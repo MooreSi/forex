@@ -1,6 +1,6 @@
 # 040 — MT5 connectivity check
 
-**Status:** not started
+**Status:** Done (2026-07-19)
 **Depends on:** 030-extract-breakout-service-layer.md
 **Real-money surface:** no — connectivity/read-only only, no order placement (established
 boundary from backend-foundation 050)
@@ -29,6 +29,12 @@ established. This task is lighter than 050 was, since the isolation groundwork a
 
 ## Notes
 
-If Simon wants an order round-trip this time, same boundary applies as before: the agent won't
-place one. Offer the same manual option (isolated terminal left logged in, Simon places one,
-agent records it) if relevant.
+Confirmed clean: isolated terminal (PID 90999) connected independently, pulled real tick +
+M5/H1/H4 candle data (80/120/40 bars respectively, matching what `_run_cycle` actually
+requests), while the live terminal (PID 91994, running since 2026-07-07) stayed untouched
+throughout — verified via `ps aux` before and after. Terminal closed after the check, per
+Simon's established preference from backend-foundation's 050.
+
+No order round-trip attempted this time either — same boundary as before (the agent doesn't
+place orders, even demo). Not raised as a fresh question since Simon already settled this in
+backend-foundation.
