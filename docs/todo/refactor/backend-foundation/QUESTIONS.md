@@ -12,11 +12,11 @@ Answer inline (write `ANSWER:` under each still-open one).
 3. ~~Which engine first?~~ **ANSWERED**
 4. ~~How much scope in this first pack?~~ **ANSWERED**
 5. ~~Which tasks need your sign-off?~~ **ANSWERED**
-6. Database consolidation across the 4 engines — one DB or keep separate?
-7. Is the NiceGUI UI layer in scope for a future pack, or backend-only forever?
-8. What proves an engine's migration is "done" and safe to cut over live?
-9. Does the KeyGen licensing/distribution angle change how this should be built?
-10. Money stored as float in `gd_copy_signal` — fix now or later?
+6. ~~Database consolidation across the 4 engines?~~ **ANSWERED (recommendation)**
+7. ~~Is the NiceGUI UI layer in scope for a future pack?~~ **ANSWERED (recommendation)**
+8. ~~What proves an engine's migration is "done"?~~ **ANSWERED (recommendation)**
+9. ~~Does KeyGen distribution change how this is built?~~ **ANSWERED (recommendation)**
+10. ~~Money stored as float in `gd_copy_signal` — fix now or later?~~ **ANSWERED (recommendation)**
 
 ---
 
@@ -53,7 +53,7 @@ adapter foundation should be designed (single shared connection pool vs one per 
 - **Design for eventual consolidation from the start** — more upfront design work in 010, pays
   off later if consolidation is likely.
 
-ANSWER:
+ANSWER: Keep separate per-engine DBs for now. (2026-07-19, user: "go with the recommendations")
 
 ## 7. Is the NiceGUI UI layer in scope for a future pack?
 Several `ui/pages/*.py` files also exceed 800 lines (`settings.py` at 3,128, `trading.py` at
@@ -65,7 +65,7 @@ Several `ui/pages/*.py` files also exceed 800 lines (`settings.py` at 3,128, `tr
 - **Plan for a UI pack too** — worth scoping now so future backend interfaces are designed with
   the eventual UI split in mind.
 
-ANSWER:
+ANSWER: Backend-only for now. (2026-07-19, user: "go with the recommendations")
 
 ## 8. What proves an engine's migration is "done" and safe to cut over live?
 This pack's own task-level Acceptance criteria (020's characterization suite passing, 050's
@@ -77,7 +77,7 @@ switching the live app itself from `forex` to `forex-refactor2`.
 - **Define it now** — e.g. N days of parallel demo-account operation with matching output, a
   fixed test suite, your manual sign-off per engine.
 
-ANSWER:
+ANSWER: Decide later, once 2+ engines are migrated. (2026-07-19, user: "go with the recommendations")
 
 ## 9. Does the KeyGen licensing/distribution angle change how this should be built?
 The separate KeyGen codebase suggests this app might eventually go to other users, not just
@@ -88,7 +88,7 @@ you.
 - **Design with multi-tenant config isolation in mind now** — more upfront complexity in 010's
   adapter (e.g. per-tenant DB paths) for a use case that may not materialize.
 
-ANSWER:
+ANSWER: Not a factor for this pack. (2026-07-19, user: "go with the recommendations")
 
 ## 10. Money stored as float in gd_copy_signal — fix now or later?
 `pnl_dollars`, `net_pnl_dollars`, `balance_after` etc. are SQLite `REAL` columns — a real
@@ -101,7 +101,7 @@ protocol, Telegram alerts — all outside this pack's scope.
 - **Fix it now, inside this pack** — bigger scope, but avoids migrating the schema twice (once
   for structure, once for money type).
 
-ANSWER:
+ANSWER: Defer to its own later pack. (2026-07-19, user: "go with the recommendations")
 
 ---
 
@@ -111,8 +111,8 @@ ANSWER:
 - [x] 3 — gd_copy_signal
 - [x] 4 — gd_copy_signal only, this pack
 - [x] 5 — only 050 needs sign-off
-- [ ] 6 — DB consolidation: in / which option?
-- [ ] 7 — UI scope: in / which option?
-- [ ] 8 — cutover criteria: in / which option?
-- [ ] 9 — multi-tenant: in / which option?
-- [ ] 10 — money-as-float: in / which option?
+- [x] 6 — DB consolidation: keep separate for now
+- [x] 7 — UI scope: backend-only for now
+- [x] 8 — cutover criteria: decide later, once 2+ engines migrated
+- [x] 9 — multi-tenant: not a factor for this pack
+- [x] 10 — money-as-float: deferred to a later pack

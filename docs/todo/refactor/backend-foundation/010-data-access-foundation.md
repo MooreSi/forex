@@ -1,6 +1,6 @@
 # 010 — Data access foundation
 
-**Status:** not started
+**Status:** Done (2026-07-19)
 **Depends on:** none
 **Real-money surface:** no
 **Leverage:** `database-conventions` skill's `DbAdapter` pattern (§1-3), translated from
