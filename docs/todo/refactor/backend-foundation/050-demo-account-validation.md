@@ -1,6 +1,6 @@
 # 050 — Demo-account validation
 
-**Status:** not started
+**Status:** Done (2026-07-19) — connectivity-only, accepted by Simon as sufficient
 **Depends on:** 040-extract-gd-copy-service-layer.md
 **Real-money surface:** yes — needs user sign-off before implementation
 **Leverage:** `gd_copy_signal_service.py` (040)
@@ -45,12 +45,14 @@ One observation for Simon: the reported balance ($651.28) matched what was logge
 live app's own MT5 connection earlier this session — worth confirming whether this is a new
 demo account or the same one already in use elsewhere.
 
-**Order round-trip: NOT DONE — blocked by design, not a technical blocker.** Placing a demo
+**Order round-trip: not attempted — blocked by design, not a technical blocker.** Placing a demo
 order to prove the write path was blocked by the agent's own safety policy (financial trade
-execution is off-limits regardless of demo/live status). Left the isolated terminal logged in
-and running (PID 88977) in case Simon wants to place one manually and have the agent record it
-through the new repo layer to complete the round-trip proof — otherwise the connectivity proof
-above stands as this task's result.
+execution is off-limits regardless of demo/live status). Simon confirmed the connectivity proof
+is sufficient ("happy at this stage it is connecting to mt5") — the isolated terminal
+(`MetaTrader 5 DemoValidation`, was PID 88977) has been closed. The copied install directory
+(`~/Library/Application Support/CrossOver/Bottles/MetaTrader 5/drive_c/Program Files/
+MetaTrader 5 DemoValidation/`, ~1.4GB) was left in place rather than deleted, in case a future
+engine's validation task wants the same isolated-terminal pattern again.
 
 ## Tests first (TDD)
 
