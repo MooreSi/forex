@@ -26,6 +26,32 @@ live app's UI or `ui/app.py`'s startup wiring — task 040 found 7 files still i
 `engine.py`/`database.py`, and QUESTIONS.md #7 already ruled UI rewiring out of scope for this
 pack. Rewiring the app to actually use the new modules is separate future work.
 
+**Isolation finding (2026-07-19):** `forex_trader/config.py`'s `USER_DATA_DIR` is a hardcoded
+constant (no override), the same physical directory the live app uses for its config/DB/
+`bridge_credentials.json`. Narrowed scope to a connectivity-only test per Simon's choice
+(rather than a full `GDCopyEngine` cycle, which would pull in `core.database`/`core.secrets`
+and touch that shared directory).
+
+**MT5 terminal isolation:** the only running MT5 terminal on this Mac was the live app's own
+(`terminal64.exe`, PID 91994, running since Jul 7, live-trading). Copied the entire
+`MetaTrader 5` install directory (1.4GB) to a second, portable-mode instance
+(`MetaTrader 5 DemoValidation`) within the same CrossOver bottle, launched independently via
+`MetaTrader5.initialize(path=...)` targeting the new copy specifically — confirmed via `ps aux`
+that both terminals ran as separate processes throughout, live one never touched.
+
+**Connectivity: DONE.** Logged into the new demo account (25470480, VantageMarkets-Demo)
+through the isolated terminal, confirmed account info and pulled 5 real XAUUSD M15 candles.
+One observation for Simon: the reported balance ($651.28) matched what was logged from the
+live app's own MT5 connection earlier this session — worth confirming whether this is a new
+demo account or the same one already in use elsewhere.
+
+**Order round-trip: NOT DONE — blocked by design, not a technical blocker.** Placing a demo
+order to prove the write path was blocked by the agent's own safety policy (financial trade
+execution is off-limits regardless of demo/live status). Left the isolated terminal logged in
+and running (PID 88977) in case Simon wants to place one manually and have the agent record it
+through the new repo layer to complete the round-trip proof — otherwise the connectivity proof
+above stands as this task's result.
+
 ## Tests first (TDD)
 
 - `tests/gd_copy_signal/test_demo_integration.py` — an integration test (marked slow/manual,
