@@ -1,6 +1,6 @@
 # 030 — Extract breakout_signal's service layer
 
-**Status:** not started
+**Status:** Done (2026-07-19)
 **Depends on:** 020-migrate-breakout-repo-layer.md
 **Real-money surface:** no (no MT5 connection in this task — that's 040, connectivity-only)
 **Leverage:** `breakout_signal_repo.py` (020), the gd_copy_signal 040 split as a template
@@ -63,8 +63,29 @@ Same mixin-composition pattern as `gd_copy_signal`'s 040:
 
 ## Notes
 
-Check for external call sites (`grep -rln "breakout_signal\.engine\|breakout_signal import
-engine\|breakout_signal\.database\|breakout_signal import database"`) BEFORE assuming
-`engine.py`/`database.py` can be deleted — gd_copy_signal's equivalent task found 7 live call
-sites that would have broken the app. Don't repeat that assumption without checking first this
-time.
+Checked before assuming anything could be deleted, per this file's own reminder — 7 external
+call sites found (`ui/app.py`, `ui/pages/remote_node.py`, `ui/pages/breakout_panel.py`,
+`core/app_lifecycle.py`, `breakout_signal/ml_engine.py`, `breakout_signal/adaptive_params.py`,
+`sync/server.py`), same pattern as gd_copy_signal. `engine.py`/`database.py` left in place.
+
+Split into 5 files (one more than the original 4-file plan): `breakout_signal_service.py` (764
+lines — close to the 800 ceiling but under it, not "well under" like gd_copy_signal's files
+were; worth a closer look if this engine is revisited), `breakout_signal_repo.py` (652, grew
+during this task — see below), `breakout_signal_manage.py` (317), `breakout_signal_velocity.py`
+(201), `breakout_signal_learn.py` (163), `breakout_signal_live_execute.py` (121). 94 tests, all
+green.
+
+**Two more raw-SQL bypasses found and fixed while extracting `_reconcile_live_pnl`** (beyond
+the 3 already added in 020): `get_closed_or_expired_signals_with_mt5_ticket()` and
+`promote_expired_to_closed()`, both added to `breakout_signal_repo.py`. The cross-engine read
+into the CORE database's `vantage_simulated_trades` table was left as-is — same precedent as
+gd_copy_signal_correlate.py's VIP read (inherent cross-engine coupling, not a bypass of this
+module's own repo).
+
+**Caught and fixed a real mistake before commit**: `breakout_signal_velocity.py` and
+`breakout_signal_learn.py` were initially written importing the OLD `database` module instead
+of the new `breakout_signal_repo` — since only `breakout_signal_repo.init()` gets called (via
+the new service's module-level `init()`), those two files would have silently read from an
+uninitialized database (the old module's global path never gets set). Caught by re-running the
+same external-call-site grep used to check for engine.py/database.py references, which flagged
+both files unexpectedly. Fixed before anything was committed.
