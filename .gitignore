@@ -1,0 +1,34 @@
+data/
+.venv/
+auth_server/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.session
+*.log
+.env
+.DS_Store
+config.yaml
+bridge_credentials.json
+
+# TEST module — ship .passwd intentionally, do not auto-commit it
+forex_trader/test_signal/.passwd
+
+# Secrets / credentials — private keys, WinRM certs, SSH keys
+.claude_ssh/
+.claude_winrm/
+
+# Backups contain real config.yaml with live API keys — never commit
+backups/
+
+# Build artifacts / vendored binaries — large, generated, not source
+installer/python_embed/
+installer/Output/
+FOREX_Trader_Setup.exe
+FOREX Trader.app/
+
+# Test/tooling caches
+.pytest_cache/
+.claude/settings.local.json

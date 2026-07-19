@@ -1,0 +1,255 @@
+"""
+Cross-platform OS utilities.
+
+All Mac-specific or Windows-specific process/network/sleep operations are
+centralised here so the calling code stays platform-agnostic.  Every function
+has a macOS path and a Windows path; the correct one is chosen at runtime via
+sys.platform checks.
+"""
+
+import os
+import subprocess
+import sys
+
+
+# ── Port detection ─────────────────────────────────────────────────────────────
+
+def pids_listening_on(port: int) -> list[int]:
+    """Return PIDs of all processes currently listening (LISTEN state) on `port`."""
+    if sys.platform == "win32":
+        try:
+            out = subprocess.check_output(
+                ["netstat", "-ano"],
+                stderr=subprocess.DEVNULL,
+            ).decode("utf-8", errors="replace")
+            pids: set[int] = set()
+            for line in out.splitlines():
+                if f":{port} " in line and "LISTENING" in line:
+                    parts = line.split()
+                    if parts:
+                        try:
+                            pids.add(int(parts[-1]))
+                        except ValueError:
+                            pass
+            return list(pids)
+        except Exception:
+            return []
+    else:
+        try:
+            out = subprocess.check_output(
+                ["lsof", f"-ti:{port}"],
+                stderr=subprocess.DEVNULL,
+            ).decode().strip()
+            return [int(p) for p in out.split() if p]
+        except Exception:
+            return []
+
+
+def is_port_in_use(port: int) -> bool:
+    """Return True if something is currently listening on `port`."""
+    return bool(pids_listening_on(port))
+
+
+def is_port_listening(port: int) -> bool:
+    """Strict LISTEN-state check (ignores CLOSE_WAIT client sockets)."""
+    if sys.platform == "win32":
+        return is_port_in_use(port)
+    else:
+        try:
+            out = subprocess.check_output(
+                ["lsof", f"-ti4TCP:{port}", "-sTCP:LISTEN"],
+                stderr=subprocess.DEVNULL,
+            ).strip()
+            return bool(out)
+        except Exception:
+            return False
+
+
+def free_port(port: int) -> None:
+    """Kill all processes listening on `port`."""
+    for pid in pids_listening_on(port):
+        kill_pid(pid, force=True)
+
+
+# ── Process management ─────────────────────────────────────────────────────────
+
+def kill_pid(pid: int, force: bool = False) -> None:
+    """Terminate a process by PID."""
+    if sys.platform == "win32":
+        args = ["taskkill", "/PID", str(pid)]
+        if force:
+            args.append("/F")
+        subprocess.run(args, capture_output=True)
+    else:
+        import signal as _signal
+        try:
+            os.kill(pid, _signal.SIGKILL if force else _signal.SIGTERM)
+        except (ProcessLookupError, OSError):
+            pass
+
+
+def pids_matching(pattern: str) -> list[int]:
+    """Return PIDs of all processes whose command line contains `pattern`."""
+    if sys.platform == "win32":
+        try:
+            out = subprocess.check_output(
+                [
+                    "wmic", "process", "where",
+                    f"CommandLine like '%{pattern}%'",
+                    "get", "ProcessId", "/value",
+                ],
+                stderr=subprocess.DEVNULL,
+            ).decode("utf-8", errors="replace")
+            pids = []
+            for line in out.splitlines():
+                line = line.strip()
+                if line.lower().startswith("processid="):
+                    try:
+                        pids.append(int(line.split("=", 1)[1]))
+                    except ValueError:
+                        pass
+            return pids
+        except Exception:
+            return []
+    else:
+        try:
+            out = subprocess.check_output(
+                ["pgrep", "-f", pattern], stderr=subprocess.DEVNULL
+            ).decode().strip().split()
+            return [int(p) for p in out if p]
+        except subprocess.CalledProcessError:
+            return []
+
+
+def kill_matching(pattern: str, force: bool = False) -> int:
+    """Kill all processes whose command line matches `pattern`. Returns count killed."""
+    pids = pids_matching(pattern)
+    for pid in pids:
+        kill_pid(pid, force=force)
+    return len(pids)
+
+
+# ── Sleep prevention ───────────────────────────────────────────────────────────
+
+class _WindowsSleepGuard:
+    """Wraps SetThreadExecutionState so callers get the same interface as a Popen."""
+
+    _ES_CONTINUOUS       = 0x80000000
+    _ES_SYSTEM_REQUIRED  = 0x00000001
+
+    def __init__(self):
+        self._active = False
+
+    def start(self) -> None:
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(
+            self._ES_CONTINUOUS | self._ES_SYSTEM_REQUIRED
+        )
+        self._active = True
+
+    def stop(self) -> None:
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(self._ES_CONTINUOUS)
+        self._active = False
+
+    # Duck-type to match subprocess.Popen so callers can treat both uniformly
+    def poll(self) -> None:
+        return None if self._active else 0
+
+    def terminate(self) -> None:
+        self.stop()
+
+
+_win_sleep_guard: "_WindowsSleepGuard | None" = (
+    _WindowsSleepGuard() if sys.platform == "win32" else None
+)
+
+
+def start_prevent_sleep():
+    """
+    Prevent the OS from sleeping.  Returns an opaque handle.
+    Pass the handle to stop_prevent_sleep() when done.
+    """
+    if sys.platform == "win32":
+        _win_sleep_guard.start()
+        return _win_sleep_guard
+    elif sys.platform == "darwin":
+        try:
+            return subprocess.Popen(
+                ["caffeinate", "-i", "-w", str(os.getpid())],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            return None
+    return None
+
+
+def stop_prevent_sleep(handle) -> None:
+    """Cancel sleep prevention started by start_prevent_sleep()."""
+    if handle is None:
+        return
+    if hasattr(handle, "terminate"):
+        handle.terminate()
+
+
+def is_preventing_sleep(handle) -> bool:
+    """Return True if the sleep-prevention handle is still active."""
+    if handle is None:
+        return False
+    if hasattr(handle, "poll"):
+        return handle.poll() is None
+    return False
+
+
+# ── Subprocess restart helper ──────────────────────────────────────────────────
+
+def open_restart_log(path, max_bytes: int = 10 * 1024 * 1024, backup_count: int = 3):
+    """
+    Open restart.log for appending, rotating it first if it exceeds max_bytes.
+    Keeps up to backup_count numbered backups (restart.log.1, restart.log.2, ...).
+    Returns a standard file object suitable for use as subprocess stdout/stderr.
+    """
+    from pathlib import Path
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.stat().st_size >= max_bytes:
+        for i in range(backup_count - 1, 0, -1):
+            src = path.parent / f"{path.name}.{i}"
+            dst = path.parent / f"{path.name}.{i + 1}"
+            if src.exists():
+                src.replace(dst)
+        path.replace(path.parent / f"{path.name}.1")
+    return open(path, "a", encoding="utf-8", errors="replace")
+
+
+def delayed_relaunch_cmd(
+    python: str,
+    script: str,
+    delay_secs: int = 5,
+    extra_args: list[str] | None = None,
+) -> list[str]:
+    """
+    Return a command list that waits `delay_secs` then relaunches `script` with
+    `python`.  Used by the in-app restart function; works on both platforms.
+    `extra_args` are appended verbatim after the script name.
+
+    Windows note: `python`/`script` must be passed as *separate* argv elements,
+    not pre-wrapped in manual quotes inside a single string element — Popen's
+    list2cmdline() quotes each element itself when it contains spaces (as any
+    install path with a space, e.g. "FOREX Trader", does), and pre-quoting
+    on top of that produces a doubly-escaped `\"...\"` command line that
+    cmd.exe can't parse (surfaced as "... is not recognized as an internal
+    or external command").
+    """
+    extra = extra_args or []
+    if sys.platform == "win32":
+        return [
+            "cmd", "/c",
+            "timeout", "/t", str(delay_secs), "/nobreak", ">nul",
+            "&&", python, script, *extra,
+        ]
+    else:
+        args_str = " ".join(extra_args) if extra_args else ""
+        args_part = f" {args_str}" if args_str else ""
+        return ["bash", "-c", f"sleep {delay_secs} && '{python}' '{script}'{args_part}"]

@@ -1,0 +1,42 @@
+# FOREX Trader — Configuration Template
+#
+# FIRST-TIME SETUP:
+#   1. Copy this file to:
+#        ~/Library/Application Support/ForexTrader/config.yaml
+#   2. Fill in your own values below.
+#
+# This file (config.yaml.example) ships with the app and contains no credentials.
+# Your config.yaml lives outside the app folder and is never overwritten by updates.
+
+account_env: demo          # "demo" or "live"
+starting_balance: 1000.0   # starting simulation balance in USD
+
+# ── MT5 Bridge ────────────────────────────────────────────────────────────────
+mt5_bridge_enabled: true
+mt5_bridge_url: http://localhost:9000
+mt5_login: 0              # your MT5 account number
+mt5_server: ''            # e.g. VantageMarkets-Demo
+
+# ── Wine / CrossOver paths (macOS only) ───────────────────────────────────────
+# Leave as-is if you installed CrossOver in the default location.
+wine_bin: /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine
+mt5_bottle_path: ~/Library/Application Support/CrossOver/Bottles/MetaTrader 5
+
+# ── Claude AI ─────────────────────────────────────────────────────────────────
+anthropic_api_key: ''
+claude_model: claude-haiku-4-5
+
+# ── Telegram reader (Telethon) ────────────────────────────────────────────────
+telegram_api_id: ''
+telegram_api_hash: ''
+telegram_phone: ''         # international format e.g. +447911123456
+telegram_2fa_password: ''
+telegram_session_name: forex_trader
+telegram_signal_group_id: ''
+
+# ── Telegram bot alerts ───────────────────────────────────────────────────────
+telegram_bot_token: ''
+telegram_chat_id: ''
+
+# ── App ───────────────────────────────────────────────────────────────────────
+port: 8888
