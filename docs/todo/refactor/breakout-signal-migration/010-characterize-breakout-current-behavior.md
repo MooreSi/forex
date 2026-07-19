@@ -1,6 +1,6 @@
 # 010 — Characterize breakout_signal's current behavior
 
-**Status:** not started
+**Status:** Done (2026-07-19) — found a real, live balance-tracking bug, see Notes
 **Depends on:** none
 **Real-money surface:** no
 **Leverage:** same pattern as backend-foundation's 020
@@ -60,3 +60,24 @@ book_partial_close atomicity gap already known from gd_copy_signal: the level-co
 (`engine.py` around `_process_candidate`) and the TP2 partial's stop-loss trail update — the
 latter has **no named function in `database.py` at all** (unlike gd_copy_signal, which at least
 had `set_stop_loss`). 020 needs to add one.
+
+**Real bug found (2026-07-19), reported to Simon via Telegram:** `close_signal()` applies the
+*full* `net_pnl_dollars` value as the balance delta (no separate "delta still owed" parameter
+like gd_copy_signal has). The real caller, `engine.py`'s `_close_and_learn`, computes
+`net_dol = partial_booked + leg_net_dol` and passes that whole total into `close_signal` —
+since `partial_booked` was already applied to the balance by the earlier `book_partial_close()`
+calls, **every breakout trade that has at least one partial close before fully closing
+double-counts that partial into the virtual balance.** Confirmed with a direct test
+(`test_close_and_learn_with_prior_partial_double_counts_the_partial` in
+`tests/breakout_signal/test_engine_characterization.py`) — a $15 partial + a $64.66 final leg
+should total $1079.66, actually lands at $1094.66 (the $15 counted twice).
+
+This is the app's own **virtual/simulated balance tracking** for the Breakout Engine (its
+dashboard balance, drawdown, and P&L stats) — not real MT5 money; the actual account balance is
+separately reconciled from real MT5 fills. `reconcile_balance_with_trades()` would self-correct
+this, but it **only runs at app startup** (`database.py:125`, inside `init()`) — the live app's
+process has been running continuously since 2026-07-07, so this has had no chance to
+self-correct since then. Deliberately NOT fixed here — 010/020 are behavior-preserving
+characterization + structural migration, not a behavior change. Characterized faithfully
+(bug-preserving) in both test files; flagged as a separate, explicit fix decision for a future
+task rather than silently corrected.
