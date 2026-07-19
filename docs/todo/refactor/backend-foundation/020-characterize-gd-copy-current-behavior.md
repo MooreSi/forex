@@ -1,6 +1,6 @@
 # 020 — Characterize gd_copy_signal's current behavior
 
-**Status:** not started
+**Status:** Done (2026-07-19) — with a scope note, see below
 **Depends on:** none (can run in parallel with 010)
 **Real-money surface:** no
 **Leverage:** none — new ground (only 2 real test files exist in the whole live app today,
@@ -63,3 +63,28 @@ highest-risk; lighter coverage for config/level-tracking/research helpers.
 
 This suite is the safety net for 030 and 040. Don't thin it out to save time — it's the entire
 point of doing this before restructuring anything.
+
+**Scope note (2026-07-19, discovered while reading engine.py in full):** `engine.py` is far
+more externally coupled than this task assumed when it was written. Its async loops
+(`_run_cycle`, `_check_outcomes`, `_check_correlation`) call directly into a live MT5 bridge,
+`self._main_eng` (the main `SimulationEngine`, for fee calc + live order placement),
+`forex_trader.core.database` (session gates, risk settings, regime/drawdown/agreement
+features, the cross-engine signal bus), and — notably — a raw `sqlite3.connect()` straight
+into the **other** engine's `vantage_tg_signals` table for VIP correlation (engine.py:832-865,
+1181-1205), plus one raw SQL query that bypasses `gd_copy_signal/database.py`'s own API
+entirely (engine.py:319-325, the consecutive-loss check). Building a harness that fakes all of
+that is real work.
+
+What actually shipped: `test_database_characterization.py` (38 tests, comprehensive — every
+money-path function, the full lifecycle, the killer test) and
+`test_engine_characterization.py` (21 tests) covering every pure/isolable method on
+`GDCopyEngine` (`_realistic_fill`, `_net_pnl`, `_calc_atr`, `_calc_adx`,
+`_classify_vip_level`) plus the DB-backed helpers (`_level_on_cooldown`, `_already_open`,
+`_today_signal_count`). 59 tests total, all passing against current, unmodified code.
+
+**Left uncovered, deliberately:** the async orchestration loops themselves
+(`_run_cycle`/`_check_outcomes`/`_check_correlation`) and `_try_live_execute`. Task 040
+(service extraction) needs to either (a) build the fake-bridge/fake-main_eng harness this
+would require before touching those methods, or (b) extract them behavior-preserving by
+inspection + the demo-account validation in 050 as the real proof, accepting that gap. Flag
+this to Simon before starting 040 — it changes how much confidence 040 can have.
