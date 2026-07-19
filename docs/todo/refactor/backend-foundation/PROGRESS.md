@@ -32,10 +32,11 @@ a new decision (see Blockers)._
 - Sign-off gating: only 050 needs per-task sign-off (source: user, 2026-07-19)
 
 ## Blockers / open
-- 050 is blocked on Simon supplying demo MT5 credentials/config for `forex-refactor2`.
-- **New (2026-07-19):** the new `gd_copy_signal_service.py`/`gd_copy_signal_repo.py` aren't
-  wired into the running app yet — 7 files still import the old `engine.py`/`database.py`.
-  Need a decision: wire those call sites over now (a new "045" task) before 050's demo
-  validation, so 050 actually exercises the code path the live app would use — or run 050
-  against the new modules in isolation (e.g. a standalone script importing
-  `gd_copy_signal_service` directly) and defer the app-wide wiring to its own later pack.
+- **050 is blocked on Simon supplying demo MT5 credentials/config for `forex-refactor2`.** This
+  is the only remaining blocker — see resolution below for the wiring question.
+- ~~New (2026-07-19): wire the 7 external call sites over now, or run 050 standalone?~~
+  **RESOLVED (2026-07-19):** QUESTIONS.md #7 already answered "UI scope: backend-only for now"
+  — rewiring `ui/app.py`/`ui/pages/gd_copy_panel.py` etc. would contradict that. 050 runs
+  against the new modules via a standalone script (imports `gd_copy_signal_service` +
+  `gd_copy_signal_repo` directly, no app wiring). Rewiring the app's 7 call sites is its own
+  future pack, not part of this one.

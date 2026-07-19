@@ -20,6 +20,12 @@ from the live app's `config.yaml`. Once available, this task connects the new
 signal generation + simulated order handling behave as expected — no live orders, no EA
 modification, no UI changes.
 
+**Resolved (2026-07-19):** runs as a standalone script directly importing
+`gd_copy_signal_service`/`gd_copy_signal_repo`/`gd_copy_signal_live_execute`, not through the
+live app's UI or `ui/app.py`'s startup wiring — task 040 found 7 files still importing the old
+`engine.py`/`database.py`, and QUESTIONS.md #7 already ruled UI rewiring out of scope for this
+pack. Rewiring the app to actually use the new modules is separate future work.
+
 ## Tests first (TDD)
 
 - `tests/gd_copy_signal/test_demo_integration.py` — an integration test (marked slow/manual,
