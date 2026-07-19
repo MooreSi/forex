@@ -1,6 +1,6 @@
 # 020 — Migrate breakout_signal's data layer onto the shared adapter
 
-**Status:** not started
+**Status:** Done (2026-07-19)
 **Depends on:** 010-characterize-breakout-current-behavior.md
 **Real-money surface:** no
 **Leverage:** `forex_trader/src/db/adapter.py` (already built), 010's characterization suite
@@ -54,3 +54,19 @@ and `set_stop_loss(signal_id, price)` (net new — didn't exist before).
 
 Same "don't delete the old file yet" rule as gd_copy_signal — cutover happens (if ever) in a
 later pack once the app is actually wired to use these new modules.
+
+**Important: the known `close_signal` double-counting bug (see 010's notes) was preserved
+faithfully, NOT fixed.** `breakout_signal_repo.py`'s `close_signal` applies `balance_delta =
+net_pnl_dollars` exactly like `database.py` does — the transaction wrapper only fixes
+atomicity (the read-compute-write sequence being interrupted), which is a separate concern from
+what value gets computed. Confirmed via the parametrized suite: the killer test's bug-preserving
+assertion (`balance == 1055.0`, not the naively-expected `1032.0`/`1079.66`) passes identically
+against both `database` and `repo`.
+
+`test_engine_characterization.py`'s fixture still inits via `database`, not `repo` — `engine.py`
+itself hasn't been repointed yet (that's 030), so its internal `bdb` reference is still bound to
+the old module. Repointing the test fixture prematurely would have silently tested against the
+wrong backend; caught this before it shipped.
+
+88 tests total (39 database tests × 2 backends, plus engine and repo-transaction/new-function
+tests). All green. `database.py` untouched.

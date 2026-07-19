@@ -10,8 +10,8 @@ _Last updated: 2026-07-19 — pack scaffolded, starting 010._
 | # | Task | Status | Owner | Notes |
 |---|---|---|---|---|
 | 010 | [characterize-breakout-current-behavior](010-characterize-breakout-current-behavior.md) | done | agent, 2026-07-19 | 42 tests, all green against current code. **Found a real, live bug**: breakout_signal's virtual balance double-counts partial-close profits on final close (see task file). Reported to Simon via Telegram. |
-| 020 | [migrate-breakout-repo-layer](020-migrate-breakout-repo-layer.md) | not started | — | Depends on 010 (done) — ready to start |
-| 030 | [extract-breakout-service-layer](030-extract-breakout-service-layer.md) | not started | — | Depends on 020 |
+| 020 | [migrate-breakout-repo-layer](020-migrate-breakout-repo-layer.md) | done | agent, 2026-07-19 | `breakout_signal_repo.py` on the shared adapter; `close_signal`/`book_partial_close`/`update_signal_pnl_from_mt5` now atomic. 3 new named functions added (`get_last_signal_time_for_level`, `get_recent_outcomes_by_direction`, `set_stop_loss`) replacing raw-SQL bypasses. **Double-counting bug preserved faithfully, not fixed** — atomicity and correctness are separate concerns. 88 tests, all green. |
+| 030 | [extract-breakout-service-layer](030-extract-breakout-service-layer.md) | not started | — | Depends on 020 (done) — ready to start |
 | 040 | [mt5-connectivity-check](040-mt5-connectivity-check.md) | not started | — | Depends on 030 |
 
 ## Decisions log
