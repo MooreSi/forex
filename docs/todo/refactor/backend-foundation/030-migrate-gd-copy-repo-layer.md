@@ -1,6 +1,6 @@
 # 030 — Migrate gd_copy_signal's data layer onto the new repo/adapter
 
-**Status:** not started
+**Status:** Done (2026-07-19)
 **Depends on:** 010-data-access-foundation.md, 020-characterize-gd-copy-current-behavior.md
 **Real-money surface:** no
 **Leverage:** `forex_trader/src/db/adapter.py` (010), 020's characterization suite as the
@@ -61,3 +61,27 @@ change. Money-as-float (the `REAL` columns) stays as-is here; that's deferred to
 
 Don't delete or edit `database.py` in this task. 040 is where the cutover happens, once the
 service layer is also ready.
+
+**Bug found and fixed while implementing (2026-07-19):** `create_signal`'s `INSERT OR IGNORE`
+on a duplicate `signal_ref` returned the *previous* successful insert's `lastrowid` instead of
+`0`. Root cause: `database.py` opens a fresh `sqlite3.connect()` per call, so `cursor.lastrowid`
+on a no-op insert is naturally `None` on a connection that's never inserted anything; the new
+adapter reuses one persistent connection, so `lastrowid` is connection-level state that
+survives a no-op write. Caught immediately by 020's parametrized characterization suite (same
+test, same assertion, run against both backends) — exactly the scenario this suite exists for.
+Fixed in `SqliteAdapter.run()` by gating `lastrowid` on `rowcount > 0`; added a direct
+regression test to 010's own `test_adapter.py` so it's covered independent of `gd_copy_signal`.
+
+020's test file (`test_database_characterization.py`) was also lightly restructured (fixture
+only, no assertion changes) to parametrize `fresh_db` over both `database` and
+`gd_copy_signal_repo`, so the same 38 assertions run against both backends without duplication.
+Two tests that depended on private internals (`database._DB_PATH`, `database._conn()`) were
+rewritten to use only the public API, so they work identically against either backend — a
+strict improvement to the suite's own robustness, not a behavior-scope change.
+
+`test_repo_transactions.py` (3 tests) proves the atomicity fix directly: forces a mid-write
+failure inside `close_signal`/`book_partial_close` and asserts both statements roll back
+together, which `database.py`'s independent-connections version cannot do correctly.
+
+Total: 111 tests passing (38 database.py assertions x 2 backends = 76, plus 21 engine, 11
+adapter/connection from 010 with the new regression test, and 3 repo-transaction tests = 111).
