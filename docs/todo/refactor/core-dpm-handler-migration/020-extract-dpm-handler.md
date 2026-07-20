@@ -1,0 +1,60 @@
+# 020 — Extract DPM handler
+
+**Status:** Done (2026-07-20)
+**Depends on:** 010
+**Real-money surface:** partially closes and modifies a live order via
+`bridge.partial_close`/`bridge.modify_order` -- identical call shape to the original; this
+pack's own tests only ever pass a fake.
+
+## Decision
+
+Extract into `core_dpm_handler.py` as two plain functions:
+`handle_dynamic_position_management(trade, tick, bridge, tp_cache, dpm_cache, dpm_candles,
+dpm_dxy_candles)` and `run_dpm_calibration(dpm_cache)`, taking all collaborators explicitly
+(no `self`).
+
+## Tests first (TDD)
+
+- 010's suite, re-pointed at the new functions (import changes only, same assertions).
+
+## What to do
+
+1. Confirm 010's suite is green.
+2. Create `core_dpm_handler.py`, porting both functions 1:1.
+3. Re-run 010's suite against the new functions -- zero assertion changes.
+4. Leave `engine.py` untouched -- same precedent as every prior pack.
+
+## Acceptance
+
+- 010's suite passes unmodified (assertions) against the new functions.
+- `engine.py` untouched.
+- No real or demo MT5 order placed, closed, or modified at any point.
+
+## Notes
+
+Created `forex_trader/core/core_dpm_handler.py` (337 lines) with two plain
+functions: `run_dpm_calibration(dpm_cache)` and
+`handle_dynamic_position_management(trade, tick, bridge, tp_cache, dpm_cache,
+dpm_candles, dpm_dxy_candles)`, porting both 1:1 from `_run_dpm_calibration`/
+`_handle_dynamic_position_management`. Reuses `core_dpm_bookkeeping.py`'s
+`DPMCache`/`load_dpm_calibrated`/`record_dpm_entry`/`update_dpm_peak`/
+`set_dpm_milestone` (already extracted), `core_tp_trigger_tracking.py`'s
+`TPCache`/`get_triggered_tps`/`get_remaining_lots`, `core_partial_close.
+partial_close_trade`, `core_fees_sizing.pnl`, and `dpm_engine.
+compute_adaptive_params`/`run_calibration` (already-extracted, untouched,
+pure module -- called through exactly as the original did, not re-derived).
+
+010's 16 tests ported verbatim into `tests/core/test_dpm_handler_surface.py`
+-- import changes only, zero assertion changes. All 16 pass.
+
+Full `tests/core/` suite: 693 passed. Full repo `tests/` suite: 1024 passed,
+2 failed -- the same pre-existing `pytest-asyncio`-missing failures seen in
+every prior pack, no new failures.
+
+`engine.py` untouched. No real or demo MT5 order placed, closed, or
+modified at any point -- verified via the fake bridge's call log in both
+the characterization and surface test files.
+
+This is the first pack of the broader "finish everything off" push covering
+the rest of `core/engine.py` (AI signal fallback, ORB report, IME, Telegram
+bot commands, background loops, and `_scan_messages` remain).
