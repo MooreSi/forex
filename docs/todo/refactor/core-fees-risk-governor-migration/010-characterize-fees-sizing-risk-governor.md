@@ -1,6 +1,6 @@
 # 010 — Characterize fees, sizing, sim account, Risk Governor
 
-**Status:** not started
+**Status:** Done (2026-07-20)
 **Depends on:** none
 **Real-money surface:** no
 
@@ -43,3 +43,27 @@ the real, shared ones — there's no per-domain isolation to lean on here.
 - Suite passes against current, unmodified `engine.py`.
 - The `_rg_apply_halts_on_close` gap is proven with a real forced-failure test, not just
   asserted from reading the code.
+
+## Notes
+
+**Real fixture bug found and fixed before any test was trusted**: `core/database.py`'s `db()`
+caches a **thread-local** sqlite3 connection. `db.init(new_path)` alone does NOT close or
+replace that cached connection — a connection opened by an earlier test keeps silently serving
+its OLD (already-deleted) temp file, so "fresh" DBs across tests were actually sharing state.
+Caught by a balance assertion off by exactly the amount an earlier test had written (1530 vs
+1500), then confirmed by a UNIQUE-constraint collision on a signal ID a later test also used.
+Fixed by explicitly closing and clearing `db._thread_local.conn`/`.depth` in fixture setup AND
+teardown, in all three test files.
+
+`SimulationEngine.__new__(SimulationEngine)` (bypassing `__init__`) was used to get real
+instances for methods needing `self` (class attribute access like `_RR_BYPASS_SOURCES` doesn't
+resolve correctly if `self` is literally `None`) — avoids constructing a live MT5 bridge, which
+the real `__init__` does.
+
+51 tests total (10 fees/sizing, 5 sim account, 26 Risk Governor), all green. Confirmed
+`reset_simulation`'s 3-statement sequence is already atomic (single existing `with
+db_module.db():` block) — nothing to fix there, unlike the other engines. Confirmed
+`_rg_apply_halts_on_close`'s 2-separate-call gap is real with a forced-failure test: the
+`trade_pause_until` write survives a crash before `risk_halt_reason` gets written, leaving a
+config state that doesn't make sense (a halt reason with no active pause is impossible to
+produce this way, but a pause with no reason absolutely can happen).
