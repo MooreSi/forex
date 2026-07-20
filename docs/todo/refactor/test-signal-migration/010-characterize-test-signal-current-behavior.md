@@ -1,6 +1,6 @@
 # 010 — Characterize test_signal's current behavior
 
-**Status:** not started
+**Status:** Done (2026-07-20)
 **Depends on:** none
 **Real-money surface:** no
 
@@ -40,7 +40,12 @@ functions, plus `engine.py`'s pure/isolable methods and DB-backed helpers. Async
 
 ## Notes
 
-Confirm during characterization whether `update_signal_pnl_from_mt5`'s delta-based correction
-(unlike breakout_signal's pre-fix full-value-reapply bug) is genuinely bug-free here, or whether
-a similar issue hides elsewhere given the different balance-update shape (4 separate calls
-instead of 1-2).
+Confirmed: `update_signal_pnl_from_mt5`'s delta-based correction is genuinely bug-free here
+(`test_update_signal_pnl_from_mt5_corrects_balance_by_delta` proves it applies only the
+correction, not the full new value). No partial-close mechanism exists in this engine at all —
+TP1 only moves SL to break-even, so the double-counting bug class found in breakout_signal
+cannot occur here.
+
+41 tests total (32 database + 9 engine), all green against current code. `get_signal_by_id`
+returns `{}` for a missing row here (not `None` like the other two engines' equivalents) —
+documented in a dedicated test so 020 doesn't accidentally "fix" this into a breaking change.
