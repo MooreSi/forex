@@ -1,6 +1,6 @@
 # 020 — Migrate test_signal's data layer onto the shared adapter
 
-**Status:** not started
+**Status:** Done (2026-07-20)
 **Depends on:** 010
 **Real-money surface:** no
 
@@ -25,3 +25,15 @@ two raw-SQL bypasses found in engine.py: the consecutive-loss check (`_run_cycle
 - 010's suite passes against both backends unmodified.
 - Atomicity proven for the balance update.
 - `database.py` untouched.
+
+## Notes
+
+`close_signal_with_balance_update()` consolidates the 4-connection sequence into one
+transaction, but the caller must compute `learning_note` BEFORE calling it (that involves an
+async AI call — holding a DB transaction open across network I/O would block every other DB
+operation app-wide for the duration). This changes the *order* engine.py computes things in
+(note generated first, then the atomic write), not what ends up stored. 030 needs to apply this
+reordering when extracting `_close_signal`.
+
+78 tests total (39 database assertions × 2 backends, plus 9 engine, 5 repo-transaction/new
+-function tests). All green. `database.py` untouched.
