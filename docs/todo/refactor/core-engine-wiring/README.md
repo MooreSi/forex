@@ -70,7 +70,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_instant_followup.py` | `_find_and_apply_instant_followup` etc. | 3 | Pending |
 | `core_signal_resolution.py` | signal resolution helpers | 3 | Pending |
 | `core_update_signal.py` | `update_signal` | 3 | Done |
-| `core_risk_governor.py` | risk governor halts | 3 | Pending |
+| `core_risk_governor.py` | `is_trading_paused`/`_check_pre_trade_filters`/`_rg_day_start_ts`/`_rg_size_and_check`/`_rg_check_halt`/`_rg_apply_halts_on_close` (+ missing `log.warning` parity fix; unused `_RR_BYPASS_SOURCES`/`_RG_MIN_TP1_RR`/`_RG_MAX_STOP_ATR` class constants removed) | 3 | Done |
 | `core_run_tp_ladder.py` | `_tp_ladder_fast_loop` body | 3 | Pending |
 | `core_orb_report.py` | `build_orb_report`/`orb_auto_execute` | 3 | Pending |
 | `core_dpm_handler.py` | `_handle_dynamic_position_management` | 4 | Pending |

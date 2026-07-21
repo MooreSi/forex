@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (5 of 16 rows touched). `core_pending_signal_activation.py` and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see Notes)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (6 of 16 rows touched). `core_pending_signal_activation.py` and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
 
 ## Log
 
@@ -369,6 +369,45 @@ Tier 3 (and likely a good chunk of Tier 4) stays blocked until
 `core_manual_market_order.py` (Tier 5) are wired into
 `self.close_trade`/`self.open_trade_from_signal`/
 `self.open_manual_market_order` first.
+
+| 2026-07-21 | `is_trading_paused`/`_check_pre_trade_filters`/`_rg_day_start_ts`/`_rg_size_and_check`/`_rg_check_halt`/`_rg_apply_halts_on_close` -> `core_risk_governor.*`; unused `_RR_BYPASS_SOURCES`/`_RG_MIN_TP1_RR`/`_RG_MAX_STOP_ATR` class constants removed | `test_risk_governor_characterization.py` (26, 1 test updated -- see Notes) + `test_risk_governor_surface.py` (26, unchanged) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (risk governor wire-in)
+
+All six methods are pure DB-read/computation, no bridge calls, no
+injected-collaborator dependency -- fully self-contained and safe
+regardless of which callers (`open_trade`, `_try_activate_pending_signals`,
+etc.) are or aren't themselves wired yet, since they don't touch order
+placement/closing at all. Added the same kind of missing-log-line parity
+fix as `core_bot_commands_trading.py`'s `cmd_report`: `rg_apply_halts_on_close`
+was missing the trailing `log.warning("[RG] Trading paused until %.0f: %s", ...)`
+call engine.py's original had; added it to `core_risk_governor.py` (plus
+the `logging`/`log = logging.getLogger(__name__)` boilerplate it didn't
+have yet). No test asserts on it either way.
+
+**One test required a genuine behavioral update, not just a fixture/mock-
+target change** -- the first time this has happened in the whole wiring
+phase. `core_risk_governor.py`'s own docstring documents a real,
+deliberate bug fix made during its 020 extraction: the original
+`_rg_apply_halts_on_close` made two SEPARATE top-level `set_app_config()`
+calls (`trade_pause_until`, then `risk_halt_reason`), so a crash between
+them could leave a pause flag set with no reason. The extraction wrapped
+both calls in one outer `with db_module.db():`, making them atomic (the
+re-entrant `db()` transaction only commits/rolls back at depth 1, so a
+failure on the second nested call rolls back the first too). The 010
+characterization suite had a test, `test_rg_apply_halts_on_close_is_not_atomic_today`,
+that deliberately forced a mid-write failure and asserted the OLD buggy
+outcome (`trade_pause_until` survives, `risk_halt_reason` doesn't) --
+written with the explicit expectation (stated in its own docstring) that
+it would need updating once this pack got wired. Renamed to
+`test_rg_apply_halts_on_close_is_atomic_since_020_fix` and flipped both
+assertions to `is None` (neither write survives now). This is NOT a
+violation of the "existing characterization test must still pass
+unmodified" rule -- that rule protects against *unintended* behavior
+drift from the wiring mechanics themselves; this is a *previously
+reviewed and accepted* bug fix (already committed, already documented)
+finally taking effect for the first time now that the method is wired,
+exactly as the original test's own docstring anticipated.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
