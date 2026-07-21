@@ -66,3 +66,23 @@ follow-up work it surfaced):
 2. If further MT5-connected validation is needed for a future engine, the isolated
    "MetaTrader 5 DemoValidation" terminal install (~1.4GB, left in place, not deleted) can be
    reused rather than copied again.
+3. **Real bug found and fixed 2026-07-21, in this pack's own foundation code**: once
+   breakout_signal and test_signal were ALSO wired to run alongside gd_copy_signal in the same
+   process (same day, see those packs' own PROGRESS.md), two latent flaws in
+   `forex_trader/src/db/connection.py`/`sqlite_adapter.py` surfaced for the first time — neither
+   had ever been exercised with more than one engine's repo module live simultaneously before:
+   (a) `connection.py`'s `_adapter` was a single bare global, so each engine's `init_db()` call
+   silently overwrote the previous engine's connection — only the most-recently-initialized
+   engine actually worked, the others got "no such table" errors querying the wrong file; fixed
+   with a `namespace` parameter (dict of adapters keyed by engine name, default namespace
+   preserves old single-adapter behavior for existing tests). (b) `SqliteAdapter` held one
+   persistent `sqlite3.Connection` reused across every call with no thread-safety, but the app
+   dispatches DB calls from more than one thread (`core.database.to_db_thread`'s dedicated
+   worker thread for most UI reads, direct calls from each engine's own async loop on the main
+   thread) — "SQLite objects created in a thread can only be used in that same thread"; fixed
+   with `check_same_thread=False` + an `RLock` wrapping every adapter method (RLock, not Lock,
+   so `transaction()`'s nested `run()` calls from the same thread don't deadlock). Each
+   engine's own `<engine>_repo.py` now wraps `get_db()`/`init_db()` with its own namespace baked
+   in, so no other call site (dozens of `get_db().run(...)` etc. per repo file) needed to
+   change. `tests/refactor/db/test_adapter.py`/`test_connection.py` still pass unmodified
+   (single-threaded, default namespace).

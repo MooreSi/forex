@@ -21,12 +21,29 @@ _Last updated: 2026-07-19 — ALL of 010-040 done. Pack complete._
 None. Pack complete.
 
 **Carried forward for whichever pack comes next** (not blockers on this pack):
-1. Wire `breakout_signal_service.py`/`breakout_signal_repo.py` into the 7 external call sites
-   (`ui/app.py`, `ui/pages/remote_node.py`, `ui/pages/breakout_panel.py`,
-   `core/app_lifecycle.py`, `breakout_signal/ml_engine.py`, `breakout_signal/adaptive_params.py`,
-   `sync/server.py`) and retire the old `engine.py`/`database.py`.
+1. ~~Wire `breakout_signal_service.py`/`breakout_signal_repo.py` into the 7 external call sites~~
+   — **done 2026-07-21**. All 7 (`ui/app.py`, `ui/pages/remote_node.py`,
+   `ui/pages/breakout_panel.py`, `core/app_lifecycle.py`, `breakout_signal/ml_engine.py`,
+   `breakout_signal/adaptive_params.py`, `sync/server.py`) now import
+   `breakout_signal_service`/`breakout_signal_repo`. `ml_engine.py` (previously out of scope,
+   still importing the legacy `database` module directly in several functions) was migrated too,
+   removing the need for `app_lifecycle.py`'s separate legacy-DB dual-init call. Old `engine.py`
+   had zero remaining callers afterward and was deleted; `database.py` kept as the dual-backend
+   characterization contract. **Also found and fixed two real, previously-latent bugs while
+   wiring this alongside test_signal and gd_copy_signal simultaneously for the first time**:
+   `forex_trader/src/db/connection.py` held a single global adapter shared by all three engines
+   (each `init_db()` call silently clobbered the previous engine's connection — only the
+   last-initialized engine actually worked); and `SqliteAdapter` had no thread-safety even
+   though the app dispatches DB calls from more than one thread (`core.database.to_db_thread`'s
+   worker thread for UI reads, main thread for each engine's own async loop) — "SQLite objects
+   created in a thread can only be used in that same thread". Fixed with per-namespace adapters
+   + an RLock in the shared connection layer. Verified via full suite (1624/1624) and a real
+   isolated `python run.py` boot with the Breakout panel actually visited and rendering live
+   engine state in the browser.
 2. **Simon's live-app decision still pending** (asked via Telegram, 2026-07-19): fix the
    Breakout Engine's balance double-counting bug directly on the live app now, or leave it for
-   when the refactor eventually replaces this engine.
+   when the refactor eventually replaces this engine. **Still not fixed in this fork either** —
+   deliberately preserved faithfully through the 2026-07-21 wiring pass, per this pack's own
+   no-behavior-change scope. Still needs a decision.
 3. `breakout_signal_service.py` at 764 lines is close to the 800 ceiling (not "well under" like
    gd_copy_signal's files) — worth a further split if this engine is revisited.

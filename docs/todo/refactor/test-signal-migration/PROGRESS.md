@@ -15,11 +15,27 @@ _Last updated: 2026-07-20 — ALL of 010-040 done. Pack complete._
 None. Pack complete.
 
 **Carried forward for whichever pack comes next:**
-1. Wire `test_signal_service.py` + friends into the 8 external call sites (`ui/app.py`,
-   `ui/pages/remote_node.py`, `ui/pages/test_panel.py`, `core/app_lifecycle.py`,
-   `breakout_signal/engine.py`, `gd_copy_signal/gd_copy_signal_correlate.py`,
-   `gd_copy_signal/engine.py`, `sync/server.py`) and retire the old `engine.py`/`database.py`.
-2. `ml_engine.py` for all three engines is still unmigrated (out of scope throughout this
-   whole `refactor/` series so far) — every engine's service now double-initializes both the
-   new repo and the legacy `database` module so `ml_engine.py` keeps working. A future pack
-   could migrate the three `ml_engine.py` files too, removing the need for dual-init.
+1. ~~Wire `test_signal_service.py` + friends into the 8 external call sites~~ — **done
+   2026-07-21**. `ui/app.py`, `ui/pages/remote_node.py`, `ui/pages/test_panel.py`,
+   `core/app_lifecycle.py`, `breakout_signal/adaptive_params.py`, `sync/server.py` now import
+   `test_signal_service`/`test_signal_repo`. `gd_copy_signal_correlate.py`'s and
+   `breakout_signal/engine.py`'s listed references turned out to be a stale comment and the old
+   (now-deleted) file's own self-reference respectively — nothing to wire there. Old `engine.py`
+   had zero remaining callers afterward and was deleted; `database.py` kept as the dual-backend
+   characterization contract. **`ml_engine.py` migrated too** (see item 2 — the dual-init this
+   item originally deferred is gone). **Found and fixed two real, previously-latent bugs while
+   wiring this alongside breakout_signal and gd_copy_signal simultaneously for the first time**:
+   `forex_trader/src/db/connection.py` held a single global adapter shared by all three engines
+   (each `init_db()` call silently clobbered the previous engine's connection); and
+   `SqliteAdapter` had no thread-safety even though the app dispatches DB calls from more than
+   one thread (`core.database.to_db_thread`'s worker thread for UI reads, main thread for each
+   engine's own async loop) — "SQLite objects created in a thread can only be used in that same
+   thread", first surfaced as "no such table: test_config" (wrong-engine's connection) then as
+   the threading error once the namespace fix was in. Fixed with per-namespace adapters + an
+   RLock in the shared connection layer. Verified via full suite (1624/1624) and a real isolated
+   `python run.py` boot with the Bounce panel actually visited and rendering live engine state
+   in the browser.
+2. ~~`ml_engine.py` for all three engines is still unmigrated~~ — **done 2026-07-21** for all
+   three (gd_copy_signal 2026-07-21 earlier same day, breakout_signal and test_signal as part of
+   this item). Every engine's `ml_engine.py` now imports its own `<engine>_repo` module
+   directly; no engine double-initializes the legacy `database` module anymore.
