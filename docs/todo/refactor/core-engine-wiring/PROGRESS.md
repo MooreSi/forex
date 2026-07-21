@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4 started: `core_handle_scale_out.py`/`core_handle_be_runner.py` done (2 of 13 handlers)._
+_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py` done (4 of 13 handlers)._
 
 ## Log
 
@@ -570,6 +570,21 @@ test mock relocation needed in either pack -- neither test file patches a
 `SimulationEngine.*` collaborator (the ADX gate is tested via
 `patch("forex_trader.core.dpm_engine.compute_adx", ...)`, a real
 module-level patch unaffected by which file calls it).
+
+| 2026-07-21 | `_handle_trail_stop` -> `core_handle_trail_stop.handle_trail_stop` | `test_handle_trail_stop_characterization.py` (7) + surface (7) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+| 2026-07-21 | `_handle_protected_scale` -> `core_handle_protected_scale.handle_protected_scale` | `test_handle_protected_scale_characterization.py` + surface (16 combined) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (trail_stop / protected_scale wire-ins)
+
+Both diffed line-by-line against engine.py's current bodies before wiring
+(per the run_tp_ladder lesson) -- both complete, verbatim extractions, no
+gaps found this time. `trail_stop` has no order-placing/closing calls at
+all (only `bridge.modify_order`); `protected_scale` follows the same safe
+`close_full_after_tps`-as-optional-injected-callable pattern as
+scale_out/be_runner/run_tp_ladder, threaded through as
+`self._close_full_after_tps` (still original, correct, unwired). Neither
+test file patches any `SimulationEngine.*` collaborator -- no mock
+relocation needed for either.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)

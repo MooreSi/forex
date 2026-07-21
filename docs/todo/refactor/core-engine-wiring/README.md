@@ -79,10 +79,10 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_handle_conservative_trial.py` | `_handle_conservative_trial` | 4 | Pending |
 | `core_handle_no_sl_scale.py` | `_handle_no_sl_scale` | 4 | Pending |
 | `core_handle_orb_fixed.py` | `_handle_orb_fixed` | 4 | Pending |
-| `core_handle_protected_scale.py` | `_handle_protected_scale` | 4 | Pending |
+| `core_handle_protected_scale.py` | `_handle_protected_scale` | 4 | Done |
 | `core_handle_scale_out.py` | `_handle_scale_out` (+ unused `_SCALE_OUT_PCTS`/`_SCALE_OUT_RETRY_COOLDOWN_S` module constants removed) | 4 | Done |
 | `core_handle_scalp_runner.py` | `_handle_scalp_runner` | 4 | Pending |
-| `core_handle_trail_stop.py` | `_handle_trail_stop` | 4 | Pending |
+| `core_handle_trail_stop.py` | `_handle_trail_stop` | 4 | Done |
 | `core_monitor_loop.py` (rest) | `_monitor_loop`'s 3 real blocks | 4 | Pending |
 | `core_manual_market_order.py` | `open_manual_market_order` | 5 | Pending |
 | `core_open_trade.py` | `open_trade` | 5 | Pending |
