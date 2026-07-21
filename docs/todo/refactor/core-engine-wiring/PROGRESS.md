@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py` done (4 of 13 handlers)._
+_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py`/`core_handle_no_sl_scale.py` done (5 of 13 handlers)._
 
 ## Log
 
@@ -585,6 +585,16 @@ scale_out/be_runner/run_tp_ladder, threaded through as
 `self._close_full_after_tps` (still original, correct, unwired). Neither
 test file patches any `SimulationEngine.*` collaborator -- no mock
 relocation needed for either.
+
+| 2026-07-21 | `_handle_no_sl_scale` -> `core_handle_no_sl_scale.handle_no_sl_scale` | `test_handle_no_sl_scale_characterization.py` + surface (30 combined) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (no_sl_scale wire-in)
+
+Largest handler diffed so far (five nested closures: `_tp_cleared`/
+`_partial`/`_close_all`/`_mark_skipped`/`_move_sl`) -- confirmed complete
+and verbatim line-by-line against engine.py before wiring, no gaps. Same
+safe `close_full_after_tps`-as-injected-callable pattern as the other
+handlers in this tier. No test mock relocation needed.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
