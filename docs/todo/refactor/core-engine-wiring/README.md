@@ -67,7 +67,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_profit_sync.py` | `_sync_profit`/`_schedule_profit_sync`/`_profit_sweep` wired; `_close_full_after_tps` deliberately deferred (bare `CloseTradeContext`, same reason as `_cmd_close`) | 3 | Partial |
 | `core_ai_signal_fallback.py` | `_try_ai_signal_fallback`/`_push_ai_recovered_created`/`_apply_sl_adjustment`/`_queue_unrecognised`/`_analyse_unrecognised_message` | 3 | Done |
 | `core_instant_entry.py` | `_process_instant_entry` | 3 | Pending |
-| `core_instant_followup.py` | `_find_and_apply_instant_followup` etc. | 3 | Pending |
+| `core_instant_followup.py` | `_apply_followup_to_instant_trade`/`_find_and_apply_instant_followup`/`_ime_timeout_watchdog` | 3 | Done |
 | `core_signal_resolution.py` | signal resolution helpers | 3 | Pending |
 | `core_update_signal.py` | `update_signal` | 3 | Done |
 | `core_risk_governor.py` | `is_trading_paused`/`_check_pre_trade_filters`/`_rg_day_start_ts`/`_rg_size_and_check`/`_rg_check_halt`/`_rg_apply_halts_on_close` (+ missing `log.warning` parity fix; unused `_RR_BYPASS_SOURCES`/`_RG_MIN_TP1_RR`/`_RG_MAX_STOP_ATR` class constants removed) | 3 | Done |

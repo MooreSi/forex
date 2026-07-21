@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py`/`core_untracked_positions.py`/`core_ai_signal_fallback.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (9 of 16 rows touched). `core_pending_signal_activation.py`, `core_signal_resolution.py` (no standalone `self.` method -- inline half of the still-unwired `open_trade_from_signal`), and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py`/`core_untracked_positions.py`/`core_ai_signal_fallback.py`/`core_instant_followup.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (10 of 16 rows touched). `core_pending_signal_activation.py`, `core_signal_resolution.py` (no standalone `self.` method -- inline half of the still-unwired `open_trade_from_signal`), and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
 
 ## Log
 
@@ -465,6 +465,15 @@ inline `open_trade_from_signal` (Tier 5), not a separate method call site.
 Wiring it would mean surgically splitting `open_trade_from_signal`'s body
 mid-method, which is Tier-5-grade risk, not a standalone Tier-3 item --
 removed it from the "safe to wire now" list from the earlier survey.
+
+| 2026-07-21 | `_apply_followup_to_instant_trade`/`_find_and_apply_instant_followup`/`_ime_timeout_watchdog` -> `core_instant_followup.*` | `test_instant_followup_characterization.py` (26) unchanged-pass + `test_instant_followup_surface.py` (unchanged) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (instant followup wire-in)
+
+Only touches `bridge.modify_order` and the already-wired
+`core_update_signal.update_signal` -- no order placement/closing, no
+injected-collaborator context issue. No test mocks a `SimulationEngine.*`
+collaborator in this pack's test file at all, so no relocation was needed.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
