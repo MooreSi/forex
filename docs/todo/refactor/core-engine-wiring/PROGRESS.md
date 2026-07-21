@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done (all 14 rows). Tier 3 starts next._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py` done (1 of 16 rows)._
 
 ## Log
 
@@ -179,6 +179,30 @@ completes Tier 2 in full (14 of 14 rows). `_handle_bot_command` (the
 dispatcher) still calls `self._cmd_*` unmodified -- untouched by this pack,
 per the extraction pack's own note that the dispatcher rewire happens once
 all bot-command packs (readonly/infra/trading) are wired.
+
+| 2026-07-21 | `_cmd_restart_bridge`/`_cmd_restart_app`/`_cmd_headless`/`_cmd_switch_live`/`_cmd_switch_demo`/`_cmd_switch_env` -> `core_bot_commands_infra.*`; module-level `_delayed_app_shutdown` removed from engine.py (only referenced internally by the extracted `cmd_restart_app`, no cross-file usage) | `test_bot_commands_infra_characterization.py` (15) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (bot commands infra wire-in)
+
+First Tier 3 wire-in. Despite touching real process-management (subprocess
+spawn, force `os._exit`, live/demo credential switch), no test patch
+needed to move: every mock in this pack's test file targets a module
+attribute (`subprocess.Popen`, `forex_trader.core.platform_utils.open_restart_log`/
+`delayed_relaunch_cmd`, `db.init`/`sync_bridge_credentials_file`,
+`cfg_mod.save_to_yaml`) rather than an `engine.<name>` or `SimulationEngine.<name>`
+symbol, and all of those modules are imported the same way (by module,
+then `.attr` at call time) in both the original engine.py code and the
+extracted `core_bot_commands_infra.py` -- so patching the shared module
+object affects the call site regardless of which file makes it. The two
+exceptions (`SimulationEngine._start_bridge_process` for `_cmd_restart_bridge`,
+`SimulationEngine._cmd_restart_app` for `_cmd_headless`) are both passed
+into the extracted functions as **injected callables** resolved fresh via
+`self.<name>` inside engine.py's thin wrapper on every call, so patching
+the class attribute still takes effect exactly as before. `_delayed_app_shutdown`
+(a module-level helper, not a method) was removed from engine.py entirely
+rather than re-exported, since nothing outside `core_bot_commands_infra.py`
+referenced it (confirmed via a repo-wide grep) -- unlike `_apply_fee`/
+`_platform_fee_rate`, which stayed re-exported for `ui/pages/history.py`.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
