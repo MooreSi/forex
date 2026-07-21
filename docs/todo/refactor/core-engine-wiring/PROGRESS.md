@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py`/`core_handle_no_sl_scale.py`/`core_handle_conservative.py`/`core_handle_conservative_trial.py` done (7 of 13 handlers)._
+_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py`/`core_handle_no_sl_scale.py`/`core_handle_conservative.py`/`core_handle_conservative_trial.py`/`core_handle_scalp_runner.py` done (8 of 13 handlers)._
 
 ## Log
 
@@ -609,6 +609,21 @@ other Tier-4 handlers so far. No test mock relocation needed.
 
 Diffed line-by-line, complete and verbatim; same safe pattern as the rest
 of this tier. No test mock relocation needed.
+
+| 2026-07-21 | `_handle_scalp_runner` -> `core_handle_scalp_runner.handle_scalp_runner` | `test_handle_scalp_runner_characterization.py` + surface (20 combined) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (scalp_runner wire-in)
+
+Diffed line-by-line, complete and verbatim; same safe pattern as the rest
+of this tier. No test mock relocation needed. Two large handlers this
+session (conservative_trial, scalp_runner) needed the "insert delegating
+call + rename original body as a dead method + verify boundary + delete"
+technique instead of a single direct Edit, since a direct old_string
+match against the full original body failed both times (likely a hidden
+Unicode variant in the em-dash/arrow characters inside the docstrings,
+not caught by visual inspection of the Read output) -- worth remembering
+as the fallback approach for any remaining large multi-hundred-line
+handler bodies.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
