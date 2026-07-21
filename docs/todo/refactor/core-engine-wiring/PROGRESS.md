@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 mostly done (7 of 8 modules)._
+_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 8 of 14 rows done._
 
 ## Log
 
@@ -35,8 +35,53 @@ that removes rather than delegates a module-level (non-method) symbol.
 | 2026-07-21 | `import_mt5_history` -> `core_mt5_import.import_mt5_history` | `test_mt5_history_characterization.py` + full suite | this pack |
 | 2026-07-21 | `get_tg_signals` -> `core_tg_signals.get_tg_signals` | `test_tg_signals_characterization.py` + full suite | this pack |
 
+| 2026-07-21 | `_get_triggered_tps`/`_last_closed_tp`/`_log_tp_wait_diagnostic`/`_check_tp_hits`/`_get_remaining_lots` -> `core_tp_trigger_tracking.*`; `self._tp_cache`+`self._tp_wait_log_ts` merged into `self._tp_trigger_cache` (`TPCache`) | 13 characterization test files (146 tests) + full suite | this pack |
+
+## Notes (TP trigger tracking wire-in)
+
+**Much bigger test-fixture ripple than any prior wire-in in this phase.**
+`_check_tp_hits`/`_get_triggered_tps`/`_log_tp_wait_diagnostic` are called
+by nearly every strategy handler, and 12 OTHER packs' own characterization
+test files (`test_handle_scale_out_characterization.py`,
+`test_dpm_handler_characterization.py`,
+`test_handle_scalp_runner_characterization.py`,
+`test_handle_conservative_characterization.py`,
+`test_handle_conservative_trial_characterization.py`,
+`test_handle_no_sl_scale_characterization.py`,
+`test_run_tp_ladder_characterization.py`,
+`test_handle_orb_fixed_characterization.py`,
+`test_handle_protected_scale_characterization.py`,
+`test_handle_be_runner_characterization.py`,
+`test_handle_trail_stop_characterization.py`,
+`test_close_trade_characterization.py`) each construct a bare
+`SimulationEngine.__new__(SimulationEngine)` and set the OLD
+`e._tp_cache = {}` / `e._tp_wait_log_ts = {}` attributes directly as
+fixture setup (since `__init__` never runs). Consolidating those two dicts
+into one `TPCache` instance broke all 12 fixtures at once (`AttributeError:
+no attribute '_tp_trigger_cache'`).
+
+This is expected, legitimate fallout from wiring shared internal state --
+not a behavioral regression -- and distinct from the "existing
+characterization test must still pass unmodified" rule, which is about
+BEHAVIOR staying identical, not internal attribute names/shapes staying
+frozen forever (the whole point of wiring is to change those). Fixed by
+updating each fixture to `e._tp_trigger_cache = TPCache()` (importing
+`TPCache` from `core_tp_trigger_tracking`) and the two files
+(`test_handle_trail_stop_characterization.py`,
+`test_close_trade_characterization.py`) that also read/write the cache
+dict directly in a test body, updated to go through
+`.triggered`/`.wait_log_ts`. Every BEHAVIORAL assertion in all 13 files
+(the tp_trigger_tracking pack's own suite plus these 12) is unchanged. All
+146 tests across the 13 files pass, plus the full suite (1620 passed, same
+4 pre-existing failures).
+
+**Lesson for remaining wire-ins**: before merging/renaming any instance
+attribute that's shared across multiple methods (as opposed to a
+locally-scoped one only one method touches), grep across the ENTIRE
+`tests/` directory for that attribute name first, not just
+`engine.py` -- the blast radius can span many other packs' fixtures.
+
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
-repeated before/after every wire-in in this batch -- no other direct
-imports of the wired symbols found besides the already-fixed
-`_apply_fee`/`_platform_fee_rate` case.
+and cross-file attribute-access sweep (`grep -rn "\._attr_name\b"`)
+repeated before/after every wire-in in this phase.

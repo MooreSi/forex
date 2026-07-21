@@ -51,7 +51,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_mt5_import.py` | `import_mt5_history` | 2 | Done |
 | `core_trade_reporting.py` | `get_open_trades`, `get_all_trades`, `compute_performance` | 2 | Done |
 | `core_sim_account.py` | `get_sim_account`, `update_sim_balance`, `reset_simulation` | 2 | Done |
-| `core_tp_trigger_tracking.py` | `_check_tp_hits`/TP cache | 2 | Pending |
+| `core_tp_trigger_tracking.py` | `_get_triggered_tps`, `_last_closed_tp`, `_log_tp_wait_diagnostic`, `_check_tp_hits`, `_get_remaining_lots` (+ `self._tp_cache`/`self._tp_wait_log_ts` merged into one `self._tp_trigger_cache` `TPCache` instance) | 2 | Done |
 | `core_tg_signals.py` | `get_tg_signals` | 2 | Done |
 | `core_signals.py` | signal CRUD | 2 | Pending |
 | `core_dpm_bookkeeping.py` | DPM cache/record helpers | 2 | Pending |
