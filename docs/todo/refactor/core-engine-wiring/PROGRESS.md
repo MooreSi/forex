@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (6 of 16 rows touched). `core_pending_signal_activation.py` and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (7 of 16 rows touched). `core_pending_signal_activation.py` and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
 
 ## Log
 
@@ -408,6 +408,28 @@ drift from the wiring mechanics themselves; this is a *previously
 reviewed and accepted* bug fix (already committed, already documented)
 finally taking effect for the first time now that the method is wired,
 exactly as the original test's own docstring anticipated.
+
+| 2026-07-21 | `_tp_safety_net_sweep`/`_tp_safety_net_check_trade`/`_compute_be_cost_pts` -> `core_tp_safety_net.*`; unused `_TP_SAFETY_NET_ALERT_COOLDOWN` class constant removed | `test_tp_safety_net_characterization.py` (15, after mock-target fixes to 2 tests) + `test_tp_safety_net_surface.py` (unchanged) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (tp_safety_net wire-in)
+
+Only touches `bridge.modify_order`/`get_candles_range`/`get_tick`, DB
+writes, and the `ea_bridge` singleton -- no injected-collaborator context
+issue like `close_trade`/`open_manual_market_order`. `_tp_safety_net_last_alert`
+stays a plain `self.*` dict passed by reference into the extracted
+functions (mutated in place), same as before -- no rename needed since
+another call site (`_record_close`'s cleanup) already reads/writes it via
+the same attribute name and isn't touched by this pack.
+
+Third lesson applied twice more: `test_tp_safety_net_characterization.py`
+had `mock.patch.object(SimulationEngine, "_compute_be_cost_pts", ...)` (now
+calls `core_tp_safety_net.compute_be_cost_pts` directly) and
+`mock.patch.object(SimulationEngine, "get_open_trades"/"_tp_safety_net_check_trade",
+...)` in the sweep-continues-past-exception test (now calls
+`core_tp_safety_net.get_open_trades`/`tp_safety_net_check_trade` directly,
+bypassing `self.*` entirely) -- both re-pointed to the module, with the
+fake's signature adjusted to the extracted function's real 4-arg shape
+(`trade, now, bridge, last_alert`).
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
