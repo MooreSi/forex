@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py` done, `core_bot_commands_trading.py` partial, `core_bridge_watchdog.py` done (3 of 16 rows)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (4 of 16 rows touched)._
 
 ## Log
 
@@ -299,6 +299,33 @@ sense of having its own extraction -- it's a large process/Wine-teardown
 method deferred to a separate not-yet-migrated background-loops cluster)
 stays exactly as before, passed through as the same injected callable
 pattern used by `_cmd_restart_bridge`.
+
+| 2026-07-21 | `_sync_profit`/`_schedule_profit_sync`/`_profit_sweep` -> `core_profit_sync.*`; `_close_full_after_tps` deliberately NOT wired (bare `CloseTradeContext`, same reason as `_cmd_close`) | `test_profit_sync_characterization.py` (13, after mock-target fixes to 4 schedule/sweep tests) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (profit sync wire-in — partial, same pattern as bot-commands-trading)
+
+`sync_profit`/`schedule_profit_sync`/`profit_sweep` are fully self-contained
+(pure DB read/write + bridge reads, no injected-collaborator dependency) so
+all three were safe to wire. `close_full_after_tps` was left on its
+original body for the same reason `_cmd_close` was skipped: its rare
+residual-position branch builds a bare `CloseTradeContext(bridge)` and
+calls `record_close(...)` directly, dropping the engine's real TP cache/
+scale-out/TP-safety-net state and close-commentary callback -- unsafe
+until `core_close_trade.py` (Tier 5) is wired into `self.close_trade`
+first.
+
+Confirmed the third lesson (collaborator patch-target relocation) applied
+here too: `_schedule_profit_sync`/`_profit_sweep`'s own tests patched
+`SimulationEngine._sync_profit` directly, but once wired,
+`schedule_profit_sync`/`profit_sweep` (the extracted functions) call the
+module-level `sync_profit` imported into `core_profit_sync`'s own
+namespace, bypassing `self._sync_profit` entirely -- even though
+`_sync_profit` itself is ALSO now wired (to the very same underlying
+function), patching the class method has no effect on a caller that
+never goes through `self.*`. Fixed by re-pointing 4 tests' mocks to
+`mock.patch.object(core_profit_sync, "sync_profit", ...)`, matching each
+fake's new 3-arg signature (`trade_id, ticket, bridge`). No fixture
+attribute renaming needed this pack.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)

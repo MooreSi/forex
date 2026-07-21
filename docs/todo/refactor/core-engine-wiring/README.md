@@ -64,7 +64,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_pending_signal_activation.py` | `_try_activate_pending_signals` | 3 | Pending |
 | `core_mt5_position_sync.py` | `_sync_closed_mt5_positions` | 3 | Pending |
 | `core_untracked_positions.py` | untracked-position import | 3 | Pending |
-| `core_profit_sync.py` | `_schedule_profit_sync`/`_profit_sweep` | 3 | Pending |
+| `core_profit_sync.py` | `_sync_profit`/`_schedule_profit_sync`/`_profit_sweep` wired; `_close_full_after_tps` deliberately deferred (bare `CloseTradeContext`, same reason as `_cmd_close`) | 3 | Partial |
 | `core_ai_signal_fallback.py` | `_try_ai_signal_fallback` etc. | 3 | Pending |
 | `core_instant_entry.py` | `_process_instant_entry` | 3 | Pending |
 | `core_instant_followup.py` | `_find_and_apply_instant_followup` etc. | 3 | Pending |
