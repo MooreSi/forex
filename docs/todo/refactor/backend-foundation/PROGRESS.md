@@ -4,7 +4,9 @@
 under Owner), flip its Status as you go, leave a one-line Note (commit / blocker / decision).
 Keep it honest.
 
-_Last updated: 2026-07-19 — ALL of 010-050 done. Phase 1 (backend-foundation) complete._
+_Last updated: 2026-07-21 — ALL of 010-050 done. Phase 1 (backend-foundation) complete. The
+carried-forward wiring item below is now also done -- gd_copy_signal_service.py/
+gd_copy_signal_repo.py are load-bearing in the real app, not parallel/unused code anymore._
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
@@ -46,11 +48,21 @@ None remaining for this pack. All resolved:
 
 **Carried forward for whichever pack comes next** (not blockers on THIS pack, but real
 follow-up work it surfaced):
-1. Wire `gd_copy_signal_service.py`/`gd_copy_signal_repo.py` into the 7 external call sites
-   (`ui/app.py`, `ui/pages/gd_copy_panel.py`, `ui/pages/remote_node.py`, `core/app_lifecycle.py`,
-   `sync/server.py`, `gd_copy_signal/ml_engine.py`, `telegram_research.py`) and retire the old
-   `engine.py`/`database.py` — this is what makes the refactor actually load-bearing rather than
-   parallel/unused code.
+1. ~~Wire `gd_copy_signal_service.py`/`gd_copy_signal_repo.py` into the 7 external call sites~~
+   — **done 2026-07-21**. All 7 (`ui/app.py`, `ui/pages/gd_copy_panel.py`,
+   `ui/pages/remote_node.py`, `core/app_lifecycle.py`, `sync/server.py`,
+   `gd_copy_signal/ml_engine.py`, `telegram_research.py`) now import
+   `gd_copy_signal_service`/`gd_copy_signal_repo` instead of the old `engine`/`database`
+   modules. The old `engine.py` (1,295 lines) had zero remaining callers (app or tests) after
+   the swap and was deleted outright. `database.py` (752 lines) is kept — the dual-backend
+   characterization test (`tests/gd_copy_signal/test_database_characterization.py`) explicitly
+   parametrizes over both modules as the equivalence contract, so it's a live reference
+   implementation, not dead code. Verified via full suite (1624/1624), a real isolated
+   `python run.py` boot, and the GD Copy panel rendering live engine state
+   (`Running`, `$1,000.00 Virtual Balance`, `Last cycle: ...`) in the browser with zero
+   console errors. `forex_trader/sync/remote_stats_facade.py`'s `_DbFacade`/`_MlFacade`
+   classes needed no changes at all — they delegate to whichever module is passed in by
+   attribute name, so swapping the underlying module was fully transparent to them.
 2. If further MT5-connected validation is needed for a future engine, the isolated
    "MetaTrader 5 DemoValidation" terminal install (~1.4GB, left in place, not deleted) can be
    reused rather than copied again.
