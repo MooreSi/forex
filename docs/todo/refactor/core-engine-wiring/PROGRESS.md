@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1-4 essentially complete (only `core_monitor_loop.py`'s remaining 3 real blocks left in Tier 4). Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py`/`core_open_trade_from_signal.py`+`core_signal_resolution.py` done. The primary Telegram-signal trade-opening path (`open_trade_from_signal`) is now fully wired._
+_Last updated: 2026-07-21 — Tiers 1-3 and 4 fully done except `core_monitor_loop.py`'s remaining 3 real blocks. Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py`/`core_open_trade_from_signal.py`+`core_signal_resolution.py`/`core_close_trade.py` done; `core_orb_report.py` done. Remaining: `core_pending_signal_activation.py`, `core_monitor_loop.py`'s rest, the four `core_scan_messages_*.py` sub-packs._
 
 ## Log
 
@@ -782,6 +782,80 @@ the way `_cmd_market_price_buy` routes through `self.open_manual_market_order`.
 Still deferred until `core_pending_signal_activation.py` is revisited
 with a proper collaborator fix (either pass the callable through, or
 call `self.open_trade_from_signal` instead of the raw extracted function).
+
+| 2026-07-21 | `close_trade`/`_record_close`/`_close_all_ladder_legs`/`_get_trading_balance` -> `core_close_trade.*`; new `_make_close_trade_ctx` helper builds the real `CloseTradeContext` from live `self.*` state (`tp_cache`/`scale_out_last_fail`/`tp_safety_net_last_alert`/`background_close_commentary`/`schedule_profit_sync`, plus an `on_profit` lambda mapping the original inline `self._profit_sound_seq += 1`) | `test_close_trade_characterization.py`/`_surface.py` unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (close_trade wire-in — resolves three earlier deferrals for free)
+
+Full line-by-line diff of `CloseTradeContext`/`get_trading_balance`/`close_trade`/
+`record_close`/`close_all_ladder_legs` against the extracted module confirmed
+verbatim, no gaps. Added `_make_close_trade_ctx(self)` since no equivalent
+context-building code existed inline before (the original method built its
+collaborators from raw `self.*` reads directly); it's the single place that
+now assembles a real `CloseTradeContext` for every caller.
+
+**Resolves three earlier deferrals, all with ZERO code changes to the
+deferred method itself** — each already called `self.close_trade`/
+`self._record_close` directly rather than the raw extracted function, so
+once those became correctly wired, the callers became correct automatically:
+- `core_bot_commands_trading.py`'s `_cmd_close` (calls `self.close_trade`)
+- `core_profit_sync.py`'s `_close_full_after_tps` (calls `self._record_close`)
+- `core_mt5_position_sync.py`'s `_sync_closed_mt5_positions` (calls `self._record_close`)
+
+`_cmd_market_price_buy`/`_cmd_market_price_sell` were already resolved for
+free by the earlier `open_manual_market_order` wire-in — see that pack's
+own notes above. That leaves `core_bot_commands_trading.py`,
+`core_profit_sync.py`, and `core_mt5_position_sync.py` fully "Done" in the
+tracker despite having zero lines changed themselves this pack.
+
+| 2026-07-21 | `build_orb_report`/`_get_orb_target_multiple`/`_backtest_orb_target_multiple`/`_orb_auto_execute` -> `core_orb_report.*`; removed now-unused module-level `_compute_volume_profile` and `_ORB_*` class constants (all have exact module-level equivalents in the extracted module) | `test_orb_report_characterization.py`/`_surface.py` (32, 2 collaborator-patch relocations + 1 `datetime` patch-target relocation + 7 `e._bridge` fixture gaps fixed) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (core_orb_report.py wire-in)
+
+Re-investigated an earlier (pre-this-session) note claiming `_orb_auto_execute`
+was blocked on the same bare-`open_manual_market_order`-context problem as
+`_cmd_close`/`_close_full_after_tps`. That claim was stale: engine.py's
+`_orb_auto_execute` no longer places any order at all — a 2026-07-17 fix
+(see its own docstring) replaced the direct `open_manual_market_order()`
+call with `self.create_signal(...)`, creating a DB-only pending signal that
+the already-wired zone-fill watcher (`_try_activate_pending_signals`) later
+opens. Confirmed the extracted `orb_auto_execute` matches this exactly
+(imports and calls `core_signals.create_signal` directly). No blocker;
+wired directly.
+
+Full line-by-line diff of `build_orb_report`/`_get_orb_target_multiple`/
+`_backtest_orb_target_multiple` against the extracted module found no gaps.
+Two collaborator-relocation fixes needed in the characterization test,
+following the established pattern: `build_orb_report` now calls the
+extracted module's own `get_orb_target_multiple(bridge)` directly (not
+`self._get_orb_target_multiple`), and that in turn calls the extracted
+module's own `backtest_orb_target_multiple(bridge)` directly — so the
+`mock.patch.object(SimulationEngine, "_get_orb_target_multiple"/
+"_backtest_orb_target_multiple", ...)` calls in 4 tests were relocated to
+`mock.patch("forex_trader.core.core_orb_report.get_orb_target_multiple"/
+"backtest_orb_target_multiple", ...)`. Same reasoning applies to
+`datetime.now()`: it's now called from inside `core_orb_report.py`, not
+`engine.py`, so the test's `_patched_now` helper was relocated from
+patching `forex_trader.core.engine.datetime` to
+`forex_trader.core.core_orb_report.datetime`. Separately, 7 `_orb_auto_execute`
+tests never set `e._bridge` (the original method never read it), but the
+wired method now accesses `self._bridge` unconditionally to pass through to
+the extracted function (unused internally, kept for signature consistency
+with every other wired method) — added `e._bridge = _FakeBridge()` to each.
+The `test_auto_execute_create_signal_failure_does_not_raise` test's
+`e.create_signal = _raise` binding was also dead after wiring (the extracted
+function calls the module-level `create_signal` import directly, never
+`self.create_signal`) — relocated to `mock.patch.object(core_signals,
+"create_signal", _raise)` + `mock.patch.object(orb, "create_signal", _raise)`,
+matching the existing pattern already used in the pack's own surface test.
+
+Removed the now-fully-unused module-level `_compute_volume_profile` (confirmed
+byte-identical to the extracted module's own copy) and all 8 `_ORB_*` class
+attributes (`_ORB_BUCKETS`/`_ORB_VALUE_AREA_PCT`/`_ORB_SL_RANGE_PCT`/
+`_ORB_MIN_ENTRY_STOP_BUFFER_PCT`/`_ORB_BACKTEST_DAYS`/`_ORB_BACKTEST_HORIZON_HOURS`/
+`_ORB_DEFAULT_TARGET_MULTIPLE`/`_ORB_MIN_SAMPLES`) — each had an exact
+module-level constant already in `core_orb_report.py`, and none had any
+remaining reference outside the now-delegated methods.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)

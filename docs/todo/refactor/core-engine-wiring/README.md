@@ -60,11 +60,11 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_bridge_watchdog.py` | `_bridge_watchdog_loop` body (sleep/while shell kept; per-cycle state now threaded through a `state` dict, `sleep_for` returned and slept by the shell) | 3 | Done |
 | `core_tp_safety_net.py` | `_tp_safety_net_sweep`/`_tp_safety_net_check_trade`/`_compute_be_cost_pts` (+ unused `_TP_SAFETY_NET_ALERT_COOLDOWN` class constant removed) | 3 | Done |
 | `core_bot_commands_infra.py` | `_cmd_restart_bridge`/`_cmd_restart_app`/`_cmd_headless`/`_cmd_switch_live`/`_cmd_switch_demo`/`_cmd_switch_env` (+ module-level `_delayed_app_shutdown` removed, now only in the extracted module) | 3 | Done |
-| `core_bot_commands_trading.py` | `_cmd_activate`/`_cmd_report` wired now; `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` deliberately deferred until their Tier-5 collaborators (`close_trade`/`open_manual_market_order`) are themselves wired -- see Notes | 3 | Partial |
+| `core_bot_commands_trading.py` | `_cmd_activate`/`_cmd_report` wired directly; `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` resolved for free once `close_trade`/`open_manual_market_order` were wired -- they call `self.close_trade`/`self.open_manual_market_order` directly, no code changes needed | 3 | Done |
 | `core_pending_signal_activation.py` | `_try_activate_pending_signals` | 3 | Pending |
-| `core_mt5_position_sync.py` | `_sync_closed_mt5_positions` | 3 | Pending |
+| `core_mt5_position_sync.py` | `_sync_closed_mt5_positions` -- resolved for free once `_record_close` was wired (calls `self._record_close` directly), no code changes needed | 3 | Done |
 | `core_untracked_positions.py` | `get_untracked_mt5_positions` | 3 | Done |
-| `core_profit_sync.py` | `_sync_profit`/`_schedule_profit_sync`/`_profit_sweep` wired; `_close_full_after_tps` deliberately deferred (bare `CloseTradeContext`, same reason as `_cmd_close`) | 3 | Partial |
+| `core_profit_sync.py` | `_sync_profit`/`_schedule_profit_sync`/`_profit_sweep` wired directly; `_close_full_after_tps` resolved for free once `_record_close` was wired (calls `self._record_close` directly), no code changes needed | 3 | Done |
 | `core_ai_signal_fallback.py` | `_try_ai_signal_fallback`/`_push_ai_recovered_created`/`_apply_sl_adjustment`/`_queue_unrecognised`/`_analyse_unrecognised_message` | 3 | Done |
 | `core_instant_entry.py` | `_process_instant_entry` | 3 | Done |
 | `core_instant_followup.py` | `_apply_followup_to_instant_trade`/`_find_and_apply_instant_followup`/`_ime_timeout_watchdog` | 3 | Done |
@@ -72,7 +72,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_update_signal.py` | `update_signal` | 3 | Done |
 | `core_risk_governor.py` | `is_trading_paused`/`_check_pre_trade_filters`/`_rg_day_start_ts`/`_rg_size_and_check`/`_rg_check_halt`/`_rg_apply_halts_on_close` (+ missing `log.warning` parity fix; unused `_RR_BYPASS_SOURCES`/`_RG_MIN_TP1_RR`/`_RG_MAX_STOP_ATR` class constants removed) | 3 | Done |
 | `core_run_tp_ladder.py` | `_run_tp_ladder`/`_handle_signal_climber`/`_handle_gd_vip_runner`/`_handle_adaptive_runner` (fixed a genuine extraction gap first -- see Notes) | 3 | Done |
-| `core_orb_report.py` | `build_orb_report`/`orb_auto_execute` | 3 | Pending |
+| `core_orb_report.py` | `build_orb_report`/`_get_orb_target_multiple`/`_backtest_orb_target_multiple`/`_orb_auto_execute` (+ unused module-level `_compute_volume_profile` and `_ORB_*` class constants removed, now only in the extracted module) | 3 | Done |
 | `core_dpm_handler.py` | `_handle_dynamic_position_management`/`_run_dpm_calibration` | 4 | Done |
 | `core_handle_be_runner.py` | `_handle_be_runner` | 4 | Done |
 | `core_handle_conservative.py` | `_handle_conservative` | 4 | Done |
@@ -87,7 +87,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_manual_market_order.py` | `open_manual_market_order` (`background_open_commentary` threaded through as `self._background_open_commentary`) | 5 | Done |
 | `core_open_trade.py` | `open_trade` (+ unused `_CLIMBER_PCTS`/`_GDVR_PCTS`/`_EA_LADDER_PCTS`/`_EA_LADDER_BE_AT_POS` module constants removed) | 5 | Done |
 | `core_open_trade_from_signal.py` | back half of `open_trade_from_signal` (post-fill overrides); wired together with `core_signal_resolution.py` as one whole method (`background_open_commentary` threaded through as `self._background_open_commentary`) | 5 | Done |
-| `core_close_trade.py` | `close_trade`/`_record_close` | 5 | Pending |
+| `core_close_trade.py` | `close_trade`/`_record_close`/`_close_all_ladder_legs`/`_get_trading_balance` (+ new `_make_close_trade_ctx` helper builds the real `CloseTradeContext` from live instance state) | 5 | Done |
 | `core_partial_close.py` | `partial_close_trade` | 5 | Done |
 | `core_scan_messages_edit_reparse.py` | `_scan_messages` edit block | 5 | Pending |
 | `core_scan_messages_parse_classify.py` | `_scan_messages` parse block | 5 | Pending |
