@@ -89,9 +89,9 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_open_trade_from_signal.py` | back half of `open_trade_from_signal` (post-fill overrides); wired together with `core_signal_resolution.py` as one whole method (`background_open_commentary` threaded through as `self._background_open_commentary`) | 5 | Done |
 | `core_close_trade.py` | `close_trade`/`_record_close`/`_close_all_ladder_legs`/`_get_trading_balance` (+ new `_make_close_trade_ctx` helper builds the real `CloseTradeContext` from live instance state) | 5 | Done |
 | `core_partial_close.py` | `partial_close_trade` | 5 | Done |
-| `core_scan_messages_edit_reparse.py` | `_scan_messages` edit block | 5 | Pending |
-| `core_scan_messages_parse_classify.py` | `_scan_messages` parse block | 5 | Pending |
-| `core_scan_messages_staleness_strategy.py` | `_scan_messages` staleness/strategy block | 5 | Pending |
-| `core_scan_messages_auto_execute.py` (rest) | `_scan_messages` auto-exec block | 5 | Pending |
+| `core_scan_messages_edit_reparse.py` | `_scan_messages` edit block (`handle_signal_edit`) | 5 | Done |
+| `core_scan_messages_parse_classify.py` | `_scan_messages` parse block (`classify_and_parse`) | 5 | Done |
+| `core_scan_messages_staleness_strategy.py` | `_scan_messages` staleness/strategy block (`record_staleness_or_new`/`resolve_strategy_and_skip_reason`) | 5 | Done |
+| `core_scan_messages_auto_execute.py` (rest) | `_scan_messages` auto-exec block (`execute_auto_signal`; fixed a genuine extraction gap first -- see Notes) | 5 | Done |
 
 See `PROGRESS.md` for the running log as wire-ins land.

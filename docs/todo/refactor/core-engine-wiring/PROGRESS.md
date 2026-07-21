@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tiers 1-4 fully done. Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py`/`core_open_trade_from_signal.py`+`core_signal_resolution.py`/`core_close_trade.py`/`core_orb_report.py` done. Remaining: the four `core_scan_messages_*.py` sub-packs -- the last cluster on the tracker._
+_Last updated: 2026-07-21 — Migration COMPLETE. Every row in README.md's tracker is "Done", including the final `core_scan_messages_*.py` cluster (the 1,138-line `_scan_messages` monolith)._
 
 ## Log
 
@@ -940,6 +940,80 @@ added all four to the `_make_engine` test helper (`_cfg = {}`,
 `_tp_trigger_cache = TPCache()`, `_scale_out_last_fail = {}`,
 `_tp_safety_net_last_alert = {}`), same pattern as every other
 `_make_close_trade_ctx`-touching pack this migration.
+
+| 2026-07-21 | `_scan_messages` (1,138-line monolith) -> `core_scan_messages_edit_reparse.handle_signal_edit` / `core_scan_messages_parse_classify.classify_and_parse` / `core_scan_messages_staleness_strategy.record_staleness_or_new`+`resolve_strategy_and_skip_reason` / `core_scan_messages_auto_execute.execute_auto_signal`; fixed a genuine extraction gap first (see Notes); removed 8 now-unused module-level constants + dead `msg_ts_str`/several dead `signal_parser` imports | `test_scan_messages_{edit_reparse,parse_classify,staleness_strategy,auto_execute}_{characterization,surface}.py` (122, 1 collaborator-relocation fix) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (core_scan_messages_*.py wire-in — the last cluster, highest real-money surface in the migration)
+
+The four packs cover one single method (`_scan_messages`), so wiring meant
+reconstructing the whole per-message loop body from all four pieces at
+once -- same situation as `open_trade_from_signal`'s two-pack split.
+Read and compared the full ~1,035-line current loop body (dedup/edit
+check through the final Telegram alert) against all four extraction
+files line-by-line before touching anything.
+
+**Found and fixed a real extraction gap before wiring** (the fifth such
+gap this migration, same standing lesson as `core_run_tp_ladder.py`/
+`core_handle_orb_fixed.py`): the original inline code's "instant trade
+follow-up matched" branch (`if bool(rs.get("immediate_market_entry", 0))`
+early in the auto-execute flow) does `continue` immediately after
+appending to `new_signals`, deliberately skipping the "signal detected"
+Telegram alert -- `_find_and_apply_instant_followup` already sends its
+own, more specific notification, so a second generic alert would be
+duplicate/misleading. The extracted `execute_auto_signal` returned early
+from this branch with `executed: True` but **no way for the caller to
+distinguish it from a normal successful `open_trade` fill** (which DOES
+need the alert) -- both return shapes were identical. Wiring straight to
+it would have introduced a real duplicate-alert regression on every
+IME-followup match. Fixed by adding a `followup_matched: True` key to
+that one early-return dict (mirroring the `deferred_stood_down` flag
+already used for the same "caller must skip the alert and continue"
+shape in the exception-handling branch); the caller now checks
+`_exec_result.get("followup_matched") or _exec_result.get("deferred_stood_down")`.
+
+**A second, more subtle discrepancy was caught by re-reading control
+flow rather than trusting docstrings**: when `handle_signal_edit`
+promotes a `pending_followup` signal to execution (returns the reparsed
+dict instead of `None`), the ORIGINAL code does NOT reuse that reparsed
+dict -- `parsed = None` a few lines later in the classify-and-parse
+section unconditionally overwrites it, and the now-valid raw text gets
+re-parsed from scratch through the normal `classify_and_parse` pipeline.
+This looks like a wasteful double-parse but is exactly what production
+does today, so the wire-in deliberately preserves it: `_edit_result` is
+computed, checked for `None` (continue if so), and then left **unused**
+on the promoted-execute path -- the loop falls through to
+Instant-Market-Entry / SL-adjustment / `classify_and_parse` exactly like
+a brand-new message would. Wiring it "more efficiently" (reusing
+`_edit_result` as `parsed` directly) would have been a genuine, if
+subtle, behavior change (AI-recovered metadata like `_ai_extracted`/
+`_ai_confidence` on the edit-time reparse wouldn't necessarily match a
+fresh non-AI reparse of the same now-valid text).
+
+Test relocation: `test_scan_messages_parse_classify_characterization.py`
+patched `parse_gd2_signal`/`parse_gd2_partial`/`parse_with_learned_rules`
+on `engine` module -- now called as module-level imports inside
+`core_scan_messages_parse_classify.py`, so relocated to that module
+(`pc`). `parse_gd2_instant_entry` is imported locally inside
+`classify_and_parse`'s own function body (re-fetched from
+`forex_trader.core.signal_parser` on every call, not a module-level
+binding), so it needed patching at the original source
+(`forex_trader.core.signal_parser.parse_gd2_instant_entry`) rather than
+on any module namespace -- matching the pattern already used by this
+pack's own surface test.
+
+Removed 8 now-fully-unused module-level constants
+(`_CONSERVATIVE_SL_PT`/`_CONSERVATIVE_TP1_PT`/`_CONSERVATIVE_TRAIL_PT`/
+`_SCALP_RUNNER_SL_PT`/`_SCALP_RUNNER_TP1_PT`/`_SCALP_RUNNER_TP2_PT`/
+`_SCALP_RUNNER_CLOSE_PCT`, plus a dead `msg_ts_str` local and several
+`signal_parser` imports (`parse_gold_signal`/`parse_gd2_signal`/
+`parse_gd2_partial`/`is_format_ab_signal`/`_CURRENCY_RE`/
+`validate_signal`/`parse_with_learned_rules`) -- all confirmed to have
+exact equivalents already in the relevant extracted modules, or (for
+`msg_ts_str`) genuinely dead since the extracted functions all take the
+full `msg` dict and derive the timestamp themselves.
+
+This completes the `core-engine-wiring` migration -- every row in
+`README.md`'s tracker is now "Done".
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
