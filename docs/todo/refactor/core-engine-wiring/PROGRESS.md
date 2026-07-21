@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 done, first Tier 2 wire-in done._
+_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 mostly done (7 of 8 modules)._
 
 ## Log
 
@@ -29,5 +29,14 @@ pre-existing, never-executed `TYPE_CHECKING`-only stale reference,
 unrelated). This check should be repeated before every future wire-in
 that removes rather than delegates a module-level (non-method) symbol.
 
+| 2026-07-21 | `get_total_deposits` -> `core_total_deposits.get_total_deposits` | full suite (1620) | this pack |
+| 2026-07-21 | `get_sim_account`/`update_sim_balance`/`reset_simulation` -> `core_sim_account.*` | `test_sim_account_characterization.py` + full suite | this pack |
+| 2026-07-21 | `get_open_trades`/`get_all_trades`/`compute_performance` -> `core_trade_reporting.*` | `test_trade_reporting_characterization.py` + full suite | this pack |
+| 2026-07-21 | `import_mt5_history` -> `core_mt5_import.import_mt5_history` | `test_mt5_history_characterization.py` + full suite | this pack |
+| 2026-07-21 | `get_tg_signals` -> `core_tg_signals.get_tg_signals` | `test_tg_signals_characterization.py` + full suite | this pack |
+
 ## Blockers / open
-None.
+None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
+repeated before/after every wire-in in this batch -- no other direct
+imports of the wired symbols found besides the already-fixed
+`_apply_fee`/`_platform_fee_rate` case.

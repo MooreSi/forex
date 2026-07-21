@@ -47,12 +47,12 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_max_tp_hit.py` (sweep) | `_max_tp_checker_loop` body | 2 | Pending |
 | `core_gd_copy_research.py` | `_gd_copy_research_loop` body | 2 | Pending |
 | `core_mt5_performance.py` | `compute_mt5_performance` (+ `_platform_fee_rate`/`_apply_fee` re-exported for `ui/pages/history.py`) | 2 | Done |
-| `core_total_deposits.py` | `get_total_deposits` | 2 | Pending |
-| `core_mt5_import.py` | `import_mt5_history` | 2 | Pending |
-| `core_trade_reporting.py` | `get_open_trades` | 2 | Pending |
-| `core_sim_account.py` | `get_sim_account` | 2 | Pending |
+| `core_total_deposits.py` | `get_total_deposits` | 2 | Done |
+| `core_mt5_import.py` | `import_mt5_history` | 2 | Done |
+| `core_trade_reporting.py` | `get_open_trades`, `get_all_trades`, `compute_performance` | 2 | Done |
+| `core_sim_account.py` | `get_sim_account`, `update_sim_balance`, `reset_simulation` | 2 | Done |
 | `core_tp_trigger_tracking.py` | `_check_tp_hits`/TP cache | 2 | Pending |
-| `core_tg_signals.py` | `get_tg_signals` | 2 | Pending |
+| `core_tg_signals.py` | `get_tg_signals` | 2 | Done |
 | `core_signals.py` | signal CRUD | 2 | Pending |
 | `core_dpm_bookkeeping.py` | DPM cache/record helpers | 2 | Pending |
 | `core_email_scheduler.py` | `_email_scheduler_loop` body | 2 | Pending |
