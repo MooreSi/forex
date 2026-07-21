@@ -60,7 +60,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_bridge_watchdog.py` | `_bridge_watchdog_loop` body | 3 | Pending |
 | `core_tp_safety_net.py` | `_tp_safety_net_sweep`/`_check_trade` | 3 | Pending |
 | `core_bot_commands_infra.py` | `_cmd_restart_bridge`/`_cmd_restart_app`/`_cmd_headless`/`_cmd_switch_live`/`_cmd_switch_demo`/`_cmd_switch_env` (+ module-level `_delayed_app_shutdown` removed, now only in the extracted module) | 3 | Done |
-| `core_bot_commands_trading.py` | `cmd_close`/`cmd_market_price_*` | 3 | Pending |
+| `core_bot_commands_trading.py` | `_cmd_activate`/`_cmd_report` wired now; `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` deliberately deferred until their Tier-5 collaborators (`close_trade`/`open_manual_market_order`) are themselves wired -- see Notes | 3 | Partial |
 | `core_pending_signal_activation.py` | `_try_activate_pending_signals` | 3 | Pending |
 | `core_mt5_position_sync.py` | `_sync_closed_mt5_positions` | 3 | Pending |
 | `core_untracked_positions.py` | untracked-position import | 3 | Pending |

@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py` done (1 of 16 rows)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py` done, `core_bot_commands_trading.py` partial (2 of 16 rows fully or partly done)._
 
 ## Log
 
@@ -203,6 +203,81 @@ the class attribute still takes effect exactly as before. `_delayed_app_shutdown
 rather than re-exported, since nothing outside `core_bot_commands_infra.py`
 referenced it (confirmed via a repo-wide grep) -- unlike `_apply_fee`/
 `_platform_fee_rate`, which stayed re-exported for `ui/pages/history.py`.
+
+| 2026-07-21 | `_cmd_activate` -> `core_bot_commands_trading.cmd_activate`; `_cmd_report` -> `core_bot_commands_trading.cmd_report`. `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` deliberately NOT wired this pass (see Notes) | `test_bot_commands_trading_characterization.py` (28, after mock-target fixes to the 8 activate/report tests) + `test_bot_commands_trading_surface.py` (already passing, unchanged) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (bot commands trading wire-in — PARTIAL, important)
+
+This pack's own module (`core_bot_commands_trading.py`) calls THREE
+already-extracted Tier-5 functions directly: `close_trade` (pack 10,
+`core_close_trade.py`), `open_trade` (pack 11, `core_open_trade.py`), and
+`open_manual_market_order` (pack 13, `core_manual_market_order.py`).
+`open_trade` is fully self-contained (verified: no injected
+collaborators, matches `self.open_trade`'s current body exactly) so
+`_cmd_activate` was safe to wire. But `close_trade` and
+`open_manual_market_order` are NOT drop-in equivalents to
+`self.close_trade`/`self.open_manual_market_order` in their CURRENT
+(still-unwired) form, because both take collaborator state/callbacks by
+injection that `core_bot_commands_trading.cmd_close`/
+`cmd_market_price_buy`/`cmd_market_price_sell` construct with bare
+defaults:
+
+- `cmd_close` builds a fresh default `CloseTradeContext(bridge,
+  starting_balance=...)` -- a BRAND NEW empty `TPCache()`, not
+  `self._tp_trigger_cache`; empty `scale_out_last_fail`/
+  `tp_safety_net_last_alert` dicts, not the engine's real ones; and
+  `on_profit`/`schedule_profit_sync`/`background_close_commentary` all
+  default to no-op. `self.close_trade` (still the original 250+ line
+  inline implementation, Tier 5, not yet wired) actually fires a profit
+  sound, schedules a profit-sync retry loop, and kicks off AI/Telegram
+  close commentary on every close.
+- `cmd_market_price_buy`/`cmd_market_price_sell` call
+  `open_manual_market_order(bridge, direction, starting_balance=...)`
+  with no `background_open_commentary` passed -- defaults to no-op.
+  `self.open_manual_market_order` (confirmed via grep, line ~1476) fires
+  `asyncio.create_task(self._background_open_commentary(...))` on every
+  manual order placed.
+
+Wiring `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` to
+this pack's functions AS-IS would have been a silent, real behavior
+regression -- Telegram bot-placed/closed trades would stop firing profit
+sound, close/open AI commentary, and profit-sync scheduling, while the
+dashboard's own manual-order buttons (still calling the original
+`self.*` methods) kept doing all of that. Caught before committing by
+reading `core_close_trade.py`'s own docstring (which explicitly flags
+every injected collaborator) and grepping `self.open_manual_market_order`
+for `create_task`/`_background`/`telegram_alerts` calls not present in
+the extracted version's default-argument path.
+
+**Resolution**: left `_cmd_close`/`_cmd_market_price_buy`/
+`_cmd_market_price_sell` on their original inline bodies (still calling
+`self.close_trade`/`self.open_manual_market_order`) for now. These three
+become safe to wire the moment `core_close_trade.py` and
+`core_manual_market_order.py` (both Tier 5) are themselves wired into
+`self.close_trade`/`self.open_manual_market_order` -- at that point
+`self.close_trade` IS `core_close_trade.close_trade` running with the
+engine's real `CloseTradeContext`, and passing that same real context
+through (rather than constructing a bare default one inline in
+`core_bot_commands_trading.py`) is what needs to happen at that time.
+Also added one small parity fix while here: `cmd_report`'s Claude-analysis
+exception handler was silently swallowing the error with no log line,
+unlike `self._cmd_report`'s original `log.warning(...)` -- added the
+missing `log.warning` call to `core_bot_commands_trading.py` (a
+previously-completed, already-committed extraction pack) for full parity;
+confirmed via `test_bot_commands_trading_surface.py`/`_characterization.py`
+that no test asserts on log output either way, so this was a safe,
+non-behavior-observable addition.
+
+**Fourth lesson for remaining wire-ins**: before wiring any bot-command
+(or other thin wrapper) that calls an ALREADY-EXTRACTED Tier-5
+order-placing/closing function directly, read that Tier-5 module's own
+docstring for injected-collaborator warnings (CloseTradeContext-style
+classes, optional `background_*_commentary` callables) and grep the
+CURRENT (still-unwired) `self.<method>` body for `create_task`/
+`_background`/notification calls not obviously present in the extracted
+function's default-argument path. If the extracted function drops a
+side-effect that the current `self.<method>` still performs, defer that
+specific wire-in until the Tier-5 collaborator itself is wired first.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
