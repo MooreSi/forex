@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py` done, `core_bot_commands_trading.py` partial (2 of 16 rows fully or partly done)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py` done, `core_bot_commands_trading.py` partial, `core_bridge_watchdog.py` done (3 of 16 rows)._
 
 ## Log
 
@@ -278,6 +278,27 @@ CURRENT (still-unwired) `self.<method>` body for `create_task`/
 function's default-argument path. If the extracted function drops a
 side-effect that the current `self.<method>` still performs, defer that
 specific wire-in until the Tier-5 collaborator itself is wired first.
+
+| 2026-07-21 | `_bridge_watchdog_loop` body -> `core_bridge_watchdog.bridge_watchdog_check`; 3 local vars (`last_restart_at`/`was_connected`/`consecutive_fails`) merged into one `state` dict; per-cycle sleep duration now returned by the check and slept once by the shell instead of scattered `sleep()+continue` calls | `test_bridge_watchdog_characterization.py` (13) unchanged-pass, exact `sleep_calls` sequences preserved + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (bridge watchdog wire-in)
+
+Clean sweep-style wire-in, same shape as max_tp_hit/gd_copy_research/
+email_scheduler: the extracted `bridge_watchdog_check` returns a sleep
+duration instead of calling `asyncio.sleep()` itself, so every one of the
+original's several `await asyncio.sleep(N); continue` call sites collapses
+to a single `await asyncio.sleep(sleep_for)` at the bottom of the shell's
+while loop. Verified this preserves the exact sleep sequence for every
+branch (fast-fail-below-threshold, restart-launched, restart-launch-failed,
+inhibited, cooldown-blocks-second-restart) via the existing test's
+`sleep_calls == [...]` assertions, all unchanged. No shared-instance-state
+ripple -- the three watchdog locals were already loop-local, not `self.*`
+attributes, so merging them into `state` only touched this one method.
+`_start_bridge_process` (Tier-3-adjacent, still not itself "wired" in the
+sense of having its own extraction -- it's a large process/Wine-teardown
+method deferred to a separate not-yet-migrated background-loops cluster)
+stays exactly as before, passed through as the same injected callable
+pattern used by `_cmd_restart_bridge`.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)

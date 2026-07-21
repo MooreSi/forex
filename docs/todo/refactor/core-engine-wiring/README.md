@@ -57,7 +57,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_dpm_bookkeeping.py` | `_load_dpm_calibrated`, `_record_dpm_entry`, `_update_dpm_peak`, `_set_dpm_milestone`, `_finalize_dpm_record` (+ `self._dpm_calibrated`/`self._dpm_cal_loaded_at`/`self._dpm_recorded` merged into one `self._dpm_cache` `DPMCache` instance) | 2 | Done |
 | `core_email_scheduler.py` | `_email_scheduler_loop` body (sleep/while/try shell kept; both inner `continue`s removed since the extracted function returns early instead) | 2 | Done |
 | `core_bot_commands_readonly.py` (13 fns) | `_cmd_*` (readonly) | 2 | Done |
-| `core_bridge_watchdog.py` | `_bridge_watchdog_loop` body | 3 | Pending |
+| `core_bridge_watchdog.py` | `_bridge_watchdog_loop` body (sleep/while shell kept; per-cycle state now threaded through a `state` dict, `sleep_for` returned and slept by the shell) | 3 | Done |
 | `core_tp_safety_net.py` | `_tp_safety_net_sweep`/`_check_trade` | 3 | Pending |
 | `core_bot_commands_infra.py` | `_cmd_restart_bridge`/`_cmd_restart_app`/`_cmd_headless`/`_cmd_switch_live`/`_cmd_switch_demo`/`_cmd_switch_env` (+ module-level `_delayed_app_shutdown` removed, now only in the extracted module) | 3 | Done |
 | `core_bot_commands_trading.py` | `_cmd_activate`/`_cmd_report` wired now; `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` deliberately deferred until their Tier-5 collaborators (`close_trade`/`open_manual_market_order`) are themselves wired -- see Notes | 3 | Partial |
