@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1-4 essentially complete (only `core_monitor_loop.py`'s remaining 3 real blocks left in Tier 4). Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py` done. `_cmd_market_price_buy`/`_cmd_market_price_sell` are now correct too, with zero code changes of their own (see Notes)._
+_Last updated: 2026-07-21 — Tier 1-4 essentially complete (only `core_monitor_loop.py`'s remaining 3 real blocks left in Tier 4). Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py`/`core_open_trade_from_signal.py`+`core_signal_resolution.py` done. The primary Telegram-signal trade-opening path (`open_trade_from_signal`) is now fully wired._
 
 ## Log
 
@@ -734,6 +734,54 @@ this indirect path. **Explicitly leaving them as-is** -- delegating them
 to the bot-commands-trading extraction instead would be a regression, not
 an improvement, since that module's own function still can't carry the
 collaborator through.
+
+| 2026-07-21 | `open_trade_from_signal` -> `core_signal_resolution.resolve_open_trade_params` + `core_open_trade_from_signal.open_trade_from_signal` wired together as one method; `background_open_commentary` threaded through as `self._background_open_commentary`; removed now-unused `_gdvr_sl_dist`/`_adaptive_sl_dist`/`_adaptive_final_tp_dist` functions and their constants | `test_open_trade_from_signal_characterization.py`/`_surface.py` + `test_signal_resolution_characterization.py`/`_surface.py` (92 tests combined, 2 fixture gaps fixed) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (open_trade_from_signal wire-in — the big one)
+
+The primary Telegram-signal trade-opening path. `open_trade_from_signal`
+was extracted as two separate packs -- `core_signal_resolution.py` (front
+half: gates, strategy resolution, pre-fill SL/lot sizing) and
+`core_open_trade_from_signal.py` (back half: atomic signal claim, the
+`open_trade` call, six strategy-specific post-fill `bridge.modify_order`
+overrides) -- because the split doesn't exist as a natural method boundary
+in engine.py; both packs' own characterization tests call the SAME full
+`SimulationEngine.open_trade_from_signal` method, just asserting on
+different halves of its behavior. Wiring required reconstructing the
+whole method from both extracted pieces at once, not a partial delegation.
+
+Read and compared the full ~500-line current method against both
+extraction files line-by-line. Confirmed one subtle-but-harmless
+divergence the extraction's own docstring already flagged: the original
+computes `_co_entry_mid`/`_gv_entry_mid`/`_ar_entry_mid`/etc. (and
+matching `_sign` vars) ONCE per strategy in the pre-fill section and
+reuses those same locals in the post-fill section afterward (single
+method, shared scope); the extracted back half can't share that scope
+(separate function call), so it recomputes a single generic
+`_entry_mid`/`_sign` pair fresh from `sig["entry_low"]`/`sig["entry_high"]`
+at the top of its own body. Verified by hand that every pre-fill and
+post-fill variant uses the exact same formula against the exact same
+(unmutated between calls) `sig` dict, so the recomputation always
+produces identical values -- not a truncation-style extraction gap like
+the two found earlier, just an intentional, verified-safe scope
+restructuring.
+
+`background_open_commentary` follows the same safe injected-callable
+pattern as `open_manual_market_order` -- passed as
+`self._background_open_commentary` (confirmed signature match). Two
+test files needed the same `starting_balance`-driven `_cfg` fixture gap
+fix as the instant-entry and manual-market-order packs.
+
+**Does NOT fully resolve `core_pending_signal_activation.py`'s deferral**
+(unlike the manual-market-order pack's free fix for market_price_buy/sell):
+`try_activate_pending_signals` calls the extracted
+`open_trade_from_signal` directly with no `background_open_commentary`
+argument at all, so it would still drop that notification if wired to
+the extracted function -- it doesn't route through `self.open_trade_from_signal`
+the way `_cmd_market_price_buy` routes through `self.open_manual_market_order`.
+Still deferred until `core_pending_signal_activation.py` is revisited
+with a proper collaborator fix (either pass the callable through, or
+call `self.open_trade_from_signal` instead of the raw extracted function).
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)

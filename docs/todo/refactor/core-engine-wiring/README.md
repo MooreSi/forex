@@ -68,7 +68,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_ai_signal_fallback.py` | `_try_ai_signal_fallback`/`_push_ai_recovered_created`/`_apply_sl_adjustment`/`_queue_unrecognised`/`_analyse_unrecognised_message` | 3 | Done |
 | `core_instant_entry.py` | `_process_instant_entry` | 3 | Done |
 | `core_instant_followup.py` | `_apply_followup_to_instant_trade`/`_find_and_apply_instant_followup`/`_ime_timeout_watchdog` | 3 | Done |
-| `core_signal_resolution.py` | signal resolution helpers | 3 | Pending |
+| `core_signal_resolution.py` | front half of `open_trade_from_signal` (`resolve_open_trade_params`) | 3 | Done |
 | `core_update_signal.py` | `update_signal` | 3 | Done |
 | `core_risk_governor.py` | `is_trading_paused`/`_check_pre_trade_filters`/`_rg_day_start_ts`/`_rg_size_and_check`/`_rg_check_halt`/`_rg_apply_halts_on_close` (+ missing `log.warning` parity fix; unused `_RR_BYPASS_SOURCES`/`_RG_MIN_TP1_RR`/`_RG_MAX_STOP_ATR` class constants removed) | 3 | Done |
 | `core_run_tp_ladder.py` | `_run_tp_ladder`/`_handle_signal_climber`/`_handle_gd_vip_runner`/`_handle_adaptive_runner` (fixed a genuine extraction gap first -- see Notes) | 3 | Done |
@@ -86,7 +86,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_monitor_loop.py` (rest) | `_monitor_loop`'s 3 real blocks | 4 | Pending |
 | `core_manual_market_order.py` | `open_manual_market_order` (`background_open_commentary` threaded through as `self._background_open_commentary`) | 5 | Done |
 | `core_open_trade.py` | `open_trade` (+ unused `_CLIMBER_PCTS`/`_GDVR_PCTS`/`_EA_LADDER_PCTS`/`_EA_LADDER_BE_AT_POS` module constants removed) | 5 | Done |
-| `core_open_trade_from_signal.py` | `open_trade_from_signal` | 5 | Pending |
+| `core_open_trade_from_signal.py` | back half of `open_trade_from_signal` (post-fill overrides); wired together with `core_signal_resolution.py` as one whole method (`background_open_commentary` threaded through as `self._background_open_commentary`) | 5 | Done |
 | `core_close_trade.py` | `close_trade`/`_record_close` | 5 | Pending |
 | `core_partial_close.py` | `partial_close_trade` | 5 | Done |
 | `core_scan_messages_edit_reparse.py` | `_scan_messages` edit block | 5 | Pending |
