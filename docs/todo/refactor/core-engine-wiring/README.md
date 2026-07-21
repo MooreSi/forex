@@ -78,7 +78,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_handle_conservative.py` | `_handle_conservative` | 4 | Done |
 | `core_handle_conservative_trial.py` | `_handle_conservative_trial` | 4 | Done |
 | `core_handle_no_sl_scale.py` | `_handle_no_sl_scale` | 4 | Done |
-| `core_handle_orb_fixed.py` | `_handle_orb_fixed` | 4 | Pending |
+| `core_handle_orb_fixed.py` | `_handle_orb_fixed` (fixed a missing trailing `log.info` first -- see Notes) | 4 | Done |
 | `core_handle_protected_scale.py` | `_handle_protected_scale` | 4 | Done |
 | `core_handle_scale_out.py` | `_handle_scale_out` (+ unused `_SCALE_OUT_PCTS`/`_SCALE_OUT_RETRY_COOLDOWN_S` module constants removed) | 4 | Done |
 | `core_handle_scalp_runner.py` | `_handle_scalp_runner` | 4 | Done |

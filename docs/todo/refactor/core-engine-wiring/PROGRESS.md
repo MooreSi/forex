@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py`/`core_handle_no_sl_scale.py`/`core_handle_conservative.py`/`core_handle_conservative_trial.py`/`core_handle_scalp_runner.py` done (8 of 13 handlers)._
+_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py`/`core_handle_no_sl_scale.py`/`core_handle_conservative.py`/`core_handle_conservative_trial.py`/`core_handle_scalp_runner.py`/`core_handle_orb_fixed.py` done (9 of 13 handlers)._
 
 ## Log
 
@@ -624,6 +624,23 @@ Unicode variant in the em-dash/arrow characters inside the docstrings,
 not caught by visual inspection of the Read output) -- worth remembering
 as the fallback approach for any remaining large multi-hundred-line
 handler bodies.
+
+| 2026-07-21 | `_handle_orb_fixed` -> `core_handle_orb_fixed.handle_orb_fixed` (missing trailing `log.info` restored first) | `test_handle_orb_fixed_characterization.py` + surface (10 combined) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (orb_fixed wire-in — second extraction gap found)
+
+Second genuine extraction gap found this session (after run_tp_ladder's):
+`core_handle_orb_fixed.py` was missing the trailing
+`log.info("[orb_fixed] %s target @ %.2f — full close", ...)` line engine.py's
+original has. Lower severity than run_tp_ladder's gap (a log line, not a
+state-tracking bug or a dropped user-facing alert), but still a real,
+silent divergence from "verbatim, no logic changes" that no test caught
+(no test asserts on log output). Restored it before wiring; reran both
+test files to confirm no regression from the fix. This is the smallest,
+simplest handler in the tier (67 lines, no `close_full_after_tps` at
+all) -- worth noting that gap-hunting doesn't correlate with handler
+size/complexity, so the line-by-line diff needs to keep happening for
+every remaining pack regardless of how trivial it looks.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
