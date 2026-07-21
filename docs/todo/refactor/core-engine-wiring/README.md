@@ -88,7 +88,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_open_trade.py` | `open_trade` | 5 | Pending |
 | `core_open_trade_from_signal.py` | `open_trade_from_signal` | 5 | Pending |
 | `core_close_trade.py` | `close_trade`/`_record_close` | 5 | Pending |
-| `core_partial_close.py` | `partial_close_trade` | 5 | Pending |
+| `core_partial_close.py` | `partial_close_trade` | 5 | Done |
 | `core_scan_messages_edit_reparse.py` | `_scan_messages` edit block | 5 | Pending |
 | `core_scan_messages_parse_classify.py` | `_scan_messages` parse block | 5 | Pending |
 | `core_scan_messages_staleness_strategy.py` | `_scan_messages` staleness/strategy block | 5 | Pending |

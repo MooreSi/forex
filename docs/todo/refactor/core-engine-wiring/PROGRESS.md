@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: all 13 strategy handlers done, including `core_dpm_handler.py`'s `_handle_dynamic_position_management`/`_run_dpm_calibration`. Only `core_monitor_loop.py`'s remaining 3 real blocks are left in Tier 4. Tier 5 (order placement/closing) starts next._
+_Last updated: 2026-07-21 — Tier 1-4 essentially complete (only `core_monitor_loop.py`'s remaining 3 real blocks left in Tier 4). Tier 5 started: `core_partial_close.py` done — `self.partial_close_trade` now literally IS the same code every already-wired Tier-4 handler calls directly._
 
 ## Log
 
@@ -659,6 +659,21 @@ Tier 5 -- order placement/closing, the highest-risk tier, and also the
 piece that unblocks every deferred Tier-3/4 item documented earlier
 (`_cmd_close`, `_close_full_after_tps`, `_try_activate_pending_signals`,
 etc.) -- is what's left.
+
+| 2026-07-21 | `partial_close_trade` -> `core_partial_close.partial_close_trade` | `test_partial_close_characterization.py` + surface (20 combined) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (Tier 5 start: partial_close_trade)
+
+Diffed line-by-line, complete and verbatim. Pure DB bookkeeping, no
+bridge call, no injected collaborator -- confirmed self-contained back
+when it was first surveyed for the bot-commands-trading pack. Wiring this
+was low-risk despite being Tier 5: every Tier-4 handler wired so far
+already calls the extracted `partial_close_trade` directly (bypassing
+`self.partial_close_trade` entirely), so this wire-in doesn't change
+what any of THEM do -- it only makes `self.partial_close_trade` (still
+called by the not-yet-wired `open_trade`/`close_trade`/bot-commands-
+trading paths) point at the exact same code path they already use,
+closing a consistency gap rather than opening a new-risk one.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
