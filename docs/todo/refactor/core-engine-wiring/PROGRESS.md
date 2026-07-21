@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tiers 1-3 fully done. Tier 4 done except `core_monitor_loop.py`'s remaining 3 real blocks. Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py`/`core_open_trade_from_signal.py`+`core_signal_resolution.py`/`core_close_trade.py`/`core_orb_report.py` done. Remaining: `core_monitor_loop.py`'s rest, the four `core_scan_messages_*.py` sub-packs._
+_Last updated: 2026-07-21 — Tiers 1-4 fully done. Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py`/`core_open_trade_from_signal.py`+`core_signal_resolution.py`/`core_close_trade.py`/`core_orb_report.py` done. Remaining: the four `core_scan_messages_*.py` sub-packs -- the last cluster on the tracker._
 
 ## Log
 
@@ -900,6 +900,46 @@ to check individual `call_args` fields instead of an exact dict, since the
 call now legitimately carries more arguments (`dpm_candles`,
 `starting_balance`, `background_open_commentary`) than the original
 bound-method call shape.
+
+| 2026-07-21 | `_monitor_loop`'s 3 real blocks -> `core_monitor_loop.reconcile_sl_hit`/`check_profit_close_target`/`reclaim_ea_managed_trade`, using `self._make_close_trade_ctx()`; the loop's own dispatch/routing shell stays inline (permanent thin orchestration, same judgment as `_handle_bot_command`) | `test_monitor_loop_characterization.py`/`_surface.py` (36, 2 collaborator-patch relocations + 4 fixture gaps) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (core_monitor_loop.py rest wire-in)
+
+Replaced the three inline blocks (SL-hit reconciliation, profit-close
+target check, EA-managed reclaim) with calls to the three extracted
+functions, each built with `self._make_close_trade_ctx()` -- the same
+context-building helper added for the `close_trade` wire-in, reused here
+instead of duplicated. All three return values map directly onto the
+original inline control flow: `reconcile_sl_hit`'s outcome was always
+followed by `continue` in the original regardless of which branch fired,
+so the wired call ignores its return value and always continues;
+`check_profit_close_target`'s `True`/`False` maps onto the original's
+"only `continue` if the target was hit, otherwise fall through to the
+EA-handoff check" shape; `reclaim_ea_managed_trade`'s `True` ("EA healthy,
+skip dispatch") maps onto `continue`, `False` ("reclaimed, proceed
+normally") maps onto falling through to strategy-handler dispatch below.
+
+Test relocations: `reconcile_sl_hit`/`check_profit_close_target` call the
+module-level `record_close`/`partial_close_trade` imports directly (not
+`self._record_close`/`self.partial_close_trade`), so the
+characterization test's `mock.patch.object(SimulationEngine, "_record_close"/
+"partial_close_trade", ...)` calls were relocated to
+`mock.patch.object(core_monitor_loop, "record_close"/"partial_close_trade", ...)`,
+matching the pack's own surface test. `_schedule_profit_sync`/
+`_background_close_commentary` patches needed no change -- `_make_close_trade_ctx`
+reads `self._schedule_profit_sync`/`self._background_close_commentary`
+fresh on every call, so a `mock.patch.object(SimulationEngine, ...)`
+applied before the loop runs is still picked up correctly.
+
+Fixture gap: `_make_close_trade_ctx` unconditionally reads `self._cfg`,
+`self._tp_trigger_cache`, `self._scale_out_last_fail`, and
+`self._tp_safety_net_last_alert` to build the `CloseTradeContext` --
+none of these existed on the bare test engine before (the original inline
+blocks never touched them at all, only `_close_trade`'s own body did) --
+added all four to the `_make_engine` test helper (`_cfg = {}`,
+`_tp_trigger_cache = TPCache()`, `_scale_out_last_fail = {}`,
+`_tp_safety_net_last_alert = {}`), same pattern as every other
+`_make_close_trade_ctx`-touching pack this migration.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)

@@ -83,7 +83,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_handle_scale_out.py` | `_handle_scale_out` (+ unused `_SCALE_OUT_PCTS`/`_SCALE_OUT_RETRY_COOLDOWN_S` module constants removed) | 4 | Done |
 | `core_handle_scalp_runner.py` | `_handle_scalp_runner` | 4 | Done |
 | `core_handle_trail_stop.py` | `_handle_trail_stop` | 4 | Done |
-| `core_monitor_loop.py` (rest) | `_monitor_loop`'s 3 real blocks | 4 | Pending |
+| `core_monitor_loop.py` (rest) | `_monitor_loop`'s 3 real blocks -- `reconcile_sl_hit`/`check_profit_close_target`/`reclaim_ea_managed_trade` (loop's own routing/dispatch shell deliberately kept inline, permanent thin orchestration layer) | 4 | Done |
 | `core_manual_market_order.py` | `open_manual_market_order` (`background_open_commentary` threaded through as `self._background_open_commentary`) | 5 | Done |
 | `core_open_trade.py` | `open_trade` (+ unused `_CLIMBER_PCTS`/`_GDVR_PCTS`/`_EA_LADDER_PCTS`/`_EA_LADDER_BE_AT_POS` module constants removed) | 5 | Done |
 | `core_open_trade_from_signal.py` | back half of `open_trade_from_signal` (post-fill overrides); wired together with `core_signal_resolution.py` as one whole method (`background_open_commentary` threaded through as `self._background_open_commentary`) | 5 | Done |
