@@ -44,8 +44,8 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_max_tp_hit.py` (`_tp_level_from_extreme`) | module-level helper | 1 | Done |
 | `core_scan_messages_auto_execute.py` (`price_in_entry_range`) | `_price_in_entry_range` | 1 | Done |
 | `core_fees_sizing.py` | `pnl` | 1 | Done |
-| `core_max_tp_hit.py` (sweep) | `_max_tp_checker_loop` body | 2 | Pending |
-| `core_gd_copy_research.py` | `_gd_copy_research_loop` body | 2 | Pending |
+| `core_max_tp_hit.py` (sweep) | `_max_tp_checker_loop` body (sleep/while shell kept), `_backfill_max_tp_hit_corrected` (fully replaced) | 2 | Done |
+| `core_gd_copy_research.py` | `_gd_copy_research_loop` body (sleep/while/try shell kept) | 2 | Done |
 | `core_mt5_performance.py` | `compute_mt5_performance` (+ `_platform_fee_rate`/`_apply_fee` re-exported for `ui/pages/history.py`) | 2 | Done |
 | `core_total_deposits.py` | `get_total_deposits` | 2 | Done |
 | `core_mt5_import.py` | `import_mt5_history` | 2 | Done |

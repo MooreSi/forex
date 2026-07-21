@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 10 of 14 rows done._
+_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 12 of 14 rows done._
 
 ## Log
 
@@ -99,6 +99,39 @@ since it touches the same renamed attribute. Grepped the whole codebase
 for the three old names afterward; every remaining hit is a function/
 method name (`load_dpm_calibrated`, `_load_dpm_calibrated`) or docstring
 text, not an attribute access.
+
+| 2026-07-21 | `_max_tp_checker_loop` body -> `core_max_tp_hit.max_tp_checker_sweep`; `_backfill_max_tp_hit_corrected` fully -> `core_max_tp_hit.backfill_max_tp_hit_corrected` | `test_max_tp_hit_characterization.py` (14) + full suite | this pack |
+| 2026-07-21 | `_gd_copy_research_loop` body -> `core_gd_copy_research.gd_copy_research_sweep` | `test_gd_copy_research_characterization.py` (7, after a patch-target fix) + full suite | this pack |
+
+## Notes (max_tp_hit / gd_copy_research wire-ins)
+
+Both are sweep-style background loops where the extraction pack already
+established the "sleep/while shell stays in engine.py, per-cycle body
+delegates" split, so the wire-in itself was mechanical -- no shared
+instance-state ripple this time (`_backfill_max_tp_hit_corrected` has no
+loop wrapper at all in the original, so its whole body -- including its
+own `sleep(120)` -- was replaced by one call).
+
+`test_gd_copy_research_characterization.py` needed one fix:
+`_patched_now()` patched `forex_trader.core.engine.datetime` to control
+"now" for the 22:00 UK-time gate. After wiring, `engine.py` no longer
+calls `datetime.now(...)` itself for this loop at all -- that computation
+now happens inside `core_gd_copy_research.gd_copy_research_sweep`, which
+imports its own `datetime` from the `datetime` module. Patching
+`engine.datetime` silently stopped affecting anything, so the one test
+whose expected outcome actually depended on hitting the 22:00 gate started
+failing (the others' expected "no call" outcome happened to still hold
+either way, for the wrong reason). Fixed by re-pointing the patch at
+`forex_trader.core.core_gd_copy_research.datetime` -- the module where the
+call now actually happens. All 7 tests pass again, same assertions.
+
+**Second lesson for remaining wire-ins**: whenever a wired method used to
+call `datetime.now(...)` (or any other module-level symbol) directly and
+now delegates to an extracted function that makes that same call itself,
+any test patching `engine.<name>` to control it needs to be re-pointed at
+the extracted module instead -- the computation moved, so the patch target
+must move with it. Check for `mock.patch("forex_trader.core.engine.<name>"` in
+that pack's test file before/after every such wire-in.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
