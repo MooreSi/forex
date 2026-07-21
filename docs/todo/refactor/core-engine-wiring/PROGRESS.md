@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py`/`core_untracked_positions.py`/`core_ai_signal_fallback.py`/`core_instant_followup.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (10 of 16 rows touched). `core_pending_signal_activation.py`, `core_signal_resolution.py` (no standalone `self.` method -- inline half of the still-unwired `open_trade_from_signal`), and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py`/`core_untracked_positions.py`/`core_ai_signal_fallback.py`/`core_instant_followup.py`/`core_instant_entry.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (11 of 16 rows touched). Only `core_pending_signal_activation.py`, `core_signal_resolution.py`, `core_mt5_position_sync.py`, and `core_orb_report.py`'s `orb_auto_execute` half remain in Tier 3, all blocked on Tier 5 (see earlier Notes)._
 
 ## Log
 
@@ -474,6 +474,36 @@ Only touches `bridge.modify_order` and the already-wired
 `core_update_signal.update_signal` -- no order placement/closing, no
 injected-collaborator context issue. No test mocks a `SimulationEngine.*`
 collaborator in this pack's test file at all, so no relocation was needed.
+
+| 2026-07-21 | `_process_instant_entry` -> `core_instant_entry.process_instant_entry` | `test_instant_entry_characterization.py` (19, after mock-target fixes to ~14 tests + a fixture gap fix) + `test_instant_entry_surface.py` (unchanged) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (instant entry wire-in)
+
+Only calls `core_open_trade.open_trade` -- confirmed self-contained (no
+injected collaborators) in an earlier pack, so this was safe despite being
+a real order-placement path. Largest single-pack test-mock relocation of
+the whole wiring phase: nearly every test in this file patched
+`SimulationEngine.get_tick`/`get_open_trades`/`_get_trading_balance`/
+`open_trade` directly. `get_tick` is no longer resolvable that way at all
+once wired -- the wrapper now calls `bridge.get_tick()` directly, not
+`self.get_tick()` -- so `_FakeBridge` gained its own settable
+`get_tick = AsyncMock(return_value=None)`, and every test that needs a
+real tick now sets `engine._bridge.get_tick = AsyncMock(return_value=...)`
+instead of patching the class. `get_open_trades`/`get_trading_balance`/
+`open_trade` moved to `mock.patch.object(core_instant_entry, "<name>", ...)`
+(module-level imports in the extracted module's own namespace), same
+third-lesson pattern as every other pack.
+
+Also hit a genuine fixture gap, not a wiring-mechanics issue: the
+extracted `process_instant_entry` takes `starting_balance` as an explicit
+parameter (needed by the two `get_trading_balance(bridge, starting_balance)`
+call sites), so the wrapper now resolves `self._cfg.get("starting_balance",
+1000.0)` unconditionally on every call. The original test fixture never
+set `e._cfg`, because in the ORIGINAL code this value was only read deep
+inside `self._get_trading_balance()`'s own body -- which every test mocked
+away entirely, so `self._cfg` was never actually touched. Added
+`e._cfg = {}` to the fixture (matching the pattern already used in
+`test_bot_commands_trading_characterization.py`).
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
