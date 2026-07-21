@@ -1,0 +1,97 @@
+# Core Engine Wiring
+
+Phase 2 of the `core/engine.py` migration: wires the 49 already-extracted,
+already-characterized `forex_trader/core/core_*.py` modules back into
+`SimulationEngine` as the methods' real implementations, retiring the
+duplicated inline logic. This is the first phase in the whole
+`core/engine.py` effort that actually modifies `engine.py` -- every prior
+pack (see `docs/todo/refactor/core-*-migration/`) left it completely
+untouched by design, since pure extraction-with-characterization-tests
+carries zero behavior-change risk. Wiring does carry that risk: a mistake
+here changes what the running app actually does.
+
+## Approach
+
+For each method, the wire-in is: replace the method body with a call into
+the corresponding `core_*.py` function, passing `self._bridge` and any
+collaborator state (caches, cooldown dicts) that already exists as an
+instance attribute. The **existing characterization test for that method
+must still pass unmodified** after the wire-in -- since that test drives
+the method via `SimulationEngine.__new__(SimulationEngine)` and asserts
+on real behavior, an unchanged pass is direct proof the delegation is
+behaviorally identical, not just "looks equivalent by inspection." Full
+`tests/` suite run after every single wire-in (same "expect only the 4
+pre-existing `test_open_trade_*` failures, never a new one" bar as every
+extraction pack), plus the standing live-app-untouched check on
+`/Users/simon/Documents/FOREX` (this phase happens entirely in
+`forex-refactor2`; nothing here touches or is deployed to the live app).
+
+## Risk tiers (wiring order: lowest risk first)
+
+| Tier | What | Real-money surface |
+|---|---|---|
+| 1 | Pure helpers (no DB, no bridge) | none |
+| 2 | Read-only / DB-only background sweeps | none |
+| 3 | Process-management / SL-only background sweeps | modifies SL, restarts a process -- no order |
+| 4 | Trade strategy handlers (13) | modifies SL/TP, partial-closes |
+| 5 | Order-placing / order-closing | places or closes a real MT5 order |
+
+## Tracker
+
+| Module | Original method(s) | Tier | Status |
+|---|---|---|---|
+| `core_monitor_loop.py` (`check_sl`) | `_check_sl` | 1 | Pending |
+| `core_max_tp_hit.py` (`_tp_level_from_extreme`) | module-level helper | 1 | Pending |
+| `core_scan_messages_auto_execute.py` (`price_in_entry_range`) | `_price_in_entry_range` | 1 | Pending |
+| `core_fees_sizing.py` | `pnl`, fee calc | 1 | Pending |
+| `core_max_tp_hit.py` (sweep) | `_max_tp_checker_loop` body | 2 | Pending |
+| `core_gd_copy_research.py` | `_gd_copy_research_loop` body | 2 | Pending |
+| `core_mt5_performance.py` | `compute_mt5_performance` | 2 | Pending |
+| `core_total_deposits.py` | `get_total_deposits` | 2 | Pending |
+| `core_mt5_import.py` | `import_mt5_history` | 2 | Pending |
+| `core_trade_reporting.py` | `get_open_trades` | 2 | Pending |
+| `core_sim_account.py` | `get_sim_account` | 2 | Pending |
+| `core_tp_trigger_tracking.py` | `_check_tp_hits`/TP cache | 2 | Pending |
+| `core_tg_signals.py` | `get_tg_signals` | 2 | Pending |
+| `core_signals.py` | signal CRUD | 2 | Pending |
+| `core_dpm_bookkeeping.py` | DPM cache/record helpers | 2 | Pending |
+| `core_email_scheduler.py` | `_email_scheduler_loop` body | 2 | Pending |
+| `core_bot_commands_readonly.py` (13 fns) | `_cmd_*` (readonly) | 2 | Pending |
+| `core_bridge_watchdog.py` | `_bridge_watchdog_loop` body | 3 | Pending |
+| `core_tp_safety_net.py` | `_tp_safety_net_sweep`/`_check_trade` | 3 | Pending |
+| `core_bot_commands_infra.py` | `_cmd_restart_bridge` etc. | 3 | Pending |
+| `core_bot_commands_trading.py` | `cmd_close`/`cmd_market_price_*` | 3 | Pending |
+| `core_pending_signal_activation.py` | `_try_activate_pending_signals` | 3 | Pending |
+| `core_mt5_position_sync.py` | `_sync_closed_mt5_positions` | 3 | Pending |
+| `core_untracked_positions.py` | untracked-position import | 3 | Pending |
+| `core_profit_sync.py` | `_schedule_profit_sync`/`_profit_sweep` | 3 | Pending |
+| `core_ai_signal_fallback.py` | `_try_ai_signal_fallback` etc. | 3 | Pending |
+| `core_instant_entry.py` | `_process_instant_entry` | 3 | Pending |
+| `core_instant_followup.py` | `_find_and_apply_instant_followup` etc. | 3 | Pending |
+| `core_signal_resolution.py` | signal resolution helpers | 3 | Pending |
+| `core_update_signal.py` | `update_signal` | 3 | Pending |
+| `core_risk_governor.py` | risk governor halts | 3 | Pending |
+| `core_run_tp_ladder.py` | `_tp_ladder_fast_loop` body | 3 | Pending |
+| `core_orb_report.py` | `build_orb_report`/`orb_auto_execute` | 3 | Pending |
+| `core_dpm_handler.py` | `_handle_dynamic_position_management` | 4 | Pending |
+| `core_handle_be_runner.py` | `_handle_be_runner` | 4 | Pending |
+| `core_handle_conservative.py` | `_handle_conservative` | 4 | Pending |
+| `core_handle_conservative_trial.py` | `_handle_conservative_trial` | 4 | Pending |
+| `core_handle_no_sl_scale.py` | `_handle_no_sl_scale` | 4 | Pending |
+| `core_handle_orb_fixed.py` | `_handle_orb_fixed` | 4 | Pending |
+| `core_handle_protected_scale.py` | `_handle_protected_scale` | 4 | Pending |
+| `core_handle_scale_out.py` | `_handle_scale_out` | 4 | Pending |
+| `core_handle_scalp_runner.py` | `_handle_scalp_runner` | 4 | Pending |
+| `core_handle_trail_stop.py` | `_handle_trail_stop` | 4 | Pending |
+| `core_monitor_loop.py` (rest) | `_monitor_loop`'s 3 real blocks | 4 | Pending |
+| `core_manual_market_order.py` | `open_manual_market_order` | 5 | Pending |
+| `core_open_trade.py` | `open_trade` | 5 | Pending |
+| `core_open_trade_from_signal.py` | `open_trade_from_signal` | 5 | Pending |
+| `core_close_trade.py` | `close_trade`/`_record_close` | 5 | Pending |
+| `core_partial_close.py` | `partial_close_trade` | 5 | Pending |
+| `core_scan_messages_edit_reparse.py` | `_scan_messages` edit block | 5 | Pending |
+| `core_scan_messages_parse_classify.py` | `_scan_messages` parse block | 5 | Pending |
+| `core_scan_messages_staleness_strategy.py` | `_scan_messages` staleness/strategy block | 5 | Pending |
+| `core_scan_messages_auto_execute.py` (rest) | `_scan_messages` auto-exec block | 5 | Pending |
+
+See `PROGRESS.md` for the running log as wire-ins land.
