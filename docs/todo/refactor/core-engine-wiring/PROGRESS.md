@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 13 of 14 rows done (only `core_bot_commands_readonly.py` left)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done (all 14 rows). Tier 3 starts next._
 
 ## Log
 
@@ -163,6 +163,22 @@ into the sweep, so that one collaborator's mock target didn't move.
 those patches need to move to the new module too. Only collaborators the
 wrapper itself still resolves before delegating (like
 `self._is_active_trader_node()` here) keep their original patch target.
+
+| 2026-07-21 | `_cmd_help`/`_cmd_balance`/`_cmd_daily`/`_cmd_status`/`_cmd_trades`/`_cmd_pause`/`_cmd_resume`/`_cmd_risk`/`_cmd_strategy`/`_cmd_dpm_on`/`_cmd_dpm_off`/`_cmd_ime_on`/`_cmd_ime_off` -> `core_bot_commands_readonly.*` (13 fns) | `test_bot_commands_readonly_characterization.py` (25) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (bot commands readonly wire-in)
+
+Straightforward wire-in, no shared-state ripple -- this pack's own docstring
+confirms none of the 13 commands hold any in-memory cache of their own; they
+only read account/trade state (via already-wired `get_open_trades`/
+`get_sim_account`/`pnl`/`last_closed_tp` collaborators) or flip a
+risk-settings/app-config flag. `_cmd_status` takes `self._tg_reader` as an
+extra parameter (`cmd_status(args, bridge, tg_reader=None)`); every other
+command needed only `self._bridge` or nothing besides `args`. This
+completes Tier 2 in full (14 of 14 rows). `_handle_bot_command` (the
+dispatcher) still calls `self._cmd_*` unmodified -- untouched by this pack,
+per the extraction pack's own note that the dispatcher rewire happens once
+all bot-command packs (readonly/infra/trading) are wired.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)

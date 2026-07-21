@@ -56,7 +56,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_signals.py` | `create_signal`, `get_signals`, `activate_signal`, `cancel_signal` | 2 | Done |
 | `core_dpm_bookkeeping.py` | `_load_dpm_calibrated`, `_record_dpm_entry`, `_update_dpm_peak`, `_set_dpm_milestone`, `_finalize_dpm_record` (+ `self._dpm_calibrated`/`self._dpm_cal_loaded_at`/`self._dpm_recorded` merged into one `self._dpm_cache` `DPMCache` instance) | 2 | Done |
 | `core_email_scheduler.py` | `_email_scheduler_loop` body (sleep/while/try shell kept; both inner `continue`s removed since the extracted function returns early instead) | 2 | Done |
-| `core_bot_commands_readonly.py` (13 fns) | `_cmd_*` (readonly) | 2 | Pending |
+| `core_bot_commands_readonly.py` (13 fns) | `_cmd_*` (readonly) | 2 | Done |
 | `core_bridge_watchdog.py` | `_bridge_watchdog_loop` body | 3 | Pending |
 | `core_tp_safety_net.py` | `_tp_safety_net_sweep`/`_check_trade` | 3 | Pending |
 | `core_bot_commands_infra.py` | `_cmd_restart_bridge` etc. | 3 | Pending |
