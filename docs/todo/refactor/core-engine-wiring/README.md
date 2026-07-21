@@ -53,8 +53,8 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_sim_account.py` | `get_sim_account`, `update_sim_balance`, `reset_simulation` | 2 | Done |
 | `core_tp_trigger_tracking.py` | `_get_triggered_tps`, `_last_closed_tp`, `_log_tp_wait_diagnostic`, `_check_tp_hits`, `_get_remaining_lots` (+ `self._tp_cache`/`self._tp_wait_log_ts` merged into one `self._tp_trigger_cache` `TPCache` instance) | 2 | Done |
 | `core_tg_signals.py` | `get_tg_signals` | 2 | Done |
-| `core_signals.py` | signal CRUD | 2 | Pending |
-| `core_dpm_bookkeeping.py` | DPM cache/record helpers | 2 | Pending |
+| `core_signals.py` | `create_signal`, `get_signals`, `activate_signal`, `cancel_signal` | 2 | Done |
+| `core_dpm_bookkeeping.py` | `_load_dpm_calibrated`, `_record_dpm_entry`, `_update_dpm_peak`, `_set_dpm_milestone`, `_finalize_dpm_record` (+ `self._dpm_calibrated`/`self._dpm_cal_loaded_at`/`self._dpm_recorded` merged into one `self._dpm_cache` `DPMCache` instance) | 2 | Done |
 | `core_email_scheduler.py` | `_email_scheduler_loop` body | 2 | Pending |
 | `core_bot_commands_readonly.py` (13 fns) | `_cmd_*` (readonly) | 2 | Pending |
 | `core_bridge_watchdog.py` | `_bridge_watchdog_loop` body | 3 | Pending |

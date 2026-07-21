@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 8 of 14 rows done._
+_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 10 of 14 rows done._
 
 ## Log
 
@@ -80,6 +80,25 @@ attribute that's shared across multiple methods (as opposed to a
 locally-scoped one only one method touches), grep across the ENTIRE
 `tests/` directory for that attribute name first, not just
 `engine.py` -- the blast radius can span many other packs' fixtures.
+
+| 2026-07-21 | `create_signal`/`get_signals`/`activate_signal`/`cancel_signal` -> `core_signals.*` | `test_signal_crud_characterization.py` (12) + full suite | this pack |
+| 2026-07-21 | `_load_dpm_calibrated`/`_record_dpm_entry`/`_update_dpm_peak`/`_set_dpm_milestone`/`_finalize_dpm_record` -> `core_dpm_bookkeeping.*`; `self._dpm_calibrated`+`self._dpm_cal_loaded_at`+`self._dpm_recorded` merged into `self._dpm_cache` (`DPMCache`) | `test_dpm_bookkeeping_characterization.py` + `test_dpm_handler_characterization.py` (30) + full suite | this pack |
+
+## Notes (DPM bookkeeping wire-in)
+
+Same class of ripple as the TP-trigger-tracking wire-in, scoped smaller
+this time since only 2 files touch this state directly: the DPM
+bookkeeping pack's own `test_dpm_bookkeeping_characterization.py` (a
+`_FakeEngine` stand-in, not a real `SimulationEngine`, but still setting
+the three old attributes) and `test_dpm_handler_characterization.py`
+(already touched once for the TP-cache merge). Also found one direct
+write OUTSIDE the five wired methods: `_run_dpm_calibration` (Tier 4,
+not itself wired yet) sets `self._dpm_cal_loaded_at = 0.0` to force a
+reload on the next cycle -- updated to `self._dpm_cache.loaded_at = 0.0`
+since it touches the same renamed attribute. Grepped the whole codebase
+for the three old names afterward; every remaining hit is a function/
+method name (`load_dpm_calibrated`, `_load_dpm_calibrated`) or docstring
+text, not an attribute access.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
