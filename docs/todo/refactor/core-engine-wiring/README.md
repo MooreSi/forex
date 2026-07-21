@@ -75,7 +75,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_orb_report.py` | `build_orb_report`/`orb_auto_execute` | 3 | Pending |
 | `core_dpm_handler.py` | `_handle_dynamic_position_management` | 4 | Pending |
 | `core_handle_be_runner.py` | `_handle_be_runner` | 4 | Done |
-| `core_handle_conservative.py` | `_handle_conservative` | 4 | Pending |
+| `core_handle_conservative.py` | `_handle_conservative` | 4 | Done |
 | `core_handle_conservative_trial.py` | `_handle_conservative_trial` | 4 | Pending |
 | `core_handle_no_sl_scale.py` | `_handle_no_sl_scale` | 4 | Done |
 | `core_handle_orb_fixed.py` | `_handle_orb_fixed` | 4 | Pending |
