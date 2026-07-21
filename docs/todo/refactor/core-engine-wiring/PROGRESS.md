@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (7 of 16 rows touched). `core_pending_signal_activation.py` and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py`/`core_untracked_positions.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (8 of 16 rows touched). `core_pending_signal_activation.py` and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
 
 ## Log
 
@@ -430,6 +430,17 @@ calls `core_tp_safety_net.compute_be_cost_pts` directly) and
 bypassing `self.*` entirely) -- both re-pointed to the module, with the
 fake's signature adjusted to the extracted function's real 4-arg shape
 (`trade, now, bridge, last_alert`).
+
+| 2026-07-21 | `get_untracked_mt5_positions` -> `core_untracked_positions.get_untracked_mt5_positions` | `test_untracked_positions_characterization.py` (10) + `test_untracked_positions_surface.py` (unchanged) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (untracked positions wire-in)
+
+Trivial, no-op-risk wire-in -- pure read-only reconciliation (compares
+live MT5 tickets against tracked ones, returns the diff), no DB writes, no
+order calls, no injected collaborator. This pack's test file never
+patched a `SimulationEngine.*`/`self.*` collaborator to begin with (uses
+a real fake bridge + real DB-backed `get_open_trades`), so no mock-target
+relocation was needed either.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
