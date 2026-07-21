@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tiers 1-3 and 4 fully done except `core_monitor_loop.py`'s remaining 3 real blocks. Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py`/`core_open_trade_from_signal.py`+`core_signal_resolution.py`/`core_close_trade.py` done; `core_orb_report.py` done. Remaining: `core_pending_signal_activation.py`, `core_monitor_loop.py`'s rest, the four `core_scan_messages_*.py` sub-packs._
+_Last updated: 2026-07-21 — Tiers 1-3 fully done. Tier 4 done except `core_monitor_loop.py`'s remaining 3 real blocks. Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py`/`core_open_trade_from_signal.py`+`core_signal_resolution.py`/`core_close_trade.py`/`core_orb_report.py` done. Remaining: `core_monitor_loop.py`'s rest, the four `core_scan_messages_*.py` sub-packs._
 
 ## Log
 
@@ -856,6 +856,50 @@ attributes (`_ORB_BUCKETS`/`_ORB_VALUE_AREA_PCT`/`_ORB_SL_RANGE_PCT`/
 `_ORB_DEFAULT_TARGET_MULTIPLE`/`_ORB_MIN_SAMPLES`) — each had an exact
 module-level constant already in `core_orb_report.py`, and none had any
 remaining reference outside the now-delegated methods.
+
+| 2026-07-21 | `_try_activate_pending_signals` -> `core_pending_signal_activation.try_activate_pending_signals`; fixed a genuine collaborator-dropping gap first (see Notes); removed now-unused `_PENDING_ACTIVATION_BACKOFF_S` class constant and `_GDVR_PENDING_EXPIRY_SEC` module constant (exact equivalents already in the extracted module) | `test_pending_signal_activation_characterization.py`/`_surface.py` (26, 2 collaborator-patch relocations + 3 fixture gaps) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (core_pending_signal_activation.py wire-in — fixed a real collaborator-dropping gap before wiring)
+
+This was the one deferral this migration explicitly flagged as needing a
+real code change, not just a delegation (see the `open_trade_from_signal`
+wire-in's own notes above). The original bound method's call —
+`self.open_trade_from_signal(sig["signal_id"], age_lot_mult=_age_lot_mult)`
+— always gets the real AI/Telegram open-commentary notification for free,
+because `self.open_trade_from_signal` itself unconditionally injects
+`self._background_open_commentary` internally (see its own wire-in). The
+extracted `core_pending_signal_activation.try_activate_pending_signals`
+instead calls the raw module-level `open_trade_from_signal` import
+directly, which defaults `background_open_commentary` to `None` — wiring
+straight to it as-is would have silently dropped that notification for
+every zone-fill activation, a real behavior regression, not just a
+mechanical delegation.
+
+Fixed by adding `background_open_commentary` as a new optional parameter
+to `try_activate_pending_signals` (default `None`, backward compatible)
+and threading it into its own internal `open_trade_from_signal` call —
+same shape as the parameter `open_trade_from_signal` and
+`open_manual_market_order` already carry. `SimulationEngine._try_activate_pending_signals`
+passes `self._background_open_commentary` through, restoring the original
+behavior exactly.
+
+Test relocations: `get_open_trades`/`open_trade_from_signal` are called as
+module-level imports inside the extracted function rather than via
+`self.*`, so the 12 `mock.patch.object(SimulationEngine, ...)` calls in
+the characterization test were relocated to
+`mock.patch.object(core_pending_signal_activation, ...)`, matching the
+pack's own surface test. Fixture gaps: the wired method now touches
+`self._bridge`/`self._cfg`/`self._background_open_commentary`
+unconditionally (the original method never referenced `self._bridge` or
+`self._cfg` at all — those are new pass-through parameters on the
+extracted function, not behavior the original had), so the `engine`
+fixture gained a `_FakeBridge`, `_cfg = {}`, and `_background_open_commentary
+= None`. Also widened the one exact-kwargs assertion
+(`test_successful_activation_calls_with_full_lot_mult_flips_tg_status`)
+to check individual `call_args` fields instead of an exact dict, since the
+call now legitimately carries more arguments (`dpm_candles`,
+`starting_balance`, `background_open_commentary`) than the original
+bound-method call shape.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)

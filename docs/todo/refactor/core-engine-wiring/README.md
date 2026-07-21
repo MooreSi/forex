@@ -61,7 +61,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_tp_safety_net.py` | `_tp_safety_net_sweep`/`_tp_safety_net_check_trade`/`_compute_be_cost_pts` (+ unused `_TP_SAFETY_NET_ALERT_COOLDOWN` class constant removed) | 3 | Done |
 | `core_bot_commands_infra.py` | `_cmd_restart_bridge`/`_cmd_restart_app`/`_cmd_headless`/`_cmd_switch_live`/`_cmd_switch_demo`/`_cmd_switch_env` (+ module-level `_delayed_app_shutdown` removed, now only in the extracted module) | 3 | Done |
 | `core_bot_commands_trading.py` | `_cmd_activate`/`_cmd_report` wired directly; `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` resolved for free once `close_trade`/`open_manual_market_order` were wired -- they call `self.close_trade`/`self.open_manual_market_order` directly, no code changes needed | 3 | Done |
-| `core_pending_signal_activation.py` | `_try_activate_pending_signals` | 3 | Pending |
+| `core_pending_signal_activation.py` | `_try_activate_pending_signals` (+ genuine fix: added `background_open_commentary` param, threaded through to the internal `open_trade_from_signal` call -- see Notes) | 3 | Done |
 | `core_mt5_position_sync.py` | `_sync_closed_mt5_positions` -- resolved for free once `_record_close` was wired (calls `self._record_close` directly), no code changes needed | 3 | Done |
 | `core_untracked_positions.py` | `get_untracked_mt5_positions` | 3 | Done |
 | `core_profit_sync.py` | `_sync_profit`/`_schedule_profit_sync`/`_profit_sweep` wired directly; `_close_full_after_tps` resolved for free once `_record_close` was wired (calls `self._record_close` directly), no code changes needed | 3 | Done |
