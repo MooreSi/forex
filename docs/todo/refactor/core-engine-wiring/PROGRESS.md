@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1-4 essentially complete (only `core_monitor_loop.py`'s remaining 3 real blocks left in Tier 4). Tier 5 started: `core_partial_close.py` done — `self.partial_close_trade` now literally IS the same code every already-wired Tier-4 handler calls directly._
+_Last updated: 2026-07-21 — Tier 1-4 essentially complete (only `core_monitor_loop.py`'s remaining 3 real blocks left in Tier 4). Tier 5: `core_partial_close.py`/`core_open_trade.py` done. `self.open_trade` -- the real order-placement method -- is now wired, a major milestone that starts unblocking the deferred Tier-3/4 items (see Notes)._
 
 ## Log
 
@@ -674,6 +674,38 @@ what any of THEM do -- it only makes `self.partial_close_trade` (still
 called by the not-yet-wired `open_trade`/`close_trade`/bot-commands-
 trading paths) point at the exact same code path they already use,
 closing a consistency gap rather than opening a new-risk one.
+
+| 2026-07-21 | `open_trade` -> `core_open_trade.open_trade`; unused `_CLIMBER_PCTS`/`_GDVR_PCTS`/`_EA_LADDER_PCTS`/`_EA_LADDER_BE_AT_POS` module constants removed | `test_open_trade_characterization.py`/`test_open_trade_surface.py` (30 tests, same 4 pre-existing `test_remote_forwarding_*` failures, confirmed byte-identical error output before/after) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (open_trade wire-in — real order placement, first genuinely high-stakes Tier-5 item)
+
+Full 305-line line-by-line diff against engine.py's current `open_trade`
+body before wiring -- complete, verbatim extraction, no gaps. Confirmed
+self-contained (no CloseTradeContext-style injected collaborator) back
+when this was first surveyed for the instant-entry/bot-commands-trading
+packs -- verified again here in full. `self.get_fresh_tick()` (used by the
+original) is a pure passthrough to `self._bridge.get_fresh_tick()`
+(confirmed), matching the extracted function's own direct
+`bridge.get_fresh_tick()` call. `self.is_trading_paused` was already
+wired earlier this session to the same underlying `core_risk_governor`
+function the extracted `open_trade` also calls, so that dependency was
+already consistent before this wire-in.
+
+Verified the pack's 2 pre-existing `test_remote_forwarding_*` failures
+(the same 2 counted among the standing "4 pre-existing failures" this
+whole migration has tracked) produce byte-identical error output before
+and after wiring (`DID NOT RAISE ValueError` / `KeyError: 'executed_remotely'`)
+-- confirming they're a genuine test-setup gap (missing the `active_trader`
+app_config key the forwarding branch checks), unrelated to this or any
+prior wiring in this migration.
+
+**This unblocks real follow-on work**: `core_open_trade_from_signal.py`
+and `core_manual_market_order.py` (still Tier 5, not yet wired) both call
+`core_open_trade.open_trade` internally -- now the exact same code
+`self.open_trade` runs. Once their own `background_open_commentary`
+collaborator question is resolved, wiring them no longer also carries
+"is the open_trade call itself equivalent" risk -- that part is now
+already proven identical by this pack.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
