@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py`/`core_handle_no_sl_scale.py`/`core_handle_conservative.py`/`core_handle_conservative_trial.py`/`core_handle_scalp_runner.py`/`core_handle_orb_fixed.py` done (9 of 13 handlers)._
+_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: all 13 strategy handlers done, including `core_dpm_handler.py`'s `_handle_dynamic_position_management`/`_run_dpm_calibration`. Only `core_monitor_loop.py`'s remaining 3 real blocks are left in Tier 4. Tier 5 (order placement/closing) starts next._
 
 ## Log
 
@@ -641,6 +641,24 @@ simplest handler in the tier (67 lines, no `close_full_after_tps` at
 all) -- worth noting that gap-hunting doesn't correlate with handler
 size/complexity, so the line-by-line diff needs to keep happening for
 every remaining pack regardless of how trivial it looks.
+
+| 2026-07-21 | `_run_dpm_calibration`/`_handle_dynamic_position_management` -> `core_dpm_handler.*` | `test_dpm_handler_characterization.py` + surface (32 combined) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (DPM handler wire-in — completes all 13 Tier-4 strategy handlers)
+
+Both diffed line-by-line, complete and verbatim, no gaps this time. No
+`close_full_after_tps` anywhere in this handler (DPM never fires a
+full-close-after-partial path the way scale_out/conservative/etc. do).
+All mocks in this pack's test file target the real `dpm_engine` module
+directly (`compute_adaptive_params`/`run_calibration`), unaffected by
+which file calls them -- no relocation needed.
+
+This completes Tier 4 in full except `core_monitor_loop.py`'s remaining
+3 real blocks (folded into the not-yet-wired `_monitor_loop` itself).
+Tier 5 -- order placement/closing, the highest-risk tier, and also the
+piece that unblocks every deferred Tier-3/4 item documented earlier
+(`_cmd_close`, `_close_full_after_tps`, `_try_activate_pending_signals`,
+etc.) -- is what's left.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
