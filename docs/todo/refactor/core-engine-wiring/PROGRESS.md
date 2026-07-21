@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py`/`core_untracked_positions.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (8 of 16 rows touched). `core_pending_signal_activation.py` and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py`/`core_untracked_positions.py`/`core_ai_signal_fallback.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (9 of 16 rows touched). `core_pending_signal_activation.py`, `core_signal_resolution.py` (no standalone `self.` method -- inline half of the still-unwired `open_trade_from_signal`), and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see earlier Notes)._
 
 ## Log
 
@@ -441,6 +441,30 @@ order calls, no injected collaborator. This pack's test file never
 patched a `SimulationEngine.*`/`self.*` collaborator to begin with (uses
 a real fake bridge + real DB-backed `get_open_trades`), so no mock-target
 relocation was needed either.
+
+| 2026-07-21 | `_try_ai_signal_fallback`/`_push_ai_recovered_created`/`_apply_sl_adjustment`/`_queue_unrecognised`/`_analyse_unrecognised_message` -> `core_ai_signal_fallback.*` | `test_ai_signal_fallback_characterization.py` (34, after 1 mock-target fix) + `test_ai_signal_fallback_surface.py` (unchanged) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (AI signal fallback wire-in)
+
+No order placement/closing calls anywhere in this module (confirmed via
+grep before starting) -- `_apply_sl_adjustment` only touches
+`bridge.modify_order`, same self-contained shape as `core_update_signal.py`.
+`_is_active_trader_node()` is resolved by the wrapper itself and passed in
+as a bool (same pattern as `core_email_scheduler.py`), so the test's
+`mock.patch.object(SimulationEngine, "_is_active_trader_node", ...)` stayed
+effective unchanged. One relocation needed: `_queue_unrecognised`'s test
+patched `SimulationEngine._analyse_unrecognised_message` to verify a task
+gets scheduled, but the wired `queue_unrecognised` now calls the extracted
+module's own `analyse_unrecognised_message` directly -- re-pointed to
+`mock.patch.object(core_ai_signal_fallback, "analyse_unrecognised_message", ...)`.
+
+Also noted (not itself wired this pack): `core_signal_resolution.py` has
+no corresponding standalone `self.` method in engine.py to redirect --
+its `resolve_open_trade_params` is the FRONT HALF of the still-fully-
+inline `open_trade_from_signal` (Tier 5), not a separate method call site.
+Wiring it would mean surgically splitting `open_trade_from_signal`'s body
+mid-method, which is Tier-5-grade risk, not a standalone Tier-3 item --
+removed it from the "safe to wire now" list from the earlier survey.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
