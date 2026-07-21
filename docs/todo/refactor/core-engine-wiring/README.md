@@ -76,7 +76,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_dpm_handler.py` | `_handle_dynamic_position_management` | 4 | Pending |
 | `core_handle_be_runner.py` | `_handle_be_runner` | 4 | Done |
 | `core_handle_conservative.py` | `_handle_conservative` | 4 | Done |
-| `core_handle_conservative_trial.py` | `_handle_conservative_trial` | 4 | Pending |
+| `core_handle_conservative_trial.py` | `_handle_conservative_trial` | 4 | Done |
 | `core_handle_no_sl_scale.py` | `_handle_no_sl_scale` | 4 | Done |
 | `core_handle_orb_fixed.py` | `_handle_orb_fixed` | 4 | Pending |
 | `core_handle_protected_scale.py` | `_handle_protected_scale` | 4 | Done |

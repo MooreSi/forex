@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py`/`core_handle_no_sl_scale.py`/`core_handle_conservative.py` done (6 of 13 handlers)._
+_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4: `core_handle_scale_out.py`/`core_handle_be_runner.py`/`core_handle_trail_stop.py`/`core_handle_protected_scale.py`/`core_handle_no_sl_scale.py`/`core_handle_conservative.py`/`core_handle_conservative_trial.py` done (7 of 13 handlers)._
 
 ## Log
 
@@ -602,6 +602,13 @@ handlers in this tier. No test mock relocation needed.
 
 Diffed line-by-line, complete and verbatim. Same safe pattern as the
 other Tier-4 handlers so far. No test mock relocation needed.
+
+| 2026-07-21 | `_handle_conservative_trial` -> `core_handle_conservative_trial.handle_conservative_trial` | `test_handle_conservative_trial_characterization.py` + surface (26 combined) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (conservative_trial wire-in)
+
+Diffed line-by-line, complete and verbatim; same safe pattern as the rest
+of this tier. No test mock relocation needed.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
