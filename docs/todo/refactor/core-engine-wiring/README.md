@@ -84,7 +84,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_handle_scalp_runner.py` | `_handle_scalp_runner` | 4 | Done |
 | `core_handle_trail_stop.py` | `_handle_trail_stop` | 4 | Done |
 | `core_monitor_loop.py` (rest) | `_monitor_loop`'s 3 real blocks | 4 | Pending |
-| `core_manual_market_order.py` | `open_manual_market_order` | 5 | Pending |
+| `core_manual_market_order.py` | `open_manual_market_order` (`background_open_commentary` threaded through as `self._background_open_commentary`) | 5 | Done |
 | `core_open_trade.py` | `open_trade` (+ unused `_CLIMBER_PCTS`/`_GDVR_PCTS`/`_EA_LADDER_PCTS`/`_EA_LADDER_BE_AT_POS` module constants removed) | 5 | Done |
 | `core_open_trade_from_signal.py` | `open_trade_from_signal` | 5 | Pending |
 | `core_close_trade.py` | `close_trade`/`_record_close` | 5 | Pending |

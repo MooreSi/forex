@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1-4 essentially complete (only `core_monitor_loop.py`'s remaining 3 real blocks left in Tier 4). Tier 5: `core_partial_close.py`/`core_open_trade.py` done. `self.open_trade` -- the real order-placement method -- is now wired, a major milestone that starts unblocking the deferred Tier-3/4 items (see Notes)._
+_Last updated: 2026-07-21 — Tier 1-4 essentially complete (only `core_monitor_loop.py`'s remaining 3 real blocks left in Tier 4). Tier 5: `core_partial_close.py`/`core_open_trade.py`/`core_manual_market_order.py` done. `_cmd_market_price_buy`/`_cmd_market_price_sell` are now correct too, with zero code changes of their own (see Notes)._
 
 ## Log
 
@@ -706,6 +706,34 @@ and `core_manual_market_order.py` (still Tier 5, not yet wired) both call
 collaborator question is resolved, wiring them no longer also carries
 "is the open_trade call itself equivalent" risk -- that part is now
 already proven identical by this pack.
+
+| 2026-07-21 | `open_manual_market_order` -> `core_manual_market_order.open_manual_market_order`, `background_open_commentary` threaded through as `self._background_open_commentary` (still-original, correct, unwired method) | `test_manual_market_order_characterization.py` (fixture gap: added `e._cfg = {}`, same `starting_balance` reason as instant_entry) + surface (24 combined) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (open_manual_market_order wire-in — resolves an earlier deferral for free)
+
+Full line-by-line diff confirmed complete, verbatim. Same injected-
+callable pattern as every Tier-4 handler's `close_full_after_tps`:
+`background_open_commentary` is optional, the extracted function doesn't
+build its own default, so passing the real `self._background_open_commentary`
+(confirmed still its original, correct, unwired body -- signature
+`(trade_id: str, sig: dict, tick: Tick)` matches the expected
+`Callable[[str, dict, Any], Awaitable[None]]`) preserves exact behavior.
+Same fixture gap as the instant-entry pack: `starting_balance` is now
+resolved unconditionally via `self._cfg.get(...)`, so `e._cfg = {}` was
+added to the fixture.
+
+**Resolves the `_cmd_market_price_buy`/`_cmd_market_price_sell` deferral
+from the bot-commands-trading pack, with ZERO code changes to either
+method.** Those two still call `self.open_manual_market_order("BUY"/"SELL")`
+directly (never touched this pack, never delegated to
+`core_bot_commands_trading.cmd_market_price_buy/sell`, which still has no
+`background_open_commentary` parameter at all and would still drop the
+commentary if used) -- now that `self.open_manual_market_order` itself is
+correctly wired, those two methods are automatically fully correct via
+this indirect path. **Explicitly leaving them as-is** -- delegating them
+to the bot-commands-trading extraction instead would be a regression, not
+an improvement, since that module's own function still can't carry the
+collaborator through.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
