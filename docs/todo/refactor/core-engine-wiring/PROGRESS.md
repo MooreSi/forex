@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 12 of 14 rows done._
+_Last updated: 2026-07-21 — Tier 1 fully done; Tier 2 13 of 14 rows done (only `core_bot_commands_readonly.py` left)._
 
 ## Log
 
@@ -132,6 +132,37 @@ any test patching `engine.<name>` to control it needs to be re-pointed at
 the extracted module instead -- the computation moved, so the patch target
 must move with it. Check for `mock.patch("forex_trader.core.engine.<name>"` in
 that pack's test file before/after every such wire-in.
+
+| 2026-07-21 | `_email_scheduler_loop` body -> `core_email_scheduler.email_scheduler_sweep` | `test_email_scheduler_characterization.py` (9, after mock-target fixes) + full suite | this pack |
+
+## Notes (email_scheduler wire-in)
+
+Same "datetime patch target must follow the delegated computation" issue
+as gd_copy_research, plus a NEW variant of it: several tests patched
+`SimulationEngine.build_orb_report`/`_orb_auto_execute`/
+`compute_mt5_performance` directly on the class, expecting the loop to
+call them as `self.build_orb_report()` etc. -- but
+`core_email_scheduler.email_scheduler_sweep` calls the already-extracted
+`core_orb_report.build_orb_report`/`orb_auto_execute` and
+`core_mt5_performance.compute_mt5_performance` directly (imported by name
+into `core_email_scheduler`'s own namespace), bypassing `self.*` entirely
+for this call path. Patching the class had no effect once wired. Fixed by
+re-pointing every such mock at `core_email_scheduler.<name>` instead, and
+adjusting each fake's signature to match the extracted functions' own
+shape (`build_orb_report(bridge)` not `build_orb_report(self)`,
+`orb_auto_execute(report, bridge, is_active_trader_node)`,
+`compute_mt5_performance(bridge, days)`). `_is_active_trader_node` mocks
+were NOT affected -- engine.py's wrapper still calls
+`self._is_active_trader_node()` itself and passes the resolved boolean
+into the sweep, so that one collaborator's mock target didn't move.
+
+**Third lesson for remaining wire-ins**: check every `mock.patch.object(SimulationEngine,
+"<name>", ...)` in a pack's test file, not just `mock.patch("forex_trader.core.engine.<name>")`
+-- if the wired method now calls an ALREADY-EXTRACTED collaborator directly
+(imported into the new module's own namespace) rather than via `self.<name>()`,
+those patches need to move to the new module too. Only collaborators the
+wrapper itself still resolves before delegating (like
+`self._is_active_trader_node()` here) keep their original patch target.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
