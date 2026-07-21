@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3 essentially complete: every row done except `core_bot_commands_trading.py`/`core_profit_sync.py` (partial) and `core_pending_signal_activation.py`/`core_signal_resolution.py`/`core_mt5_position_sync.py`/`core_orb_report.py`'s `orb_auto_execute` half, all blocked on Tier 5 being wired first (see earlier Notes). Tier 4/5 start next._
+_Last updated: 2026-07-21 — Tier 1/2 done, Tier 3 essentially complete (see prior entry). Tier 4 started: `core_handle_scale_out.py`/`core_handle_be_runner.py` done (2 of 13 handlers)._
 
 ## Log
 
@@ -543,6 +543,33 @@ body against the current engine.py method line-by-line before wiring --
 don't assume completeness from the docstring alone. This is the first
 (and so far only) case in the whole wiring phase where the extraction
 itself, not the wiring, had the bug.
+
+| 2026-07-21 | `_handle_scale_out` -> `core_handle_scale_out.handle_scale_out`; unused `_SCALE_OUT_PCTS`/`_SCALE_OUT_RETRY_COOLDOWN_S` module constants removed | `test_handle_scale_out_characterization.py` (8) + surface (9) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+| 2026-07-21 | `_handle_be_runner` -> `core_handle_be_runner.handle_be_runner` (ADX-ranging fallback now calls the already-wired `_handle_scale_out`'s own extracted function directly) | `test_handle_be_runner_characterization.py` (8) + surface (8) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (Tier 4 start: scale_out / be_runner)
+
+First two Tier-4 strategy handlers. Diffed both extracted functions
+line-by-line against engine.py's current bodies before wiring (per the
+new fifth lesson from the run_tp_ladder gap) -- both are genuinely
+complete and verbatim this time, no truncation.
+
+`close_full_after_tps` threaded through both as `self._close_full_after_tps`
+(the still-original, correct, deliberately-unwired implementation),
+exactly the same safe pattern as the run_tp_ladder pack -- these handlers
+only take it as an optional injected callable rather than constructing
+their own bare default context, so passing the real bound method through
+preserves exact behavior. `scale_out_last_fail`/`_tp_trigger_cache` stay
+plain `self.*` dicts/objects passed by reference, unchanged.
+
+`_handle_be_runner`'s ADX-ranging branch calls
+`core_handle_scale_out.handle_scale_out` directly (not `self._handle_scale_out`)
+-- since `_handle_scale_out` is now ALSO wired to the very same underlying
+function, this is a no-op difference; both paths run identical code. No
+test mock relocation needed in either pack -- neither test file patches a
+`SimulationEngine.*` collaborator (the ADX gate is tested via
+`patch("forex_trader.core.dpm_engine.compute_adx", ...)`, a real
+module-level patch unaffected by which file calls it).
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
