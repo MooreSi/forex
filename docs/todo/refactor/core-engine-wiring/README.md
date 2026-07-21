@@ -69,7 +69,7 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_instant_entry.py` | `_process_instant_entry` | 3 | Pending |
 | `core_instant_followup.py` | `_find_and_apply_instant_followup` etc. | 3 | Pending |
 | `core_signal_resolution.py` | signal resolution helpers | 3 | Pending |
-| `core_update_signal.py` | `update_signal` | 3 | Pending |
+| `core_update_signal.py` | `update_signal` | 3 | Done |
 | `core_risk_governor.py` | risk governor halts | 3 | Pending |
 | `core_run_tp_ladder.py` | `_tp_ladder_fast_loop` body | 3 | Pending |
 | `core_orb_report.py` | `build_orb_report`/`orb_auto_execute` | 3 | Pending |

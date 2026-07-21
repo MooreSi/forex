@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (4 of 16 rows touched)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (5 of 16 rows touched). `core_pending_signal_activation.py` and everything else touching `open_trade_from_signal`/`open_manual_market_order`/`close_trade` deferred until Tier 5 is wired (see Notes)._
 
 ## Log
 
@@ -326,6 +326,49 @@ never goes through `self.*`. Fixed by re-pointing 4 tests' mocks to
 `mock.patch.object(core_profit_sync, "sync_profit", ...)`, matching each
 fake's new 3-arg signature (`trade_id, ticket, bridge`). No fixture
 attribute renaming needed this pack.
+
+| 2026-07-21 | `update_signal` -> `core_update_signal.update_signal` | `test_update_signal_characterization.py` (14) unchanged-pass + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (update_signal wire-in + Tier-3 collaborator survey)
+
+Clean wire-in, no ripple -- `update_signal` only touches `bridge.modify_order`
+and the `ea_bridge` module singleton directly, both already accessed the
+same way (module-level, not via `self.*`) in the original.
+
+Before picking this one, surveyed the REMAINING Tier 3 rows for the same
+bare-collaborator-context risk found in `_cmd_close`/`_close_full_after_tps`
+by grepping each `core_*.py` module for `CloseTradeContext`/
+`background_open_commentary`/`background_close_commentary`/
+`open_trade(`/`open_manual_market_order(`/`close_trade(`/`record_close(`/
+`open_trade_from_signal(`:
+
+- **Blocked** (calls a collaborator-bearing Tier-5 function with a bare/
+  default context, same regression class as `_cmd_close`):
+  `core_pending_signal_activation.py` (calls `open_trade_from_signal` with
+  no `background_open_commentary`), `core_mt5_position_sync.py` (calls
+  `record_close` with a bare `CloseTradeContext`, confirmed earlier),
+  `core_orb_report.py`'s `orb_auto_execute` (calls `open_manual_market_order`
+  the same way, per its own comments).
+- **Safe** (no such call, or calls a genuinely self-contained Tier-5
+  function like `open_trade`/`partial_close_trade` that has no injected-
+  collaborator dependency): `core_tp_safety_net.py`, `core_untracked_positions.py`,
+  `core_ai_signal_fallback.py`, `core_instant_entry.py` (calls `open_trade`
+  directly, same as `_cmd_activate`), `core_instant_followup.py`,
+  `core_signal_resolution.py`, `core_update_signal.py` (this pack),
+  `core_risk_governor.py`, `core_run_tp_ladder.py` (calls
+  `partial_close_trade`, which is pure DB bookkeeping with no bridge call
+  at all).
+
+This survey narrows the remaining safe-to-wire-now Tier 3 set to:
+`core_tp_safety_net.py`, `core_untracked_positions.py`,
+`core_ai_signal_fallback.py`, `core_instant_entry.py`,
+`core_instant_followup.py`, `core_signal_resolution.py`,
+`core_risk_governor.py`, `core_run_tp_ladder.py`. Everything else in
+Tier 3 (and likely a good chunk of Tier 4) stays blocked until
+`core_close_trade.py`/`core_open_trade_from_signal.py`/
+`core_manual_market_order.py` (Tier 5) are wired into
+`self.close_trade`/`self.open_trade_from_signal`/
+`self.open_manual_market_order` first.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
