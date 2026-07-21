@@ -1,6 +1,6 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3: `core_bot_commands_infra.py`/`core_bridge_watchdog.py`/`core_update_signal.py`/`core_risk_governor.py`/`core_tp_safety_net.py`/`core_untracked_positions.py`/`core_ai_signal_fallback.py`/`core_instant_followup.py`/`core_instant_entry.py` done, `core_bot_commands_trading.py`/`core_profit_sync.py` partial (11 of 16 rows touched). Only `core_pending_signal_activation.py`, `core_signal_resolution.py`, `core_mt5_position_sync.py`, and `core_orb_report.py`'s `orb_auto_execute` half remain in Tier 3, all blocked on Tier 5 (see earlier Notes)._
+_Last updated: 2026-07-21 — Tier 1 and Tier 2 fully done. Tier 3 essentially complete: every row done except `core_bot_commands_trading.py`/`core_profit_sync.py` (partial) and `core_pending_signal_activation.py`/`core_signal_resolution.py`/`core_mt5_position_sync.py`/`core_orb_report.py`'s `orb_auto_execute` half, all blocked on Tier 5 being wired first (see earlier Notes). Tier 4/5 start next._
 
 ## Log
 
@@ -504,6 +504,45 @@ inside `self._get_trading_balance()`'s own body -- which every test mocked
 away entirely, so `self._cfg` was never actually touched. Added
 `e._cfg = {}` to the fixture (matching the pattern already used in
 `test_bot_commands_trading_characterization.py`).
+
+| 2026-07-21 | `_run_tp_ladder`/`_handle_signal_climber`/`_handle_gd_vip_runner`/`_handle_adaptive_runner` -> `core_run_tp_ladder.*` (after fixing a real extraction gap -- see Notes) | `test_run_tp_ladder_characterization.py` (22) unchanged-pass + surface test (unchanged) + full suite (1620, same 4 pre-existing) | this pack |
+
+## Notes (run_tp_ladder wire-in -- found and fixed a real extraction bug)
+
+Before wiring, compared `core_run_tp_ladder.py`'s `run_tp_ladder` line by
+line against engine.py's `_run_tp_ladder` and found the extracted version
+was TRUNCATED: it stopped right after `await db_module.to_db_thread(
+_apply_ladder_sl)`, silently dropping the trailing `current_sl = new_sl`
+update and the `if pos == be_at_pos: send "SL moved to breakeven" alert
+else: log the trail` block. Missing `current_sl = new_sl` is a real
+state-tracking bug, not cosmetic -- on a trade with 2+ trailing TPs hit in
+the same call, the second `should_update` comparison would evaluate
+against the STALE pre-trail SL instead of the one just written, which
+could cause a spurious duplicate `modify_order` (recomparing against an
+older, more favorable value) on the next iteration. The dropped Telegram
+alert would also have silently stopped notifying "SL moved to breakeven"
+for every Signal Climber / GD VIP Runner / Adaptive Runner trade. No
+existing test (010 characterization or 020 surface) caught this — none
+walks a trade through two SL-trailing TPs in one call. Fixed by restoring
+the missing lines verbatim from engine.py's current body; reran both this
+pack's test files (22 tests) to confirm no regression from the fix itself
+(unsurprising, since nothing previously exercised the missing code path).
+
+Otherwise a normal wire-in: `partial_close_trade` (confirmed
+self-contained pure DB bookkeeping, no bridge call, in an earlier survey)
+and `close_full_after_tps` (the injected-callable pattern, this time
+threaded through with `self._close_full_after_tps` -- the STILL-ORIGINAL,
+correct, deliberately-unwired implementation from the profit_sync pack --
+so passing it through preserves exact behavior, unlike `_cmd_close`'s
+bare-default-context problem). No test mock relocation needed; this
+pack's test file never patched a `SimulationEngine.*` collaborator.
+
+**Fifth lesson for remaining wire-ins**: when a pack's docstring claims
+"verbatim, no logic changes," still diff the extracted function's full
+body against the current engine.py method line-by-line before wiring --
+don't assume completeness from the docstring alone. This is the first
+(and so far only) case in the whole wiring phase where the extraction
+itself, not the wiring, had the bug.
 
 ## Blockers / open
 None. Cross-file-import sweep (`grep -rn "from forex_trader.core.engine import"`)
