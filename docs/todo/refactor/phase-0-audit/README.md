@@ -22,10 +22,14 @@ inline copy keeps running in `engine.py`. Green tests are consistent with that o
 which is why it survived review.
 
 This pack builds mechanical checks for that class of defect and records what they find.
-No restructuring happens here. Two defects the checks turned up were fixed in place — the
-live lot-sizing divergence (on the owner's decision, since it changes order size) and the
-non-atomic `insert_signal`. Everything else is new files under `tools/` and
-`tests/refactor/`.
+No restructuring happens here. Four things the checks turned up were fixed in place: the
+live lot-sizing divergence (on the owner's decision, since it changes order size), the
+non-atomic `insert_signal`, and two duplicate implementations in `engine.py`
+(`calculate_fees`, and a second copy of `check_sl`). Everything else is new files under
+`tools/`, `tests/refactor/` and `tests/conftest.py`.
+
+Open questions for the owner are collected in [QUESTIONS.md](QUESTIONS.md). **Q1 blocks
+Phase 1**: there is no trustworthy regression baseline yet.
 
 ## What the checks are
 
@@ -44,7 +48,7 @@ em-dash and arrow variants that defeated string comparison during the original w
 
 ## Findings
 
-### Ten orphaned functions, 456 LOC of dead code
+### Eight orphaned functions, 419 LOC of dead code (was ten / 456)
 
 Every one is recorded in `tools/refactor_audit/orphan_allowlist.json` with a reason, a
 verdict, and the phase that resolves it. An allowlist entry is a debt record, not an
@@ -55,16 +59,21 @@ approval — the work is proved by the entry disappearing.
 | 276 | `core_mt5_position_sync::sync_closed_mt5_positions` | diverged |
 | 62 | `core_profit_sync::close_full_after_tps` | diverged |
 | 47 | `core_bot_commands_trading::cmd_close` | diverged |
-| 25 | `core_fees_sizing::calculate_fees` | **identical** |
 | 14 | `core_bot_commands_trading::cmd_market_price_buy` | diverged |
 | 14 | `core_bot_commands_trading::cmd_market_price_sell` | diverged |
-| 10 | `core_tp_trigger_tracking::check_sl` | duplicate extraction |
 | 4 | `core_logic_keywords::set_all_lexicons` | no twin (harmless) |
 | 2 | `core_logic_keywords::default_lexicon` | no twin (harmless) |
 | 2 | `core_strategy_params::default_params` | no twin (harmless) |
 
-Three of these are undocumented anywhere in the existing packs: `close_full_after_tps`,
-`calculate_fees`, and the duplicated `check_sl`.
+Three of the original ten were undocumented anywhere in the existing packs:
+`close_full_after_tps`, `calculate_fees`, and a duplicated `check_sl`. **Two of those are
+now resolved** — `engine.py` delegates `calculate_fees` to `core_fees_sizing` rather than
+carrying its own verbatim copy, and the second `check_sl` (byte-identical to
+`core_monitor_loop`'s wired one) is deleted along with its surface tests. That leaves eight
+orphans, 419 LOC.
+
+The five remaining on the order path all block on the same `CloseTradeContext` dependency
+below, so they are one decision, not five — see QUESTIONS.md Q4.
 
 ### The five order-path orphans share one root cause
 
@@ -224,18 +233,16 @@ directory move happens, instead of the move being blocked on untangling 14 files
       it needs an owner's decision, not a refactor. CI is red until it is resolved.
 - [ ] Wrap `test_signal_repo.insert_signal` and `log_analysis` in `transaction()` before
       the pattern is copied into 16 new domains.
-- [ ] Collapse the duplicated test fixtures into one `tests/conftest.py` (`fresh_db`) plus
-      one `make_engine(**overrides)` factory. ~110 files currently poke
-      `db._thread_local`, `db._db_executor` and `db._rs_cache` by hand. Merging two dicts
-      into one `TPCache` once broke 12 test files at once; moving that state out of the
-      god object will break far more. This is a prerequisite for phases 6-8, not an
-      optimisation.
-- [ ] Correct the false rows: `core-engine-wiring/README.md:65` and the tracker entries
-      for the deferrals, which currently read Done rather than Deferred. Also the 25
-      README headers still saying `**Status:** planning (pre-implementation)` for
-      finished packs — `PROGRESS.md` is authoritative today, and that is a trap.
-- [ ] Establish a real regression baseline in an environment with the app's dependencies
-      (see below). Nothing should move until there is something to regress against.
+- [x] Canonical `tests/conftest.py` landed with `fresh_db` and a `make_engine` factory.
+      **Additive only** — the 119 local `fresh_db` definitions (17 distinct variants) are
+      untouched and still shadow it, so the suite behaves identically. Migrating them is
+      QUESTIONS.md Q5.
+- [x] Corrected the false tracker rows in `core-engine-wiring/README.md`, retracted the
+      "Migration COMPLETE" claim in its `PROGRESS.md`, and replaced the 25 stale
+      `**Status:** planning (pre-implementation)` headers on finished packs.
+- [ ] **Establish a real regression baseline** on a machine with the app's dependencies.
+      Nothing should move until there is something to regress against — QUESTIONS.md Q1.
+- [ ] Decide whether to delete or wire the five remaining orphans — QUESTIONS.md Q4.
 
 ## Test suite status in this container
 

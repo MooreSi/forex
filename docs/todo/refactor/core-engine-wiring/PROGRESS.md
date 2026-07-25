@@ -1,6 +1,15 @@
 # Core Engine Wiring — PROGRESS
 
-_Last updated: 2026-07-21 — Migration COMPLETE. Every row in README.md's tracker is "Done", including the final `core_scan_messages_*.py` cluster (the 1,138-line `_scan_messages` monolith)._
+_Last updated: 2026-07-25 — **Migration is NOT complete.** The 2026-07-21 entry below claimed
+it was, on the basis that every tracker row read "Done". Five of those rows were wrong: they
+recorded methods as "resolved for free" once a callee was wired, which does not follow.
+Nothing imports those modules and the original inline code still runs -- 273 lines of it in
+the case of `_sync_closed_mt5_positions`. See README.md's correction note and
+`docs/todo/refactor/phase-0-audit/`._
+
+_Original entry, kept for the record: "Migration COMPLETE. Every row in README.md's tracker is
+'Done', including the final `core_scan_messages_*.py` cluster (the 1,138-line `_scan_messages`
+monolith)."_
 
 ## Log
 

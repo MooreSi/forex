@@ -36,6 +36,24 @@ extraction pack), plus the standing live-app-untouched check on
 | 4 | Trade strategy handlers (13) | modifies SL/TP, partial-closes |
 | 5 | Order-placing / order-closing | places or closes a real MT5 order |
 
+## Correction (2026-07-25)
+
+**Five rows below were marked Done and are not.** They share one piece of
+reasoning -- that a method was "resolved for free" once a *callee* it invokes
+was wired. That does not follow: wiring a callee does not wire the caller. In
+each case nothing imports the extracted module and the original inline
+implementation is still what runs.
+
+Found by `tools/refactor_audit/delegation_checker.py`, which asks the question
+no test in this repo asked: does the engine method actually call the module
+extracted from it? The characterization/surface test pairs cannot detect this --
+one drives the inline copy, the other drives the extracted function, and nothing
+asserts a relationship between them.
+
+The affected rows are corrected in place below. Full analysis, and the
+`CloseTradeContext` dependency that blocks all five, is in
+`docs/todo/refactor/phase-0-audit/`.
+
 ## Tracker
 
 | Module | Original method(s) | Tier | Status |
@@ -60,11 +78,11 @@ extraction pack), plus the standing live-app-untouched check on
 | `core_bridge_watchdog.py` | `_bridge_watchdog_loop` body (sleep/while shell kept; per-cycle state now threaded through a `state` dict, `sleep_for` returned and slept by the shell) | 3 | Done |
 | `core_tp_safety_net.py` | `_tp_safety_net_sweep`/`_tp_safety_net_check_trade`/`_compute_be_cost_pts` (+ unused `_TP_SAFETY_NET_ALERT_COOLDOWN` class constant removed) | 3 | Done |
 | `core_bot_commands_infra.py` | `_cmd_restart_bridge`/`_cmd_restart_app`/`_cmd_headless`/`_cmd_switch_live`/`_cmd_switch_demo`/`_cmd_switch_env` (+ module-level `_delayed_app_shutdown` removed, now only in the extracted module) | 3 | Done |
-| `core_bot_commands_trading.py` | `_cmd_activate`/`_cmd_report` wired directly; `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` resolved for free once `close_trade`/`open_manual_market_order` were wired -- they call `self.close_trade`/`self.open_manual_market_order` directly, no code changes needed | 3 | Done |
+| `core_bot_commands_trading.py` | `_cmd_activate`/`_cmd_report` wired directly. `_cmd_close`/`_cmd_market_price_buy`/`_cmd_market_price_sell` were recorded as "resolved for free" -- **that was wrong** (see the correction note above); nothing imports them and the inline copies still run | 3 | **Partly done** -- 3 of 5 NOT wired |
 | `core_pending_signal_activation.py` | `_try_activate_pending_signals` (+ genuine fix: added `background_open_commentary` param, threaded through to the internal `open_trade_from_signal` call -- see Notes) | 3 | Done |
-| `core_mt5_position_sync.py` | `_sync_closed_mt5_positions` -- resolved for free once `_record_close` was wired (calls `self._record_close` directly), no code changes needed | 3 | Done |
+| `core_mt5_position_sync.py` | `_sync_closed_mt5_positions` -- recorded as "resolved for free", **wrong**: nothing imports the module and the full 273-line inline copy still runs at `engine.py:1346` | 3 | **NOT DONE** |
 | `core_untracked_positions.py` | `get_untracked_mt5_positions` | 3 | Done |
-| `core_profit_sync.py` | `_sync_profit`/`_schedule_profit_sync`/`_profit_sweep` wired directly; `_close_full_after_tps` resolved for free once `_record_close` was wired (calls `self._record_close` directly), no code changes needed | 3 | Done |
+| `core_profit_sync.py` | `_sync_profit`/`_schedule_profit_sync`/`_profit_sweep` wired directly. `_close_full_after_tps` recorded as "resolved for free", **wrong**: all 13 handler call sites pass the inline copy | 3 | **Partly done** -- `_close_full_after_tps` NOT wired |
 | `core_ai_signal_fallback.py` | `_try_ai_signal_fallback`/`_push_ai_recovered_created`/`_apply_sl_adjustment`/`_queue_unrecognised`/`_analyse_unrecognised_message` | 3 | Done |
 | `core_instant_entry.py` | `_process_instant_entry` | 3 | Done |
 | `core_instant_followup.py` | `_apply_followup_to_instant_trade`/`_find_and_apply_instant_followup`/`_ime_timeout_watchdog` | 3 | Done |

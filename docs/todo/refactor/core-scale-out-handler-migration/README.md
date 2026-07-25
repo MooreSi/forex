@@ -1,6 +1,6 @@
 # Core: Scale Out Handler Migration
 
-**Status:** planning (pre-implementation)
+**Status:** see PROGRESS.md — this header was stale and is not authoritative
 **Domain:** refactor
 **Created:** 2026-07-20
 
