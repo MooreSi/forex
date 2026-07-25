@@ -12,26 +12,47 @@ Phase 1 onwards moves ~48,000 lines into `backend/` and `frontend/`.
 
 ---
 
-## 1. What is the real test baseline? — BLOCKING
+## 1. What is the real test baseline? — PARTLY ANSWERED
 
-Nothing should move until we know which tests pass on a healthy machine.
+I can now run the suite here. Three separate problems were making it unusable, two
+of them fixed:
 
-This container cannot tell us. `MetaTrader5` is Windows-only, and the system
-`cryptography` was broken (`No module named '_cffi_backend'`). After installing
-`httpx`, `nicegui` and `cffi` the run was **1847 passed / 159 failed**, against a
-baseline the old docs record as **1624 passing with 4 known failures**. That gap
-was not investigated. It is not attributable to this work — the audit added only
-new files, and each code change since was verified against a stashed comparison —
-but "not mine" is not the same as "fine".
+**Fixed — the suite read the wall clock.** `dpm_engine.detect_session()` branches on
+the current UTC hour and `is_weekly_market_closed()` returns True all weekend, so
+every session-gated test passed on a Tuesday and failed on a Saturday with no code
+change in between. That alone accounted for **120 failures**: this work happened on
+a Saturday, and the historical "1624 passing" baseline was recorded on Tuesday
+2026-07-21. `tools/testing/fixed_clock.py` pins both readers to a fixed market-open
+instant and is enabled by default in `pyproject.toml`.
 
-Without a known-good baseline, every later phase is moving code with no way to
-tell a regression from pre-existing noise.
+**Fixed — `pytest-asyncio` was missing.** Without it every `@pytest.mark.asyncio`
+test *fails* rather than skipping, which read as **26 broken tests** instead of one
+missing package. Now installed by the session-start hook.
 
-- **Recommended:** someone runs `python -m pytest tests/ -q` on the machine that
-  actually runs the app, and pastes the summary line plus the list of failures.
-  That becomes the recorded baseline. Ten minutes of work; it unblocks everything.
-- Alternative: accept this container's numbers as the baseline and treat the 159
-  as pre-existing. Cheaper, and wrong — it would bless real failures as expected.
+**Not fixed — the suite is polluted and flaky.** With the clock pinned and the
+dependencies installed, repeated runs of identical code gave **20, 32, 33, 39, 40,
+41 and 58 failures**. The failures cluster in `tests/core/test_scan_messages_*`,
+and those files **pass 53/53 when run on their own**. So this is state leaking
+between tests, not broken production code.
+
+I tried one plausible cause: 40 of the `fresh_db` variants never reset
+`db._rs_cache`/`_rs_cache_ts` on teardown, unlike the canonical one, so a populated
+risk-settings cache can outlive its temp database. Patching the 32 of those that
+genuinely use `core.database` did **not** change the failure count, and given the
+run-to-run variance a single comparison proves nothing either way. I reverted it
+rather than ship a 32-file change I cannot show helps.
+
+**So the remaining question is what to do about the flakiness**, because a suite
+that varies by 38 failures run-to-run cannot detect a regression from moving code.
+
+- **Recommended: fix the pollution before Phase 1.** Bisect it properly —
+  `pytest -p no:randomly --lf`, or run the suite in file-order chunks to find which
+  file's state leaks into `test_scan_messages_*`. It is very likely one or two
+  module-level globals in `database.py`, which is exactly the state Phase 1 moves,
+  so this is work we need done anyway rather than a detour.
+- Alternative: record the ~20 stable failures as the baseline and treat anything
+  above as noise. Cheap, but it means accepting we cannot tell a real regression
+  from flakiness — which is how the previous refactor shipped five false "Done"s.
 
 **ANSWER:**
 
