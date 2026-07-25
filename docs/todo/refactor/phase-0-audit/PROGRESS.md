@@ -1,8 +1,8 @@
 # Phase 0 Audit — PROGRESS
 
-_Last updated: 2026-07-25 — Checks 1-4 and the structure ratchets built, validated and run.
-The fixture collapse, the tracker corrections, and the `suggest_lot_size` decision are not
-started. CI is intentionally red on `suggest_lot_size`._
+_Last updated: 2026-07-25 — Checks 1-4 and the structure ratchets built, validated and run;
+the `suggest_lot_size` defect fixed. The fixture collapse and the tracker corrections are
+not started. All gates green._
 
 ## Overall
 
@@ -15,10 +15,16 @@ Headline: **10 orphaned functions, 456 LOC of dead code**, three of them undocum
 Five of the seven on the order path share a single root cause -- a partial
 `CloseTradeContext` -- which is also the dependency gating the trading phase.
 
-Worst single finding: **two reachable, disagreeing implementations of `suggest_lot_size`**.
-Telegram auto-executed trades are sized without the Max Risk per trade % ceiling that
-manual orders and bot commands apply. Live defect, not dead code, and deliberately left
-failing CI rather than fixed unilaterally -- it changes order size on a trading app.
+Worst single finding, now fixed: **two reachable, disagreeing implementations of
+`suggest_lot_size`**. Telegram auto-executed trades were sized without the Max Risk per
+trade % ceiling that manual orders and bot commands applied -- the same UI field honoured
+on two entry paths of three. Raised rather than fixed unilaterally, since it changes order
+size on a live account; the owner chose to honour the setting everywhere. `engine.py`'s
+copy is gone and the method delegates. Telegram-signal positions may now be smaller.
+
+Note on the fix itself: it initially grew `engine.py` by two lines and the LOC ratchet
+rejected it. Shrink-only applies to this work too, so the change was tightened until
+`engine.py` came out three lines smaller (3,165 -> 3,162) rather than rebaselining upward.
 
 ## Tasks
 
@@ -31,7 +37,7 @@ failing CI rather than fixed unilaterally -- it changes order size on a trading 
 | 5 | Structure ratchets | done | LOC / SQL / transaction / ui_db, all shrink-only with a checked-in baseline. |
 | 6 | Test fixture collapse | not started | Prerequisite for phases 6-8, not an optimisation. |
 | 7 | Correct the false tracker rows | not started | `core-engine-wiring/README.md:65` and the deferral rows. |
-| 8 | Resolve `suggest_lot_size` | not started | Needs an owner's decision; CI is red until then. |
+| 8 | Resolve `suggest_lot_size` | done | Owner chose one implementation with the ceiling applied. `engine.py`'s copy deleted; method delegates. CI green. |
 
 ## What validation was actually done
 

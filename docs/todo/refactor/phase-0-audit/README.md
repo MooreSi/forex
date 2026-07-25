@@ -22,7 +22,9 @@ inline copy keeps running in `engine.py`. Green tests are consistent with that o
 which is why it survived review.
 
 This pack builds mechanical checks for that class of defect and records what they find.
-No restructuring happens here. Nothing in `forex_trader/` is modified.
+No restructuring happens here. The only change to `forex_trader/` is the one-method fix
+for the live lot-sizing defect below, made on the owner's decision; everything else is
+new files under `tools/` and `tests/refactor/`.
 
 ## What the checks are
 
@@ -80,34 +82,48 @@ Wiring any of them as-is would silently drop up to six of those. That is why the
 deferred — and it is now detected mechanically instead of remembered. It is also the
 single dependency that gates the whole trading phase.
 
-### A live risk-control defect: two lot-sizing implementations that disagree
+### A live risk-control defect: two lot-sizing implementations that disagreed — FIXED
 
-Check 4 found this, and it is the most serious thing in the audit. It is not
-dead code and not scheduled debt — it is running now.
+Check 4 found this, and it was the most serious thing in the audit: not dead
+code and not scheduled debt, but a defect that was running.
 
-`suggest_lot_size` exists twice, and **both copies are reachable**:
+`suggest_lot_size` existed twice, and **both copies were reachable**:
 
-| | applies `max_risk_per_trade_pct`? | reached by |
+| | applied `max_risk_per_trade_pct`? | reached by |
 |---|---|---|
-| `engine.py:466` | **no** | `_scan_messages` auto-execution, via `self.suggest_lot_size` passed at `engine.py:2268` and `:2284` |
+| `engine.py`'s own copy | **no** | `_scan_messages` auto-execution, via `self.suggest_lot_size` passed at `engine.py:2268` and `:2284` |
 | `core_fees_sizing.suggest_lot_size` | yes | `core_manual_market_order.py:123`, `core_bot_commands_trading.py:151` |
 
 The extracted copy clamps the risk-based lot a second time against Global
-Parameters > Max Risk per trade %. The engine's copy applies only
+Parameters > Max Risk per trade %. The engine's copy applied only
 `max_lot_size`. `database.py:303` declares
 `max_risk_per_trade_pct REAL NOT NULL DEFAULT 1.0` — the ceiling is **on by
-default**.
+default**, and `ui/pages/trading.py:2235` exposes it as a field the user can set.
 
-So a trade auto-executed from a Telegram signal can be sized past the Max Risk
+So a trade auto-executed from a Telegram signal could be sized past the Max Risk
 per trade % ceiling, while the same signal entered manually or via a bot command
-is capped. No test covers this; the orphan detector cannot see it, because the
-extracted module *is* used — just not by the engine.
+was capped. No test covered it, and the orphan detector could not see it, because
+the extracted module *is* used — just not by the engine.
 
-**Not fixed here.** Changing lot sizing alters order size on a live trading
-app, which is exactly what the plan's order-path sign-off gate is for. It is
-deliberately excluded from the delegation allowlist so CI fails until someone
-decides which behaviour is correct. `tests/refactor/test_delegation_checker.py`
-pins the divergence so a silent partial fix is visible.
+It was never a designed fallback. `core_scan_messages_auto_execute.py:188` makes
+a single call to whichever function was injected — no `try`/`except`, no chain.
+The entry path alone decided which copy you got. Nobody chose that: extraction
+created a second copy, the ceiling was later added to only one, and the engine
+kept its stale original.
+
+**Fixed** (owner decision, 2026-07-25): `engine.py`'s copy is deleted and the
+method now delegates to `core_fees_sizing.suggest_lot_size`. One implementation,
+every entry path, and the UI field is honoured everywhere it claims to be.
+
+Consequence to be aware of: positions opened from Telegram signals are now
+capped by Max Risk per trade % (default 1.0) and may be smaller than before.
+Fixed-lot overrides are unaffected — `strategy_lot_size` still wins outright
+(`core_scan_messages_auto_execute.py:190`), and that was already consistent
+across both copies.
+
+Three tests hold the fix: the engine method must stay a plain delegation, only
+`core_fees_sizing` may own the ceiling, and both paths must return the same
+number for the same inputs.
 
 ### The reference pattern is not fully transactional
 
