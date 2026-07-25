@@ -1,17 +1,24 @@
 # Phase 0 Audit — PROGRESS
 
-_Last updated: 2026-07-25 — audit tooling landed; Checks 1-3 built, validated and run.
-Check 4 (wiring tests), the fixture collapse, and the CI guardrails are not started._
+_Last updated: 2026-07-25 — Checks 1-4 and the structure ratchets built, validated and run.
+The fixture collapse, the tracker corrections, and the `suggest_lot_size` decision are not
+started. CI is intentionally red on `suggest_lot_size`._
 
 ## Overall
 
-Built three AST-based checks for the defect class that let extractions be marked "Done"
-without being wired in, validated each against a case with a known answer, and ran them
-across all 78 `core_*.py` modules. Nothing under `forex_trader/` was modified.
+Built four AST-based checks for the defect class that let extractions be marked "Done"
+without being wired in, plus four shrink-only structure ratchets. Each check was pointed at
+a case with a known answer before being trusted, then run across all 78 `core_*.py`
+modules. Nothing under `forex_trader/` was modified.
 
 Headline: **10 orphaned functions, 456 LOC of dead code**, three of them undocumented.
-Five of the seven on the order path share a single root cause — a partial
-`CloseTradeContext` — which is also the dependency gating the trading phase.
+Five of the seven on the order path share a single root cause -- a partial
+`CloseTradeContext` -- which is also the dependency gating the trading phase.
+
+Worst single finding: **two reachable, disagreeing implementations of `suggest_lot_size`**.
+Telegram auto-executed trades are sized without the Max Risk per trade % ceiling that
+manual orders and bot commands apply. Live defect, not dead code, and deliberately left
+failing CI rather than fixed unilaterally -- it changes order size on a trading app.
 
 ## Tasks
 
@@ -20,10 +27,11 @@ Five of the seven on the order path share a single root cause — a partial
 | 1 | Orphan detector | done | AST + alias resolution. Finds 10 functions / 456 LOC. 16 tests including negative controls and the keyword-argument false positive a grep produces. |
 | 2 | Inline-twin comparator | done | Classifies identical / diverged / no twin. 12 tests on the normaliser. Surfaced the shared `CloseTradeContext` root cause. |
 | 3 | Divergence detector | done | Retro-audit over git history. 6 tests. Validated by independently recovering the documented `core_run_tp_ladder` truncation (`current_sl = new_sl` + the breakeven alert). |
-| 4 | Wiring tests (~50) | not started | The check that makes "Done" mean something. |
-| 5 | Test fixture collapse | not started | Prerequisite for phases 6-8, not an optimisation. |
-| 6 | CI guardrails | partial | Orphan gate done (`--check` + allowlist). LOC / import-contract / SQL / transaction gates not started. |
+| 4 | Delegation checker | done | Static rather than the ~50 generated runtime tests originally planned -- see below. Found 7 unwired duplicates, one of them a live defect. |
+| 5 | Structure ratchets | done | LOC / SQL / transaction / ui_db, all shrink-only with a checked-in baseline. |
+| 6 | Test fixture collapse | not started | Prerequisite for phases 6-8, not an optimisation. |
 | 7 | Correct the false tracker rows | not started | `core-engine-wiring/README.md:65` and the deferral rows. |
+| 8 | Resolve `suggest_lot_size` | not started | Needs an owner's decision; CI is red until then. |
 
 ## What validation was actually done
 
@@ -39,6 +47,24 @@ Each check was pointed at a case with a known answer before being trusted:
   `check_sl` from `core_monitor_loop`, not from `core_tp_trigger_tracking`.
 - **Check 3** — reproduced the `core_run_tp_ladder` truncation from history alone, naming both
   lost statements that `core-engine-wiring/PROGRESS.md:509-530` records.
+- **Check 4** — negative controls assert that `_check_sl`, `open_trade`, `close_trade` and
+  `open_trade_from_signal` are *not* flagged. `_check_sl` matters most: it is reached through
+  `from ...core_monitor_loop import check_sl as _check_sl_impl`, so a checker matching on the
+  local name would report it falsely.
+- **Ratchets** — the shrink-only logic is tested directly: growth fails, a brand-new violation
+  fails, shrinkage passes, and one test asserts the checked-in baseline still matches reality,
+  since a drifted baseline silently disables every gate.
+
+## Two corrections made during the work, not after
+
+- **Check 4 first ranked severity by statement count**, with a comment claiming a clean gap
+  between wired delegators and duplicates. There is no such gap: `suggest_lot_size` sat exactly
+  on the cutoff and was classed as a harmless wrapper, so CI passed on the audit's most serious
+  finding. Replaced with a structural test -- a wrapper is a body that only delegates, however
+  short.
+- **The `ui_db` gate first reported 5 files**, contradicting the known 13. It only matched
+  `from ...database import x`, missing `from forex_trader.core import database as db_module`,
+  which is the form the pages actually use. Corrected: 14 files, 24 imports.
 
 ## Corrections to earlier assumptions, recorded
 
