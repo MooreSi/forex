@@ -22,9 +22,10 @@ inline copy keeps running in `engine.py`. Green tests are consistent with that o
 which is why it survived review.
 
 This pack builds mechanical checks for that class of defect and records what they find.
-No restructuring happens here. The only change to `forex_trader/` is the one-method fix
-for the live lot-sizing defect below, made on the owner's decision; everything else is
-new files under `tools/` and `tests/refactor/`.
+No restructuring happens here. Two defects the checks turned up were fixed in place — the
+live lot-sizing divergence (on the owner's decision, since it changes order size) and the
+non-atomic `insert_signal`. Everything else is new files under `tools/` and
+`tests/refactor/`.
 
 ## What the checks are
 
@@ -125,18 +126,28 @@ Three tests hold the fix: the engine method must stay a plain delegation, only
 `core_fees_sizing` may own the ceiling, and both paths must return the same
 number for the same inputs.
 
-### The reference pattern is not fully transactional
+### The reference pattern was not fully transactional — FIXED
 
 The three migrated engines are the template for the other 16 domains, so a gap
-in them propagates. `reversal_engine_repo.py` is clean;
-`breakout_signal_repo.py` (`init`) and `test_signal_repo.py`
-(`insert_signal`, `log_analysis`) are not.
+in them propagates fifteen more times.
 
-`test_signal_repo.insert_signal` is the substantive one: it INSERTs a signal,
-then issues a separate `UPDATE test_signals SET signal_ref=?` to stamp the
-reference derived from the new rowid. Two unwrapped writes — a crash between
-them leaves a row with a NULL `signal_ref`. Worth fixing before the pattern is
-copied fifteen more times.
+The gate first named three offenders. Two were **its own false positives**:
+`test_signal_repo.log_analysis` opens with a `try`/`except`-guarded
+`ALTER TABLE ... ADD COLUMN`, and `breakout_signal_repo.init` is schema creation
+plus migrate-on-write columns. Neither is a business write — SQLite commits DDL
+implicitly, and those ALTERs are *expected* to fail once the column exists.
+Wrapping them would have been wrong.
+
+The third was real. `test_signal_repo.insert_signal` INSERTed a signal, then
+issued a separate `UPDATE test_signals SET signal_ref=?` to stamp the reference
+derived from the new rowid — so a crash between the two committed a row with a
+NULL `signal_ref`, which every caller assumes is populated. Now one transaction.
+
+Both the defect and the gate are fixed: DDL and migrate-on-write statements no
+longer count as writes. Repo-wide the count fell from 16 files / 35 functions to
+5 / 9, and all three reference repos are clean. That matters more than the raw
+number — a gate wrong two thirds of the time gets switched off, which would have
+cost more than it caught.
 
 ### `core_mt5_position_sync` is the one to fix first
 

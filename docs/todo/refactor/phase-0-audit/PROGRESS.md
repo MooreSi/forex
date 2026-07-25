@@ -38,6 +38,7 @@ rejected it. Shrink-only applies to this work too, so the change was tightened u
 | 6 | Test fixture collapse | not started | Prerequisite for phases 6-8, not an optimisation. |
 | 7 | Correct the false tracker rows | not started | `core-engine-wiring/README.md:65` and the deferral rows. |
 | 8 | Resolve `suggest_lot_size` | done | Owner chose one implementation with the ceiling applied. `engine.py`'s copy deleted; method delegates. CI green. |
+| 9 | Fix the reference-repo transaction gap | done | `test_signal_repo.insert_signal` now atomic. Two of the three original findings were the gate's own false positives (DDL); gate corrected, offenders fell 16 files/35 fns -> 5/9. |
 
 ## What validation was actually done
 
@@ -71,6 +72,11 @@ Each check was pointed at a case with a known answer before being trusted:
 - **The `ui_db` gate first reported 5 files**, contradicting the known 13. It only matched
   `from ...database import x`, missing `from forex_trader.core import database as db_module`,
   which is the form the pages actually use. Corrected: 14 files, 24 imports.
+- **The transaction gate counted DDL as a write**, so two of its three findings against the
+  reference repos were false -- a `try`/`except`-guarded `ALTER TABLE ADD COLUMN` and a schema
+  `init`. Only `insert_signal` was a genuine defect. Fixed both: the repo is now atomic, and
+  the gate ignores DDL and migrate-on-write statements while still counting any statement it
+  cannot read statically.
 
 ## Corrections to earlier assumptions, recorded
 
