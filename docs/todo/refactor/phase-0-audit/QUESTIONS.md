@@ -12,49 +12,42 @@ Phase 1 onwards moves ~48,000 lines into `backend/` and `frontend/`.
 
 ---
 
-## 1. What is the real test baseline? — PARTLY ANSWERED
+## 1. What is the real test baseline? — ANSWERED
 
-I can now run the suite here. Three separate problems were making it unusable, two
-of them fixed:
+Three problems were making the suite unusable. All three are now fixed.
 
-**Fixed — the suite read the wall clock.** `dpm_engine.detect_session()` branches on
-the current UTC hour and `is_weekly_market_closed()` returns True all weekend, so
-every session-gated test passed on a Tuesday and failed on a Saturday with no code
-change in between. That alone accounted for **120 failures**: this work happened on
-a Saturday, and the historical "1624 passing" baseline was recorded on Tuesday
-2026-07-21. `tools/testing/fixed_clock.py` pins both readers to a fixed market-open
-instant and is enabled by default in `pyproject.toml`.
+**The suite read the wall clock — 120 failures.** `dpm_engine.detect_session()`
+branches on the current UTC hour and `is_weekly_market_closed()` returns True all
+weekend, so session-gated tests passed on a Tuesday and failed on a Saturday with
+no code change between. This work happened on a Saturday; the historical
+"1624 passing" baseline was recorded on Tuesday 2026-07-21.
+`tools/testing/fixed_clock.py` pins both, on by default.
 
-**Fixed — `pytest-asyncio` was missing.** Without it every `@pytest.mark.asyncio`
-test *fails* rather than skipping, which read as **26 broken tests** instead of one
-missing package. Now installed by the session-start hook.
+**`pytest-asyncio` was missing — 26 failures.** Without it, `@pytest.mark.asyncio`
+tests fail rather than skip. Installed by the session-start hook.
 
-**Not fixed — the suite is polluted and flaky.** With the clock pinned and the
-dependencies installed, repeated runs of identical code gave **20, 32, 33, 39, 40,
-41 and 58 failures**. The failures cluster in `tests/core/test_scan_messages_*`,
-and those files **pass 53/53 when run on their own**. So this is state leaking
-between tests, not broken production code.
+**The settings cache was shared across databases — the flakiness.**
+`get_risk_settings()` memoises for `_RS_CACHE_TTL = 10.0` seconds keyed on nothing
+but time. Every test builds its own temp database, so a test that only *read*
+settings within ten seconds of another silently got the previous test's values
+from a deleted file. Timing-dependent, not order-dependent — which is why the
+count wandered between 20 and 58, and why bisecting for a polluting file found
+nothing from either direction. `database.init()` now invalidates the cache, and an
+autouse fixture in `tests/conftest.py` clears it around every test.
 
-I tried one plausible cause: 40 of the `fresh_db` variants never reset
-`db._rs_cache`/`_rs_cache_ts` on teardown, unlike the canonical one, so a populated
-risk-settings cache can outlive its temp database. Patching the 32 of those that
-genuinely use `core.database` did **not** change the failure count, and given the
-run-to-run variance a single comparison proves nothing either way. I reverted it
-rather than ship a 32-file change I cannot show helps.
+**That last one was also a live production bug.** `cmd_switch_env`
+(`core_bot_commands_infra.py:196`) re-points the database at the other
+environment's file but did not clear the cache, so for up to ten seconds after a
+demo/live switch the app answered with the *other* environment's risk settings —
+session gates and the Max Risk per trade % ceiling included. `init()` already
+closed stale connections for exactly this reason, with a comment describing an
+analogous demo/live bug found 2026-07-21; the cache one layer up was missed.
+`tests/core/test_database_init_env_switch.py` covers it and fails without the fix.
 
-**So the remaining question is what to do about the flakiness**, because a suite
-that varies by 38 failures run-to-run cannot detect a regression from moving code.
+See TESTING.md for detail. Nothing is being asked of you here — recorded so the
+baseline is auditable.
 
-- **Recommended: fix the pollution before Phase 1.** Bisect it properly —
-  `pytest -p no:randomly --lf`, or run the suite in file-order chunks to find which
-  file's state leaks into `test_scan_messages_*`. It is very likely one or two
-  module-level globals in `database.py`, which is exactly the state Phase 1 moves,
-  so this is work we need done anyway rather than a detour.
-- Alternative: record the ~20 stable failures as the baseline and treat anything
-  above as noise. Cheap, but it means accepting we cannot tell a real regression
-  from flakiness — which is how the previous refactor shipped five false "Done"s.
-
-**ANSWER:**
+**ANSWER:** Resolved 2026-07-25, no decision needed.
 
 ---
 

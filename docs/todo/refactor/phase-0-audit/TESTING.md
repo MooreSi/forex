@@ -59,32 +59,72 @@ Two packages are deliberately not required:
   build on Python 3.11. Only the live Telegram client needs it. The hook attempts
   it and carries on if it fails.
 
-## Known problem: the suite is flaky
+## The flakiness, and what actually caused it — mostly fixed
 
-**This is unresolved and it matters.** With the clock pinned and all dependencies
-installed, repeated runs of *identical code* produced:
+Before this was understood, repeated runs of *identical code* produced 20, 32,
+33, 39, 40, 41 and 58 failures. The failures clustered in
+`tests/core/test_scan_messages_*`, and those files passed 53/53 in isolation.
 
+Bisecting for a polluting file found nothing, twice: the set of files collected
+*before* the failures passed, and the set collected *after* passed too. That
+ruled out ordering, which is what pointed at the real cause.
+
+**`get_risk_settings()` caches for ten seconds, keyed on nothing but time.**
+
+```python
+_RS_CACHE_TTL = 10.0   # core_db_risk_settings.py:28
 ```
-20, 32, 33, 39, 40, 41, 58 failures
-```
 
-The failures cluster in `tests/core/test_scan_messages_*`, and those files
-**pass 53/53 when run on their own**. So state is leaking between tests; the
-production code is not at fault.
+Every test builds its own temp database. A test that only *reads* settings
+within ten seconds of a previous one silently received the previous test's
+values — from a database file already deleted. `update_risk_settings()`
+invalidates the cache, so tests that write were safe; tests that read were not.
+That makes the suite **timing**-dependent rather than order-dependent, which is
+why the count wandered, why bisection failed, and why the slower
+`test_scan_messages_*` files took the brunt.
 
-One plausible cause was investigated and rejected: 40 `fresh_db` variants never
-reset `db._rs_cache`/`_rs_cache_ts` on teardown, unlike the canonical fixture, so
-a populated risk-settings cache can outlive its temp database. Patching the 32 of
-those that genuinely use `core.database` did not change the failure count — and
-with 38-failure run-to-run variance, one comparison proves nothing either way. The
-patch was reverted rather than shipped unproven.
+Two changes fix it:
 
-**Until this is fixed, the suite cannot prove a regression.** A change that breaks
-20 tests is indistinguishable from a quiet afternoon. Fixing it is not a detour:
-the leaking state is almost certainly module-level globals in `database.py`, which
-is exactly what Phase 1 relocates.
+1. **`database.init()` now invalidates the cache** (`forex_trader/core/database.py`).
+   This is the real fix, and it is not test-only — see below.
+2. **An autouse fixture in `tests/conftest.py`** clears the cache around every
+   test, covering all 119 modules regardless of which of the 17 local `fresh_db`
+   variants they define. It only clears a cache, so it cannot change what any
+   test asserts — only which database answers it.
 
-See QUESTIONS.md Q1.
+### The same bug was live in production
+
+`cmd_switch_env` (`core_bot_commands_infra.py:196`) re-points the database at the
+other environment's file via `db_module.init(...)`. It did not clear the settings
+cache, so for up to ten seconds after a demo/live switch the app kept answering
+with the **other environment's risk settings** — the session gates and the Max
+Risk per trade % ceiling among them.
+
+`init()` already closed stale per-thread connections, with a comment describing
+an exactly analogous demo/live bug found 2026-07-21. The cache one layer up was
+missed. `tests/core/test_database_init_env_switch.py` now covers it, and that
+test fails without the fix.
+
+### What is left
+
+On an idle machine the suite goes fully green — **2022 passed, 0 failed**,
+reproduced. Under CPU contention a handful of `test_scan_messages_*` tests still
+flake: runs taken while other suites were running concurrently gave 14 and 41
+failures, always from that same cluster.
+
+So the range narrowed from 20–58 down to 0–14, and it is now clearly
+load-sensitive rather than mysterious. Practical guidance:
+
+- **Run the suite on its own.** Do not run two suites concurrently, which is what
+  produced every non-zero result recorded here.
+- **A non-zero count in `test_scan_messages_*` alone is not a regression** — re-run
+  before investigating. A failure anywhere else is real.
+
+The residual cause is still unidentified. It is not ordering: those files pass in
+isolation, and pass when combined with any single other directory. It only appears
+under the full suite plus load, which points at something cumulative and
+time-sensitive rather than a specific polluting module. Worth finishing when
+`signals/` is migrated, since that is the code involved.
 
 ## Auditing tools
 

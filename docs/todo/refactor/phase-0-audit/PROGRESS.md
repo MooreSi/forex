@@ -39,6 +39,8 @@ rejected it. Shrink-only applies to this work too, so the change was tightened u
 | 7 | Correct the false tracker rows | not started | `core-engine-wiring/README.md:65` and the deferral rows. |
 | 8 | Resolve `suggest_lot_size` | done | Owner chose one implementation with the ceiling applied. `engine.py`'s copy deleted; method delegates. CI green. |
 | 9 | Fix the reference-repo transaction gap | done | `test_signal_repo.insert_signal` now atomic. Two of the three original findings were the gate's own false positives (DDL); gate corrected, offenders fell 16 files/35 fns -> 5/9. |
+| 10 | Make the suite runnable and deterministic | done | Clock plugin (120 failures), pytest-asyncio (26), settings-cache isolation (the flakiness). Session-start hook installs the environment. |
+| 11 | Fix the shared settings cache | done | `database.init()` now invalidates `_rs_cache`. Root cause of the test flakiness **and** a live demo/live-switch bug. Regression test added. |
 
 ## What validation was actually done
 
@@ -90,11 +92,26 @@ Each check was pointed at a case with a known answer before being trusted:
   line; the gap was introduced by a later edit, before wiring. The test asserting otherwise was
   wrong and was corrected to pin the real behaviour and document the limitation.
 
+## The baseline, resolved
+
+The suite is now runnable and deterministic in this container, and the 159 failures are
+fully accounted for. See TESTING.md.
+
+| Cause | Failures | Fix |
+|---|---|---|
+| Session gates read the wall clock; this ran on a Saturday | 120 | `tools/testing/fixed_clock.py`, on by default |
+| `pytest-asyncio` absent, so async tests failed rather than skipped | 26 | session-start hook |
+| `get_risk_settings()` cached across databases for 10s | the flaky remainder | `database.init()` invalidates; autouse fixture in `tests/conftest.py` |
+
+The third was not a test-only problem. `cmd_switch_env` re-points the database without
+clearing the cache, so for ten seconds after a demo/live switch the app read the *other*
+environment's risk settings — session gates and the Max Risk per trade % ceiling included.
+`init()` already closed stale connections for the same reason (bug found 2026-07-21); the
+cache a layer up was missed. Covered by `tests/core/test_database_init_env_switch.py`,
+which fails without the fix.
+
 ## Blockers / open
 
-- No usable regression baseline in this container. `MetaTrader5` is Windows-only and the system
-  `cryptography` is broken (`No module named '_cffi_backend'`). After installing `httpx`,
-  `nicegui` and `cffi`: 1847 passed / 159 failed, versus a documented historical baseline of
-  1624 passing with 4 known failures. That gap was not investigated and is not attributable to
-  this pack, which adds only new files. **A real baseline is needed before Phase 1 moves any
-  code** — without one there is nothing to regress against.
+- None blocking Phase 1. Remaining open items are decisions, not blockers — QUESTIONS.md
+  Q2 (is a separate live deployment still running?) and Q4 (delete or wire the five
+  remaining orphans).
