@@ -55,8 +55,12 @@ read-only check before it moves.
       and the repo-wide total 240 -> 232. Only the queries moved -- every line of
       shaping stayed where it was, so the page diff is "expression moved" and a
       behaviour change could not hide inside a relocation.
-- [ ] Step 2: shaping (`_parse_reason`, `_fmt_duration`, `_strategy_display_label`,
-      `_broker_ts_to_uk_date`) to `controller.py`, returning plain dicts.
+- [x] **Step 2: shaping extracted.** The six pure display helpers moved verbatim
+      to `backend/src/controllers/history/controller.py` -- checked for NiceGUI,
+      database and engine references first, all six clean. `history.py` is
+      1,794 -> 1,644 LOC. Their tests moved with them to
+      `tests/controllers/test_history_controller.py`, and coverage went 13 -> 21:
+      `parse_reason` and both broker-timestamp helpers had none at all.
 - [ ] Step 3: split the `_render_*` functions into separate view files.
 - [ ] Step 4: retire the shim and update `frontend/app.py`'s tab registry.
 - [ ] The two `sqlite3.connect()` sites open *other* database files — the opposite
