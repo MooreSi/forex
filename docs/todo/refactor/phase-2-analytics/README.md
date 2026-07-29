@@ -50,13 +50,21 @@ read-only check before it moves.
 
 ## Still to do
 
-- [ ] Drain `frontend/pages/history.py` (1,794 LOC) using the four-commit
-      sequence: queries to `read_repo.py`, then shaping to `controller.py`, then
-      split the views, then retire the shim.
-- [ ] The two `sqlite3.connect()` sites at `history.py:66` and `:987` open *other*
-      database files — the opposite environment's, and the signal-generator's.
-      They need named adapters (`init_db(path, namespace=...)`), not folding into
-      the main repo. Doing that wrong is a correctness regression, not a tidy-up.
+- [x] **Step 1 of draining `history.py`: SQL extracted.** All eight inline
+      queries moved to `trade_history_repo.py`; the page's SQL count went 9 -> 1
+      and the repo-wide total 240 -> 232. Only the queries moved -- every line of
+      shaping stayed where it was, so the page diff is "expression moved" and a
+      behaviour change could not hide inside a relocation.
+- [ ] Step 2: shaping (`_parse_reason`, `_fmt_duration`, `_strategy_display_label`,
+      `_broker_ts_to_uk_date`) to `controller.py`, returning plain dicts.
+- [ ] Step 3: split the `_render_*` functions into separate view files.
+- [ ] Step 4: retire the shim and update `frontend/app.py`'s tab registry.
+- [ ] The two `sqlite3.connect()` sites open *other* database files — the opposite
+      environment's, and the signal-generator's. They are the reason `history.py`
+      still reports one SQL statement rather than zero. They need named adapters
+      (`init_db(path, namespace=...)`); folding them into the main repo would make
+      them read the wrong database, which is a correctness regression rather than
+      a tidy-up.
 - [ ] `edge_dashboard.py` (283) and `ai_summary.py` (491). `edge_dashboard`
       already imports no database module, so it is the cleanest template.
 - [ ] Split `core_orb_report.py` — report builder here, `orb_auto_execute` deferred
