@@ -40,7 +40,8 @@ rejected it. Shrink-only applies to this work too, so the change was tightened u
 | 8 | Resolve `suggest_lot_size` | done | Owner chose one implementation with the ceiling applied. `engine.py`'s copy deleted; method delegates. CI green. |
 | 9 | Fix the reference-repo transaction gap | done | `test_signal_repo.insert_signal` now atomic. Two of the three original findings were the gate's own false positives (DDL); gate corrected, offenders fell 16 files/35 fns -> 5/9. |
 | 10 | Make the suite runnable and deterministic | done | Clock plugin (120 failures), pytest-asyncio (26), settings-cache isolation (the flakiness). Session-start hook installs the environment. |
-| 11 | Fix the shared settings cache | done | `database.init()` now invalidates `_rs_cache`. Root cause of the test flakiness **and** a live demo/live-switch bug. Regression test added. |
+| 11 | Fix the shared settings cache | done | `database.init()` now invalidates `_rs_cache`. A live demo/live-switch bug as well as a test one. Regression test added. |
+| 12 | Eliminate the suite flakiness | done | Three causes, not one: two time-keyed caches (now behind a `register_cache_invalidator` registry) and, mainly, seven test modules freezing a "fresh" timestamp at import time so it aged past the 4-minute staleness threshold before the tests ran. **1996 passed, 0 failed.** |
 
 ## What validation was actually done
 
@@ -112,6 +113,10 @@ which fails without the fix.
 
 ## Blockers / open
 
-- None blocking Phase 1. Remaining open items are decisions, not blockers — QUESTIONS.md
-  Q2 (is a separate live deployment still running?) and Q4 (delete or wire the five
-  remaining orphans).
+- None. Q4 is resolved: the five orphans were deleted 2026-07-27, dead code in `core/`
+  fell from 456 LOC to 8, and the delegation allowlist is empty.
+- The suite is green and deterministic, so it can now serve as the regression oracle the
+  later phases need.
+- QUESTIONS.md Q2 (is a separate live deployment still running?) remains unanswered. It
+  does not block Phase 2, which is read-only, but it should be settled before phases 6-8
+  touch the broker and trading paths.

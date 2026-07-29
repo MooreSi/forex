@@ -59,72 +59,64 @@ Two packages are deliberately not required:
   build on Python 3.11. Only the live Telegram client needs it. The hook attempts
   it and carries on if it fails.
 
-## The flakiness, and what actually caused it — mostly fixed
+## The flakiness — FIXED
 
-Before this was understood, repeated runs of *identical code* produced 20, 32,
-33, 39, 40, 41 and 58 failures. The failures clustered in
-`tests/core/test_scan_messages_*`, and those files passed 53/53 in isolation.
+Repeated runs of *identical code* once produced 20, 32, 33, 39, 40, 41 and 58
+failures, always clustered in `tests/core/test_scan_messages_*`, and those files
+passed in isolation. It took three separate fixes, because there were three
+independent causes wearing the same costume.
 
-Bisecting for a polluting file found nothing, twice: the set of files collected
-*before* the failures passed, and the set collected *after* passed too. That
-ruled out ordering, which is what pointed at the real cause.
+### 1. Caches keyed on time, not on which database is open
 
-**`get_risk_settings()` caches for ten seconds, keyed on nothing but time.**
+`get_risk_settings()` memoised for `_RS_CACHE_TTL = 10` seconds keyed on nothing
+but time. Every test builds its own temp database, so a test that only *read*
+settings within ten seconds of another silently received the previous test's
+values from a file already deleted.
+
+`core_strategy_params._cache` had an identical 10-second TTL and the same defect.
+Finding the same bug twice is why `database.init()` now owns a **cache
+invalidator registry** (`register_cache_invalidator`) rather than clearing each
+one by hand — the next such cache is a one-line registration, not a third bug.
+
+**Both were live bugs, not test artefacts.** `cmd_switch_env`
+(`core_bot_commands_infra.py:196`) re-points the database at the other
+environment's file, so for up to ten seconds after a demo/live switch the app
+served the other environment's risk settings *and* strategy parameters — session
+gates and the Max Risk per trade % ceiling included.
+`tests/core/test_database_init_env_switch.py` covers it and fails without the fix.
+
+### 2. "Fresh" timestamps frozen at import time — the main cause
+
+Seven test modules did this at module level:
 
 ```python
-_RS_CACHE_TTL = 10.0   # core_db_risk_settings.py:28
+_NOW_ISO = datetime.now(timezone.utc).isoformat()
 ```
 
-Every test builds its own temp database. A test that only *reads* settings
-within ten seconds of a previous one silently received the previous test's
-values — from a database file already deleted. `update_risk_settings()`
-invalidates the cache, so tests that write were safe; tests that read were not.
-That makes the suite **timing**-dependent rather than order-dependent, which is
-why the count wandered, why bisection failed, and why the slower
-`test_scan_messages_*` files took the brunt.
+That is evaluated once during **collection**, before any test runs. Production
+treats a signal older than `_MAX_SIGNAL_AGE_SECS` (4 minutes,
+`core_scan_messages_staleness_strategy.py:30`) as stale. The full suite takes
+5–6 minutes, so by the time these tests executed, their "fresh" message was
+older than the threshold and the code correctly rejected it as stale. The tests
+were wrong, not the code.
 
-Two changes fix it:
+This explains every symptom that made it look mysterious:
 
-1. **`database.init()` now invalidates the cache** (`forex_trader/core/database.py`).
-   This is the real fix, and it is not test-only — see below.
-2. **An autouse fixture in `tests/conftest.py`** clears the cache around every
-   test, covering all 119 modules regardless of which of the 17 local `fresh_db`
-   variants they define. It only clears a cache, so it cannot change what any
-   test asserts — only which database answers it.
+| Symptom | Why |
+|---|---|
+| Passes in isolation | collection-to-execution gap ≈ 0s |
+| Fails in the full suite | those files run last; gap exceeds 4 minutes |
+| Count varies run to run | a slower machine widens the gap |
+| Bisection found nothing | no single file was polluting; elapsed time was |
+| Adding any one directory did not reproduce | not enough extra runtime to cross 4 minutes |
 
-### The same bug was live in production
+The fix is to evaluate the timestamp per call rather than at import. Each of the
+seven modules now has a `_now_iso()` / `_fresh_ts()` function.
 
-`cmd_switch_env` (`core_bot_commands_infra.py:196`) re-points the database at the
-other environment's file via `db_module.init(...)`. It did not clear the settings
-cache, so for up to ten seconds after a demo/live switch the app kept answering
-with the **other environment's risk settings** — the session gates and the Max
-Risk per trade % ceiling among them.
+### Result
 
-`init()` already closed stale per-thread connections, with a comment describing
-an exactly analogous demo/live bug found 2026-07-21. The cache one layer up was
-missed. `tests/core/test_database_init_env_switch.py` now covers it, and that
-test fails without the fix.
-
-### What is left
-
-On an idle machine the suite goes fully green — **2022 passed, 0 failed**,
-reproduced. Under CPU contention a handful of `test_scan_messages_*` tests still
-flake: runs taken while other suites were running concurrently gave 14 and 41
-failures, always from that same cluster.
-
-So the range narrowed from 20–58 down to 0–14, and it is now clearly
-load-sensitive rather than mysterious. Practical guidance:
-
-- **Run the suite on its own.** Do not run two suites concurrently, which is what
-  produced every non-zero result recorded here.
-- **A non-zero count in `test_scan_messages_*` alone is not a regression** — re-run
-  before investigating. A failure anywhere else is real.
-
-The residual cause is still unidentified. It is not ordering: those files pass in
-isolation, and pass when combined with any single other directory. It only appears
-under the full suite plus load, which points at something cumulative and
-time-sensitive rather than a specific polluting module. Worth finishing when
-`signals/` is migrated, since that is the code involved.
+**1996 passed, 0 failed**, reproduced. No quarantine, no re-run rule, no
+"failures in this cluster are expected" caveat — the suite means what it says.
 
 ## Auditing tools
 
