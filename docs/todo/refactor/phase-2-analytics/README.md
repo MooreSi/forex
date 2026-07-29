@@ -1,0 +1,79 @@
+# Phase 2 — analytics
+
+**Status:** in progress
+**Started:** 2026-07-27
+
+## Why analytics goes first
+
+It is the only domain with no order path at all. Nothing here can place, modify
+or close a trade, so a mistake costs a wrong number on a dashboard rather than a
+wrong position. That makes it the right place to prove two things the remaining
+eight phases depend on:
+
+1. **The repo pattern against real SQL.** `frontend/pages/history.py` holds the
+   ugliest queries in the codebase — 11 inline statements including multi-table
+   joins onto `vantage_ladder_legs`, plus two `sqlite3.connect()` calls that open
+   *different database files*.
+2. **The view/controller split**, on pages nobody's account depends on.
+
+## What has moved so far
+
+```
+core/core_db_analytics.py    -> backend/src/services/analytics/read_repo.py
+core/core_trade_reporting.py -> backend/src/services/analytics/reporting.py
+```
+
+Both verified SELECT-only before moving: no `INSERT`/`UPDATE`/`DELETE`, no call
+into `open_trade`/`close_trade`/`place_order`.
+
+## `core_orb_report.py` does NOT belong here
+
+The plan listed it under `analytics/`. That is wrong, and the check caught it:
+
+```python
+# core_orb_report.py:338
+async def orb_auto_execute(report: dict, bridge: Any, is_active_trader_node: bool) -> None:
+```
+
+It **places a genuine EA pending limit order** at the reload level. The
+report-building half is read-only analytics; `orb_auto_execute` is a trading
+surface and carries the same real-money risk as anything in phase 8.
+
+Moving it wholesale into a phase defined as "no order path" would have quietly
+put an order-placing function inside the domain whose entire safety argument is
+that it has none. It stays in `core/` until it can be split — the report builder
+to `analytics/`, `orb_auto_execute` to `trading/` in phase 8.
+
+Worth noting the plan's other domain assignments were made from module names and
+line counts. This one was wrong; others may be. Each module gets the same
+read-only check before it moves.
+
+## Still to do
+
+- [ ] Drain `frontend/pages/history.py` (1,794 LOC) using the four-commit
+      sequence: queries to `read_repo.py`, then shaping to `controller.py`, then
+      split the views, then retire the shim.
+- [ ] The two `sqlite3.connect()` sites at `history.py:66` and `:987` open *other*
+      database files — the opposite environment's, and the signal-generator's.
+      They need named adapters (`init_db(path, namespace=...)`), not folding into
+      the main repo. Doing that wrong is a correctness regression, not a tidy-up.
+- [ ] `edge_dashboard.py` (283) and `ai_summary.py` (491). `edge_dashboard`
+      already imports no database module, so it is the cleanest template.
+- [ ] Split `core_orb_report.py` — report builder here, `orb_auto_execute` deferred
+      to phase 8.
+
+## Verification
+
+Full suite after every step: **1996 passed, 0 failed**. All four structure
+ratchets green. `python3 -m tools.refactor_audit.check_syntax` runs immediately
+after any bulk import rewrite — see below.
+
+### A repeated mistake, now automated away
+
+A bulk `sed` rewrite broke the tree twice in this refactor, both times
+identically: a rule written for `from X import Y` applied to
+`from X import Y as Z` and produced a double `as`. The second time was *after*
+the lesson had been written into the Phase 1b commit message.
+
+`tools/refactor_audit/check_syntax.py` now parses every file in about a second
+and names the exact file and line. Writing it down did not work; running it does.
