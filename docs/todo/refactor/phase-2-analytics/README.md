@@ -63,12 +63,23 @@ read-only check before it moves.
       `parse_reason` and both broker-timestamp helpers had none at all.
 - [ ] Step 3: split the `_render_*` functions into separate view files.
 - [ ] Step 4: retire the shim and update `frontend/app.py`'s tab registry.
-- [ ] The two `sqlite3.connect()` sites open *other* database files — the opposite
-      environment's, and the signal-generator's. They are the reason `history.py`
-      still reports one SQL statement rather than zero. They need named adapters
-      (`init_db(path, namespace=...)`); folding them into the main repo would make
-      them read the wrong database, which is a correctness regression rather than
-      a tidy-up.
+- [x] **Both cross-database reads resolved, and one turned out to be dead.**
+      `_query_env_db` — a generic "run this SQL against the other environment's
+      database" helper — had **no callers at all**, and `_get_env_db_path` was
+      called only by it. Both deleted rather than adapted; building a careful
+      adapter for code nothing runs would have been worse than the raw
+      `sqlite3.connect()` it replaced.
+
+      The live one, the signal generator's `test_analysis_log`, became
+      `signal_lab_repo.py`: a named adapter opened `mode=ro`, returning dicts, and
+      degrading to an empty overlay when the file or table is absent (both normal
+      on a fresh install). Folding it into `trade_history_repo` would have pointed
+      it at the *trading* database, where the table does not exist, and the
+      calendar's surrounding `try`/`except` would have swallowed the error and
+      rendered a blank overlay — a silent wrong-database read.
+
+      **`history.py` now contains zero raw database access**: no `sqlite3`, no SQL
+      string, no `db_module.db()`. 1,644 -> 1,613 LOC.
 - [ ] `edge_dashboard.py` (283) and `ai_summary.py` (491). `edge_dashboard`
       already imports no database module, so it is the cleanest template.
 - [ ] Split `core_orb_report.py` — report builder here, `orb_auto_execute` deferred
