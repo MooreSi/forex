@@ -1,6 +1,6 @@
 # Phase 5 — telegram transport + signals ingestion
 
-**Status:** 5a done (transport); signals/ and the engine fat-method dissolves remain
+**Status:** 5a + 5b done; engine fat-method dissolves remain
 
 ## 5a — transport (done 2026-07-27)
 
@@ -27,11 +27,25 @@ functions** — the audit's opening headline of 456 LOC of extracted-but-dead co
 is fully resolved (five deleted, two delegated, the trivial defaults moved out
 with their services).
 
+## 5b — signals ingestion (done 2026-07-27)
+
+Eight modules to `backend/src/services/signals/`: parser, repo, tg_repo,
+resolution, pending_activation, and three of the four scan_messages packs
+(parse_classify, staleness, edit_reparse). Broker use in the package is
+read-only (`bridge.get_tick`).
+
+**Four more excluded by the broker check** — all make real `modify_order` or
+`open_trade` calls and stay in core/ for the trading phases:
+core_update_signal, core_instant_entry, core_instant_followup,
+core_scan_messages_auto_execute. Seven modules total have now been kept out of
+service packages by that check.
+
+The orphan tests' synthetic examples were rewritten onto a fictional module
+name (`core_zz_example`) after a bulk rewrite reached into them for the second
+phase running — no future move can touch them now.
+
 ## Remaining
 
-- [ ] signals/: signal_parser, core_signals, core_tg_signals, core_update_signal,
-      core_pending_signal_activation, core_instant_entry/followup, the four
-      core_scan_messages_* packs — each needs the broker check; several take
-      injected open/close callbacks and should pass.
 - [ ] Dissolve engine.py's `_scan_messages` (321 LOC) and `_bot_command_loop`.
 - [ ] Split reader.py under the 800 ceiling.
+- [ ] The four broker-calling ingestion modules move with phases 6-8.
