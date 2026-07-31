@@ -18,8 +18,12 @@ calls before moving, not assumed safe from its name — the check that caught
 
 ## To do
 
-- [ ] **ai/** — ai_provider, claude_ai, ai_signal_extractor,
-      core_ai_signal_fallback, core_db_commentary, core_db_ai_recovered.
+- [x] **ai/** — five modules moved: claude_ai, provider (was ai_provider),
+      signal_extractor, commentary_repo, recovered_repo. **core_ai_signal_fallback
+      stays in core/**: the broker check found a real `bridge.modify_order` at
+      line 232 (SL adjustment on a live position). Second real catch for that
+      check after orb_auto_execute. recovered_repo carries its pre-existing
+      3 unwrapped multi-write functions to the new path (rename, not growth).
 - [ ] **channels/** — core_db_channel (644, splits along the transport/policy
       seam), core_db_channel_parser, core_db_learned_rules, core_db_unrecognised,
       channel_strategy_ai, ai_rule_generator.
