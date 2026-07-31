@@ -51,7 +51,7 @@ baseline is auditable.
 
 ---
 
-## 2. Is the app running from this repo, or is there a live copy elsewhere?
+## 2. Is the app running from this repo, or is there a live copy elsewhere? — ANSWERED
 
 The old docs repeatedly reference a live app at `/Users/simon/Documents/FOREX`
 and a separate `MooreSi/forex` remote, with a standing rule never to touch them.
@@ -67,7 +67,12 @@ carefully every later phase has to be sequenced.
   only copy, or whether a separate live deployment is still trading. If the
   latter, we need to know how changes reach it before Phase 1 starts.
 
-**ANSWER:**
+**ANSWER (owner, 2026-07-27):** Do not worry about the `/Users/...` directory —
+nothing may be hardcoded to it, the app must run ANYWHERE. If something else is
+running elsewhere it is not this work's concern. A sweep confirmed zero
+functional hardcoded `/Users/` paths in the codebase (three comment/docstring
+mentions only, one of them the protective "must NEVER default to that path"
+note in config). This unblocks the sequencing caution on phases 6-8.
 
 ---
 
