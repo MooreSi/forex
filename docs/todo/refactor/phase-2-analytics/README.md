@@ -80,10 +80,22 @@ read-only check before it moves.
 
       **`history.py` now contains zero raw database access**: no `sqlite3`, no SQL
       string, no `db_module.db()`. 1,644 -> 1,613 LOC.
-- [ ] `edge_dashboard.py` (283) and `ai_summary.py` (491). `edge_dashboard`
-      already imports no database module, so it is the cleanest template.
-- [ ] Split `core_orb_report.py` — report builder here, `orb_auto_execute` deferred
-      to phase 8.
+- [x] **`edge_dashboard.py` and `ai_summary.py` drained.** edge_dashboard's whole
+      data layer (registry, mode=ro query helper, stats/heatmap math) became
+      `edge_stats.py`; the page is widgets only. ai_summary's three inline reads
+      joined `read_repo`. The real find was a latent import-order trap this
+      exposed: `database.py` eagerly re-imported five analytics names and
+      `core_db_channel` imported two helpers back, so whichever module was
+      imported first decided whether the process bootstrapped. Both edges are now
+      lazy and both import orders are verified.
+- [x] **`core_orb_report.py` split.** The four report functions (range detection,
+      volume profile, backtested target multiple) moved to
+      `services/analytics/orb_report.py`; `orb_auto_execute` — the EA
+      order-placing half — stays in `core/` for phase 8. The halves were verified
+      disjoint first: auto-execute takes the finished report as an argument and
+      shares no constants with the builders. One documented exception to the
+      no-writes rule: `get_orb_target_multiple` memoises its daily backtest into
+      `app_config`, a self-cache of a statistic, not trading state.
 
 ## Verification
 
