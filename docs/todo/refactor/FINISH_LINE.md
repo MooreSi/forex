@@ -33,13 +33,19 @@ frontend pages' 17 (fall to M3, where each becomes a controller call), and
 one docstring false-positive. The ratchet baseline is tightened to match,
 so none of it can come back.
 
-### M2. File splits over 800 LOC (~2 sessions, mechanical)
-22 files over the ceiling. About half resolve by other milestones
-(trading.py, settings.py, runtime.py shrink via M4/M3). Independent
-mechanical splits: telegram `reader.py` (1,037), `ea_bridge.py` (816),
-backtest `engine.py` (1,125), remote/sync servers and clients (867–1,196),
-`email_service.py` (946), test_signal `signal_generator.py` (1,052) and
-`ml_engine.py` (896).
+### M2. File splits over 800 LOC — backend services DONE, 16 files remain
+Five splits landed 2026-08-01 (email_service, telegram reader,
+backtest engine, signal_generator, test_signal ml_engine — plus ea_bridge
+dropped under the ceiling via M1). Of the 16 still over:
+- 9 are frontend pages / frontend app → resolve in **M3**'s page drains.
+- `runtime.py` → **M4**; `database.py` → the shim split after the test
+  fixture migration.
+- `remote/{server,client}.py`, `sync/{server,client}.py` (867–1,196):
+  **deliberately deferred** — all four keep module-level state that is
+  REBOUND via `global` (e.g. `_allowed_tokens = json.load(...)`), so a
+  naive split would silently fork that state between modules. They need a
+  small state-module refactor first (attribute access instead of module
+  globals), a careful pass on a security-sensitive path.
 **Decision needed:** `mt5_bridge.py` (1,335) deliberately stays at the repo
 root as a subprocess under a different Python — split it in place, or
 grant it a permanent exemption?
