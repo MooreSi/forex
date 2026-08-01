@@ -24,12 +24,14 @@ Suite: 2005 passed, 5 skipped, 0 failed. All CI gates green and ratcheting.
 Ordered by the sequence that makes each one cheapest. "Session" ≈ one long
 working day of Claude time.
 
-### M1. SQL into repos (~1–2 sessions, safe, mechanical)
-230 SQL statements in 67 files sit outside `*repo*.py`. Most are inside the
-service that owns them — the fix is moving each query into that service's
-existing repo file, same call order, characterization-covered. The counter
-is already a shrink-only CI gate; this drives it toward zero. The 13 in
-`runtime.py` and 11 in `ea_bridge.py` fold into M3/M2 respectively.
+### M1. SQL into repos — ✅ DONE (2026-08-01, four batches, commits 4889f69..590af45)
+Was 230 SQL statements in 67 files; now 31 in 8. **Backend services carry
+zero inline SQL** — every statement lives in its service's repo, with
+formerly-atomic multi-statement blocks as explicit `transaction()`
+functions. The 31 that remain are runtime.py's 13 (fall to M4), the
+frontend pages' 17 (fall to M3, where each becomes a controller call), and
+one docstring false-positive. The ratchet baseline is tightened to match,
+so none of it can come back.
 
 ### M2. File splits over 800 LOC (~2 sessions, mechanical)
 22 files over the ceiling. About half resolve by other milestones
