@@ -77,6 +77,24 @@ enforcing contracts (import-linter): frontend→controllers only; no nicegui
 in backend; controllers never import repos; signals never import broker;
 utils/config import nothing.
 
+### M7. Expert Tunables (NEW, 2026-08-02 — needs full plan + build)
+Prompted by Q3: "things like that should all be configurable." The full
+inventory and proposal live in **CONFIG_AUDIT.md** (same directory): nine
+storage mechanisms exist with no written rule for which tier a setting
+belongs in, and ~135 behavior constants are hardcoded in services — ~15 of
+them (minimum R:R filter, directional cap, IME stop bounds and timeout,
+pending-signal expiry, staleness cutoff, TP ladder fractions, broker-close
+miss threshold…) are genuinely trader-facing. Plan: one declarative
+`EXPERT_PARAMS` catalogue (key, label, default, safe min/max, unit, desc,
+domain) reusing the proven Strategy-Parameters storage path (DB override
+merged over defaults, node-synced, cache-invalidated on env switch),
+rendered generically as **Settings → Expert Tunables** with per-row
+reset-to-default. Defaults stay byte-identical — nothing trades
+differently until a dial is moved. Owner decisions before build: approve
+the Tier-A starter list, safe ranges per value, and whether the hardcoded
+Telegram group IDs become channel config. Because several values gate
+order placement, the built page gets a pass in the M6 demo session.
+
 ### M6. The demo-gated work (needs your brother, then ~1 session)
 Re-extract the CloseTradeContext cluster — the five modules deleted in the
 audit because their extractions were built on a broken partial context.
