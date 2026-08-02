@@ -50,15 +50,18 @@ dropped under the ceiling via M1). Of the 16 still over:
 root as a subprocess under a different Python — split it in place, or
 grant it a permanent exemption?
 
-### M3. Drain the frontend pages (~3–4 sessions, the big one)
-13 pages still import the database directly (22 imports). Per page, the
-proven four-commit procedure: queries → service repo; data-shaping →
-`controllers/<name>/controller.py`; page becomes widgets + controller
-calls; registry update. Largest: `trading.py` (3,290), `settings.py`
-(3,204), `ai_trade_analysis.py` (1,721), `history.py` (1,613, already
-half-drained). Finishing this flips the frontend import contract from
-counted to **enforced** — the point where `frontend/` can only see
-`controllers/`.
+### M3. Drain the frontend pages — ✅ DONE (2026-08-01, four batches)
+**The frontend no longer touches the database at all: 0 files, 0
+imports** (was 13 files / 22 imports). Every page and the app shell now
+go through `backend/src/controllers/` — dpm, telegram, settings,
+remote_node, chart, engines (shared by the three panels), ai_analysis,
+history (which also took over the ticket-map builders and the
+trade-source/channel label helpers), and trading. Same queries, same
+DB-worker-thread dispatch, plain dicts back. The ui_db ratchet baseline
+is now **zero**, so any new frontend DB import is an instant CI failure —
+the boundary enforces itself. (The pages still exceed 800 lines; the
+widget-level file splits are cosmetic and can ride along with future page
+work.)
 
 ### M4. Dissolve `runtime.py` into TradingRuntime (~2 sessions, after M3)
 3,143 LOC today. 110 of its 142 methods are pure one-line wrappers
