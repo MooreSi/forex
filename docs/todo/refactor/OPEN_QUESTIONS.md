@@ -94,7 +94,29 @@ against a real account's risk appetite.
 
 ---
 
-## 6. Smaller things I decided rather than asked
+## 6. Non-atomic writes in the per-engine research databases
+
+`transaction()` wrapping went from 8 undeclared multi-write functions to 5.
+The three in the **main trading database** are fixed. The remaining ones
+are not a rename away:
+
+`reversal_engine/database.py::close_signal` opens **three separate
+connections** — update the signal, update the balance, write
+`balance_after` — with no transaction spanning them. If the process dies
+between the first and the third, the signal reads as closed with its
+`balance_after` unset. Same shape in `upsert_daily_correlation`,
+`upsert_level` and `test_signal/database.py::insert_signal`.
+
+The cause is that each engine's `_conn()` opens a *fresh* connection per
+call and does not nest, unlike the main DB's `db()`, which counts depth so
+the outermost block is the commit boundary. Fixing it properly means giving
+`_conn()` that behaviour.
+
+**Not done here** because it changes an engine's data layer rather than
+renaming a call, and these are research/analysis databases rather than the
+trading one. Worth doing; wanted flagging rather than half-doing.
+
+## 7. Smaller things I decided rather than asked
 
 - **`SimulationEngine` → `TradingRuntime` rename.** Done as its own
   mechanical commit, as planned. The class is a runtime, not a simulator;
@@ -106,3 +128,33 @@ against a real account's risk appetite.
   one in `tests/conftest.py`) was done opportunistically on files this run
   touched, not exhaustively. The rest is safe, mechanical, and can happen
   whenever.
+- **runtime.py is ~1,300 lines, not the documented <400.** That target
+  assumed dissolving the class entirely. The plan chose a curated facade
+  instead, for good reasons recorded in FINISH_LINE.md, and ~1,300 is that
+  design's floor. If you want <400, the facade has to go, and roughly 90
+  call sites start hand-carrying collaborators.
+- **M5 used the repo's own ratchet idiom rather than import-linter**, which
+  the plan named. Same interface as the other gates, no new dependency, and
+  it supports baselines — which the three unfinished contracts need and
+  import-linter does not provide.
+
+## 8. Things this run found that you may not know about
+
+- **The installer had been unbuildable since the restructure.** It packaged
+  `forex_trader\*`, deleted three milestones ago; Inno Setup fails at
+  compile time on a source path matching nothing. The `.exe` sitting in the
+  repo root predates that and is stale. Fixed, with a test.
+- **`delegation_checker.py` had been enforcing nothing.** It globbed
+  `forex_trader/core/`, which no longer exists, so it printed "every method
+  delegates" on every run regardless. It was one of the guardrails the
+  previous effort cited as evidence of completeness. Deleted; `facade_audit`
+  replaces it.
+- **Three names were imported from `runtime.py` by other modules** while
+  being unused inside it. A dead-import sweep deleted them and broke a test
+  at import time. Restored as explicit re-exports, and the sweep's test now
+  scans for external importers first.
+- **The Telegram bot loop's 409 back-off and single pooled HTTP client**
+  turn out to be load-bearing, not incidental: one client per poll meant a
+  TLS handshake per second, and the back-off is what stops a paired
+  Mac/VPS install from fighting over the bot token. Preserved verbatim and
+  documented where they now live.
