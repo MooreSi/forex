@@ -138,7 +138,39 @@ trading one. Worth doing; wanted flagging rather than half-doing.
   it supports baselines — which the three unfinished contracts need and
   import-linter does not provide.
 
-## 8. Things this run found that you may not know about
+## 8. The remote/ auth subsystem has no tests — and I did not split it
+
+The plan listed `remote/{server,client}.py` and `sync/{server,client}.py`
+(867–1,196 lines each) as files to split under the 800-line ceiling,
+deferred because "all four keep module-level state rebound via `global`".
+
+Two things turned out to be true that change the recommendation.
+
+**First, that claim is only really true of one file.** `sync/server.py` and
+`sync/client.py` have exactly one `global` each — a singleton `_instance`
+accessor, the most ordinary pattern there is. `remote/client.py` has three,
+all the same task handle. Only `remote/server.py` carries real rebound
+state: `_allowed_tokens`, `_revoked_tokens`, `_admin_machines` and five
+keygen hooks.
+
+**Second, and more importantly: `backend/src/controllers/remote/` has zero
+test coverage.** Not thin coverage — no test in the repo imports it. That
+is 2,116 lines handling licence token issuance, revocation, and which
+machines hold admin rights.
+
+So I did not split them. Splitting an untested, security-sensitive auth
+server to satisfy a line-count heuristic is the wrong trade, and the
+ceiling is a code-health signal, not a correctness rule.
+
+**The recommendation is the inverse of the original task:** the valuable
+work here is not splitting `remote/server.py`, it is *testing* it — token
+issue/revoke/reinstate, the admin-machine gate, and what happens when the
+token store is missing or corrupt. Once that exists, a split is
+mechanical and safe. Until then, a split is a coin flip on the auth path.
+
+I have left it entirely alone rather than half-doing it.
+
+## 9. Things this run found that you may not know about
 
 - **The installer had been unbuildable since the restructure.** It packaged
   `forex_trader\*`, deleted three milestones ago; Inno Setup fails at

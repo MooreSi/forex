@@ -1,7 +1,7 @@
 # Where the finish line is
 
 Status as of 2026-08-03, branch `claude/refactor-plan-docs-pjn1hl`.
-Suite: **1925+ passed, 5 skipped, 0 failed.** All gates green and ratcheting.
+Suite: **1989 passed, 6 skipped, 0 failed.** All gates green and ratcheting.
 
 ## Done — the plan's structural end state is reached
 
@@ -23,9 +23,15 @@ blocks are explicit `transaction()` functions. Ratchet pinned at zero.
 Backend service splits landed. Still over the ceiling and deliberately so:
 - `mt5_bridge.py` (1,335) — runs under a *different Python interpreter*
   (Wine/Windows). **Owner decision** in OPEN_QUESTIONS.md §2.
-- `remote/{server,client}.py`, `sync/{server,client}.py` — all four rebind
-  module-level state via `global`, so a naive split forks that state. Needs
-  a state-module refactor first, on a security-sensitive path.
+- `remote/{server,client}.py`, `sync/{server,client}.py` — **deliberately
+  not split, and the reason changed.** The recorded rationale ("all four
+  rebind module state via `global`") holds for `remote/server.py` only;
+  the two sync files have a single singleton `_instance` each. What
+  actually blocks the work is that `controllers/remote/` — 2,116 lines of
+  licence-token issuance, revocation and admin-machine authority — has
+  **zero test coverage**. Splitting untested auth code for a line-count
+  target is the wrong trade. Test it first; then the split is mechanical.
+  See OPEN_QUESTIONS.md §8.
 - The frontend pages remain large; widget-level splits are cosmetic.
 
 ### M3. Drain the frontend pages — ✅ DONE
