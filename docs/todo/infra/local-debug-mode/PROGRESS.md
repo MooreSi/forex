@@ -23,8 +23,8 @@ session, both recorded in Notes.
 
 | # | Task | Money | Status | Owner | Notes |
 |---|---|---|---|---|---|
-| 010 | [debug-config](010-debug-config.md) | no | not started | — | flag name pending QUESTIONS #5 confirm |
-| 020 | [fake-mt5-bridge](020-fake-mt5-bridge.md) | **YES** | not started | — | `/safe-change` first; seam = `runtime.py:170` |
+| 010 | [debug-config](010-debug-config.md) | no | done (2026-08-10) | Claude/Darren | `debug_mode` flag (env FOREX_DEBUG_MODE > yaml), `is_debug()`, DB isolated to forex_trader_debug.db. 7 tests. Full suite confirming. |
+| 020 | [fake-mt5-bridge](020-fake-mt5-bridge.md) | **YES** | surface mapped, ready to build | — | 21-method surface documented in task file; `/safe-change` first; fake+tests non-money, only `runtime.py:170` seam is Simon-gated |
 | 030 | [fake-telegram](030-fake-telegram.md) | no | not started | — | |
 | 040 | [fake-news-ai-email](040-fake-news-ai-email.md) | no | not started | — | |
 | 050 | [debug-licence](050-debug-licence.md) | no | not started | — | blocked on QUESTIONS #1 (Simon sign-off) |

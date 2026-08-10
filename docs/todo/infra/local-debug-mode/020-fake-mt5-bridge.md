@@ -93,6 +93,38 @@ assert, don't re-gate).
 - `python -m tools.checks all` green, output pasted into PROGRESS.md; owner sign-off + demo
   session recorded before Done.
 
+## Surface mapped (2026-08-10, ready for the build)
+
+Introspected `MT5BridgeClient` + `NativeMT5Bridge`. The duck-typed surface the fake must implement
+(all **async** except `is_configured`), grouped by what it needs:
+
+**Market (from FakeMarket tick engine):** `get_tick()`, `get_fresh_tick()` → `Tick(bid,ask,mid,
+spread,spread_points,timestamp,source)` (`utils/models.py:7`); `get_tick_at(ts)` → dict;
+`get_candles(timeframe='M5', count)`, `get_candles_for_symbol(symbol, timeframe='M5', count)`,
+`get_candles_range(from_ts, to_ts, timeframe)` → list[dict] OHLC.
+
+**Ledger / orders (money conventions — match the consumers, not just the client):**
+`place_order(direction, lots, sl, tp, ...)` → dict (success incl. `ticket`, or `{"error": ...}`);
+`close_position(ticket)`, `partial_close(ticket, lots)`, `modify_order(ticket, sl, tp)` → dict;
+`get_positions()`, `get_deal_history(days=7)`, `get_position_history(ticket)` → list[dict];
+`get_account()` → Optional[dict] (balance/equity/margin…).
+IMPORTANT: the client methods just pass HTTP through to `mt5_bridge.py`, so the authoritative dict
+shapes are what the CONSUMERS read — trace `open_trade.py` / `monitor_loop.py` / `sim_account.py`
+for the exact keys before finalising `place_order`/`get_positions` returns.
+
+**Passive / lifecycle (benign stubs):** `is_configured()` → True (sync); `startup()`,
+`shutdown()` → None; `enable_autotrading()`, `reconnect()`, `get_health()`,
+`send_credentials(...)` → benign dict. Plus a `url` attribute.
+
+Deterministic FakeMarket sketch (no Math.random — closed-form so `get_tick_at` works):
+`mid(step) = start + 5*sin(step/120) + 1.5*sin(step/17) + 0.4*jitter(step)`, jitter a seeded LCG
+in [-1,1]; timestamp = base_ts + step; spread fixed (~0.30). Split into `fake_market.py` to stay
+under the 800-line gate.
+
+**The build is Simon-gated only at the `_make_bridge` edit** — the fake + all its isolation tests
+(surface-match, ticks, order-lifecycle, error-injection) are non-money and can land first; leave
+the 3-line seam edit + `run.py` subprocess skip for the `/safe-change` + demo session.
+
 ## Notes
 
 The fake must be able to *misbehave on demand* — the unchecked-`modify_order` class of bug
