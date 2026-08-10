@@ -45,7 +45,7 @@ session, both recorded in Notes.
 | 3 | [040 split-database-py](phase3-expansion-tax/040-split-database-py.md) | no | not started | — | |
 | 3 | [050 frontend-hygiene](phase3-expansion-tax/050-frontend-exception-timer-hygiene.md) | no | not started | — | |
 | 3 | [060 money-path-coverage](phase3-expansion-tax/060-money-path-coverage-floors.md) | no | not started | — | |
-| 4 | [010 ci-job](phase4-hygiene/010-ci-job.md) | no | not started | — | |
+| 4 | [010 ci-job](phase4-hygiene/010-ci-job.md) | no | done — activates on push (2026-08-10) | Claude/Darren | repo+remote+gitignore already exist (Q003 corrected). `.github/workflows/checks.yml` runs `tools.checks all` on Windows on push/PR + guard tests. Red/green verification happens on first push. |
 | 4 | [020 test-layout](phase4-hygiene/020-test-layout-consolidation.md) | no | not started | — | |
 | 4 | [030 licence-signing](phase4-hygiene/030-licence-asymmetric-signing.md) | no | not started | — | |
 | 4 | [040 docs-of-what-shipped](phase4-hygiene/040-docs-of-what-shipped.md) | no | not started | — | last task before /spec done |
