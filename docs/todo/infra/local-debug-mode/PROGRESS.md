@@ -27,8 +27,8 @@ session, both recorded in Notes.
 | 020 | [fake-mt5-bridge](020-fake-mt5-bridge.md) | **YES** | surface mapped, ready to build | — | 21-method surface documented in task file; `/safe-change` first; fake+tests non-money, only `runtime.py:170` seam is Simon-gated |
 | 030 | [fake-telegram](030-fake-telegram.md) | no | not started | — | |
 | 040 | [fake-news-ai-email](040-fake-news-ai-email.md) | no | not started | — | |
-| 050 | [debug-licence](050-debug-licence.md) | no | not started | — | blocked on QUESTIONS #1 (Simon sign-off) |
-| 060 | [dashboard-login](060-dashboard-login.md) | no | not started | — | independent; can start any time |
+| 050 | [debug-licence](050-debug-licence.md) | no | done (2026-08-10) | Claude/Darren | `tools/generate_debug_licence.py` writes a GENUINE key (enforce() untouched, no bypass); installed + verified booting. Simon sign-off on the policy still pending (QUESTIONS #1). |
+| 060 | [dashboard-login](060-dashboard-login.md) | no | working — verified via Playwright | Claude/Darren | auth service (scrypt) + thin auth_controller + gate middleware + login page + storage_secret. debug/debug seed in debug mode. Browser-verified: /→/login→dashboard, session persists. CLI setter tool + BAR.md polish still TODO. |
 | 070 | [debug-banner](070-debug-banner.md) | no | not started | — | BAR.md must be edited+agreed by Darren first |
 | 080 | [e2e-offline](080-e2e-offline.md) | no | not started | — | needs 020–050 landed |
 | 090 | [docs](090-docs.md) | no | not started | — | last |
