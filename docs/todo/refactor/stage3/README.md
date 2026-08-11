@@ -1,6 +1,8 @@
 # Stage 3 — Simon-gated work (the money path)
 
-**Status:** blocked — needs Simon's sign-off + a demo session on his machine
+**Status:** ready for Simon — not started, but everything he needs to run the session is prepared:
+**[SIMON-SESSION.md](SIMON-SESSION.md)** is the agenda (decisions first, then per-task sign-off +
+demo on his machine)
 **Touches money:** YES — every task here changes order placement, closing, sizing or the halts.
 **Created:** 2026-08-11 (extracted from stage1 phase 1 so stage2 is workable today)
 
@@ -36,6 +38,7 @@ reasons the app is not yet safe to run live.
 | [030 broker↔DB reconciliation](030-broker-db-reconciliation.md) | Startup + periodic reconcile; broker is the source of truth for what exists | Kill the app between place and DB-record → the position is adopted once, not orphaned or duplicated |
 | [040 no DB close on a failed broker close](040-no-db-close-on-failed-broker-close.md) | Never record a DB close when the broker close failed/raised (route through the frozen wrappers) | Force a broker close-reject → DB stays open + an alert, not a phantom close |
 | [050 protective halts on by default](050-protective-halts-default-on.md) | Daily-loss / drawdown / circuit-breaker armed by default; un-swallow the breaker recording | Breach the daily-loss cap → new opens pause (nothing auto-closed) |
+| [060 debug-bridge seam](../infra/local-debug-mode/020-fake-mt5-bridge.md) | The 3-line `_make_bridge` debug branch + `run.py` bridge-skip. The fake + its tests already shipped (stage2 phase 5) — only this wiring waits on Simon | Debug OFF: boots against real MT5 exactly as today. Debug ON: offline boot, moving fake price, banner, zero outbound connections |
 
 ## Anchor specs
 

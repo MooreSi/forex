@@ -4,7 +4,8 @@
 session). A green suite is necessary but NOT sufficient — Notes must record Simon's sign-off + the
 demo session before any task is `done`.
 
-_Last updated: 2026-08-11 — extracted from stage1 phase 1; no code started._
+_Last updated: 2026-08-11 — pack is READY FOR SIMON: SIMON-SESSION.md is the agenda; 060 (debug
+seam) added so everything Simon-gated lives in one view. No money code started._
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit + **Simon sign-off + demo**)
@@ -22,6 +23,7 @@ _Last updated: 2026-08-11 — extracted from stage1 phase 1; no code started._
 | [030 broker↔DB reconciliation](030-broker-db-reconciliation.md) | YES | blocked (Simon) | — | startup + periodic; broker is source of truth |
 | [040 no DB close on failed broker close](040-no-db-close-on-failed-broker-close.md) | YES | blocked (Simon) | — | route through frozen wrappers |
 | [050 protective halts on by default](050-protective-halts-default-on.md) | YES | blocked (Simon) | — | daily-loss/drawdown/breaker armed; un-swallow recording |
+| [060 debug-bridge seam](../infra/local-debug-mode/020-fake-mt5-bridge.md) | YES | blocked (Simon) — implementation already built | — | fake + tests shipped 2026-08-11 (stage2 phase 5); only the 3-line _make_bridge branch + run.py skip await sign-off; selection pinned unchanged by tests/services/broker/test_make_bridge_debug.py |
 
 ## Decisions log
 - Extracted from stage1 phase 1 into its own Simon-gated stage so stage2 is workable today (source: user, 2026-08-11)

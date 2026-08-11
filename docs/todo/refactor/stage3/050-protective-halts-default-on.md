@@ -69,6 +69,11 @@ pause new opens only; they never auto-close existing positions.
 
 ## Notes
 
+- 2026-08-11 design review confirms both gaps with the mechanism otherwise well-designed (right
+  choke point, restart-safe, node-synced, alert-once): see
+  [docs/reviews/2026-08-11/handoff-readiness-review.md](../../../reviews/2026-08-11/handoff-readiness-review.md)
+  Part 1. Also un-swallow the sibling `[RG] post-close halt check skipped` debug-level except two
+  blocks above the breaker call site — same failure class, same fix, same frozen-path constraint.
 - Related: the check-then-act race on these same gates is phase2/030 — don't fix it here, but keep
   the gate call sites tidy for it.
 - Upgrade note for CHANGELOG (docs phase of this pack is folded into phase 4): existing users who
