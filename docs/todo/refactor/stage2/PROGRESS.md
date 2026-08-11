@@ -55,6 +55,20 @@ session, both recorded in Notes.
 ## Verification log
 Paste the real `python -m tools.checks all` output (or its tail) each time a task lands.
 
+- 2026-08-11 — 2026-08-11-review criticals C1+C2 (debug-boot refuses a real bridge via
+  `services/broker/debug_guard.py`; first-run dashboard password setup), red-first TDD;
+  C3 (CI test deps) landed separately the same day:
+  ```
+  structure gates        ok   (11.4s)
+  import contracts       ok   (7.7s)
+  runtime facade         ok   (0.3s)
+  orphan modules         ok   (3.0s)
+  boot smoke             ok   (5.3s)
+  doc links              ok   (0.4s)
+  test suite             ok   (359.0s)
+  coverage ratchet       ok   (0.3s)
+  All checks passed.
+  ```
 - 2026-08-11 — phase 1 (all five tasks):
   ```
   structure gates        ok   (5.2s)
