@@ -14,7 +14,7 @@ session, both recorded in Notes.
 
 ## Overall
 - Phase 1 (usability): **done** (2026-08-11) — all five tasks, TDD, checks green
-- Phase 2 (proper migrations): not started — unblocked
+- Phase 2 (proper migrations): **done** (2026-08-11) — registry, legacy fixtures, explicit backfills
 - Phase 3 (test remediation): not started — unblocked
 - Phase 4 (frontend split): blocked — Darren must answer the restructure QUESTIONS (0/4)
 - Phase 5 (debug complete): not started — 1 money task (fake-bridge wiring, Simon)
@@ -30,9 +30,9 @@ session, both recorded in Notes.
 | 1 | [030 tab subtitles & renames](phase1-usability/030-tab-subtitles.md) | no | done (2026-08-11) | Claude (for Darren) | components/tab_labels.py, rendered as tab tooltips; names kept (load-bearing) |
 | 1 | [040 real empty states](phase1-usability/040-empty-states.md) | no | done (2026-08-11) | Claude (for Darren) | components/empty_state.py; TG-signals + 2 history surfaces + day dialog |
 | 1 | [050 set-up-once / every-day](phase1-usability/050-setup-once-every-day.md) | no | done (2026-08-11) | Claude (for Darren) | components/about_home.py; About home regrouped; shares DAILY_ROUTINE with 020; shrank app.py under its LOC baseline |
-| 2 | [010 numbered migration runner](phase2-proper-migrations/010-migration-runner.md) | no | not started | — | out of database.py; builds on Aug-08 2/020 fail-closed core |
-| 2 | [020 legacy-DB upgrade tests](phase2-proper-migrations/020-legacy-upgrade-tests.md) | no | not started | — | fixtures per historical shape → head |
-| 2 | [030 retire except-pass backfills](phase2-proper-migrations/030-explicit-backfills.md) | no | not started | — | make the data backfills explicit |
+| 2 | [010 numbered migration runner](phase2-proper-migrations/010-migration-runner.md) | no | done (2026-08-11) | Claude (for Darren) | db/migrations.py: 12 numbered steps (verbatim transcription), per-step version stamp, resume-from-version; database.py flat loop deleted (~215 lines) |
+| 2 | [020 legacy-DB upgrade tests](phase2-proper-migrations/020-legacy-upgrade-tests.md) | no | done (2026-08-11) | Claude (for Darren) | tests/db/test_legacy_upgrade.py: base-only / stopped-at-5 / stopped-at-10 shapes reach head losslessly; negative control on the pre-flight |
+| 2 | [030 retire except-pass backfills](phase2-proper-migrations/030-explicit-backfills.md) | no | done (2026-08-11) | Claude (for Darren) | db/backfills.py: 6 named every-boot backfills; missing-schema benign, all else aborts; zero except-pass left in the schema path (pinned by test) |
 | 3 | [010 delete assert-nothing stubs](phase3-test-remediation/010-delete-empty-stubs.md) | no | not started | — | 13 gutted files in tests/core, twins exist |
 | 3 | [020 broker+runtime coverage floors](phase3-test-remediation/020-money-coverage-floors.md) | no | not started | — | add to MONEY_CRITICAL_FLOORS |
 | 3 | [030 test-layout consolidation](phase3-test-remediation/030-test-layout.md) | no | not started | — | retire tests/core, __init__.py, ghost testpaths, test_engine.py import mutation |
@@ -63,6 +63,17 @@ Paste the real `python -m tools.checks all` output (or its tail) each time a tas
   orphan modules         ok   (4.6s)
   boot smoke             ok   (5.2s)
   test suite             ok   (395.7s)
+  coverage ratchet       ok   (0.3s)
+  All checks passed.
+  ```
+- 2026-08-11 — phase 2 (migration registry + backfills + legacy fixtures):
+  ```
+  structure gates        ok   (6.2s)
+  import contracts       ok   (4.8s)
+  runtime facade         ok   (0.2s)
+  orphan modules         ok   (2.1s)
+  boot smoke             ok   (5.3s)
+  test suite             ok   (346.5s)
   coverage ratchet       ok   (0.3s)
   All checks passed.
   ```
