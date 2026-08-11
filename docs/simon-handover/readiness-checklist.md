@@ -54,14 +54,16 @@ doc, not a work log._
   Handoff" section, each claim traceable to a PROGRESS Done row).
 - [x] **`python -m tools.checks all` green** at every stage-2 commit (outputs
   in docs/todo/refactor/stage2/PROGRESS.md).
-- [ ] **CI green on the branch.** *Branch pushed 2026-08-11 — the workflow
-  (.github/workflows/checks.yml) runs for the first time on that push;
-  verify the first run goes green on GitHub, then tick this.*
+- [x] **CI green on the branch.** First fully green run 2026-08-11 on
+  `d2a1661` (run 31506752985, windows-latest): all 8 checks passed after
+  the workflow gained its test deps (872e58a) and the review-criticals
+  tests went green (d2a1661). Earlier same-day runs failed for known,
+  explained reasons (missing pytest; RED-first tests ahead of their fix).
 
 ## How to read this at handoff
 
-Green rows are done and verified. The three open rows are, in order of
-weight: the **money-path** (stage 3 — the only one that blocks live use),
-the **frontend split** (debt, not danger), and **CHANGELOG/CI** (hygiene).
+Green rows are done and verified. The two open rows are, in order of
+weight: the **money-path** (stage 3 — the only one that blocks live use)
+and the **frontend split** (debt, not danger).
 The demo session that signs off stage 3 is also the natural moment to walk
 Simon through Start Here, the debug mode, and the questions queue.
