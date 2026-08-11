@@ -34,7 +34,10 @@ not a failure.
 - **Leave `app.py` alone entirely** — cheapest, and defensible for a composition root, but the About
   and Glossary content alone is several hundred lines of pure data sitting in the shell file.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, agent under Darren's "complete stage 2" instruction; Darren
+confirms) — the recommendation: split the real components (About/Glossary content, dialogs,
+ticker where it separates cleanly), let the remaining composition stay. No manufactured modules.
+Stage2 phase 1 already moved the About home into `frontend/components/about_home.py`.
 
 ## 2. `chart.py` is 839 lines — 39 over the gate. Worth splitting?
 
@@ -46,7 +49,9 @@ the code that consumes it for the sake of 39 lines.
   with a written reason is worth more than a split that fools the gate.
 - **Split it** — extract the chart config to its own module. Uniform, cheap, mildly artificial.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, as above) — the recommendation: leave `chart.py`, record it as a
+deliberate exemption with its reason (one large ECharts config; splitting config from its one
+consumer for 39 lines fools the gate rather than serving it).
 
 ## 3. Do the phase-2 splits need new tests?
 
@@ -63,7 +68,9 @@ boots and serves.
 - **Boot smoke only** — cheapest; risks a module that exists but is never imported by anything,
   which is the exact species of dead code the 2026 audit found ~3,000 lines of.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, as above) — the recommendation: boot smoke + a per-package
+import/wiring test (`tests/frontend/test_page_packages_are_wired.py` already covers the
+NameError-after-split class); no new behavioural tests for moved behaviour.
 
 ## 4. Must phase 1 land as one release, or can it spread?
 
@@ -75,7 +82,9 @@ Phase 1 has six tasks. Each is independently green — the contract count just s
 - **One release** — the contract goes 59 → 0 in a single version, so the changelog entry is clean.
   But it means a long-lived branch touching every frontend page at once.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, as above) — the recommendation: spread across releases; each task
+lands independently green. The money-touching task (phase1/020 trading & risk) ships alone after
+Simon's sign-off + demo session — it is NOT part of the stage-2 sweep.
 
 ---
 

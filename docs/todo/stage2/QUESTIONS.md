@@ -23,7 +23,9 @@ The onboarding review proposes a first-run "Start Here" checklist (Licence / MT5
   computes, pure view-layer.
 - **Something else** — describe it under ANSWER.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, session run under Darren's "do all of stage 2" instruction) —
+went with the recommendation. The checklist shipped as `frontend/components/start_here.py`; the
+exact strings are queued for Darren's review in `docs/questions/006-onboarding-strings.md`.
 
 ## 2. Frontend-restructure questions (Darren)
 Phase 4 (splitting the giant files, finishing the restructure) is blocked because
@@ -33,7 +35,9 @@ not trading.
 - **Go answer them (Recommended)** — unblocks the largest maintainability phase.
 - **Defer phase 4** — do usability + foundations first; come back to the split.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11) — answered all four inline in
+`docs/todo/frontend/restructure/QUESTIONS.md` with each question's own recommendation, marked
+PROVISIONAL for Darren to confirm. Phase 4's money-free lanes are unblocked.
 
 ## 3. Debug-mode open questions (Darren/Simon)
 `docs/todo/infra/local-debug-mode/QUESTIONS.md` covers: scripted-scenario format for the fake price
@@ -42,7 +46,8 @@ phase 5 (make debug mode actually tick).
 
 - **Go with that pack's recommendations (Recommended)** — sensible defaults; nothing money-live.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11) — recommendations adopted, annotated inline in that pack's
+QUESTIONS.md. The debug-licence item stays flagged for Simon.
 
 ## 4. Money-path defaults (Simon)
 stage1 `QUESTIONS.md` holds six provisional answers (order-id transport, reconciliation
@@ -62,7 +67,8 @@ signs off the money-path on a shared demo session?
   changes get Simon's sign-off + a demo before live use.
 - **Full self-serve for Simon** — needs the onboarding + docs to be complete enough to run unaided.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11) — the recommendation: demo-session handoff. Phase-1 onboarding
+still aims at self-serve daily use after that handoff. Simon/Darren confirm.
 
 ---
 

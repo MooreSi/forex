@@ -4,7 +4,7 @@
 (name + date under Owner), flip its Status, leave a one-line Note (commit / blocker / decision). A
 task reported Done that isn't is the exact failure this repo's rules exist to prevent.
 
-_Last updated: 2026-08-11 — pack scaffolded, no code started._
+_Last updated: 2026-08-11 — phase 1 (usability) complete and verified green._
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
@@ -13,7 +13,7 @@ A money-touching task is **not** `done` on a green suite alone — it needs Simo
 session, both recorded in Notes.
 
 ## Overall
-- Phase 1 (usability): not started — **recommended first**, unblocked, no money
+- Phase 1 (usability): **done** (2026-08-11) — all five tasks, TDD, checks green
 - Phase 2 (proper migrations): not started — unblocked
 - Phase 3 (test remediation): not started — unblocked
 - Phase 4 (frontend split): blocked — Darren must answer the restructure QUESTIONS (0/4)
@@ -25,11 +25,11 @@ session, both recorded in Notes.
 
 | Phase | Task | Money | Status | Owner | Notes |
 |---|---|---|---|---|---|
-| 1 | [010 start-here checklist](phase1-usability/010-start-here-checklist.md) | no | not started | — | centerpiece; gated on app.storage.user["setup_seen"] |
-| 1 | [020 help button + getting-started](phase1-usability/020-help-and-getting-started.md) | no | not started | — | wire the buried docs to a header "?" |
-| 1 | [030 tab subtitles & renames](phase1-usability/030-tab-subtitles.md) | no | not started | — | de-jargon the 10 tabs |
-| 1 | [040 real empty states](phase1-usability/040-empty-states.md) | no | not started | — | "no signals yet → do this" |
-| 1 | [050 set-up-once / every-day](phase1-usability/050-setup-once-every-day.md) | no | not started | — | reframe About; seed components/ |
+| 1 | [010 start-here checklist](phase1-usability/010-start-here-checklist.md) | no | done (2026-08-11) | Claude (for Darren) | components/start_here.py; setup_seen gate; strings queued as docs/questions/006. Fix-this jumps land on the top-level tab (Settings sub-tab named in the hint — deep-link needs the phase-4 settings split) |
+| 1 | [020 help button + getting-started](phase1-usability/020-help-and-getting-started.md) | no | done (2026-08-11) | Claude (for Darren) | components/getting_started.py + header "?"; links About sections by real ids |
+| 1 | [030 tab subtitles & renames](phase1-usability/030-tab-subtitles.md) | no | done (2026-08-11) | Claude (for Darren) | components/tab_labels.py, rendered as tab tooltips; names kept (load-bearing) |
+| 1 | [040 real empty states](phase1-usability/040-empty-states.md) | no | done (2026-08-11) | Claude (for Darren) | components/empty_state.py; TG-signals + 2 history surfaces + day dialog |
+| 1 | [050 set-up-once / every-day](phase1-usability/050-setup-once-every-day.md) | no | done (2026-08-11) | Claude (for Darren) | components/about_home.py; About home regrouped; shares DAILY_ROUTINE with 020; shrank app.py under its LOC baseline |
 | 2 | [010 numbered migration runner](phase2-proper-migrations/010-migration-runner.md) | no | not started | — | out of database.py; builds on Aug-08 2/020 fail-closed core |
 | 2 | [020 legacy-DB upgrade tests](phase2-proper-migrations/020-legacy-upgrade-tests.md) | no | not started | — | fixtures per historical shape → head |
 | 2 | [030 retire except-pass backfills](phase2-proper-migrations/030-explicit-backfills.md) | no | not started | — | make the data backfills explicit |
@@ -55,7 +55,17 @@ session, both recorded in Notes.
 ## Verification log
 Paste the real `python -m tools.checks all` output (or its tail) each time a task lands.
 
-- (none yet — pack just scaffolded)
+- 2026-08-11 — phase 1 (all five tasks):
+  ```
+  structure gates        ok   (5.2s)
+  import contracts       ok   (5.9s)
+  runtime facade         ok   (0.3s)
+  orphan modules         ok   (4.6s)
+  boot smoke             ok   (5.2s)
+  test suite             ok   (395.7s)
+  coverage ratchet       ok   (0.3s)
+  All checks passed.
+  ```
 
 ## Blockers / open
 - Phase 4 blocked on Darren answering `docs/todo/frontend/restructure/QUESTIONS.md` (0/4).

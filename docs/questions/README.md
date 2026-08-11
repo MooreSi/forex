@@ -38,11 +38,12 @@ When every file here is answered, the queue is clear.
 | [003](003-version-control-and-ci.md) | Where does version control live, and is there a remote? | Darren | none yet — blocks CI | review-aug-08 phase4/010 |
 | [004](004-news-no-data-policy.md) | When news data is missing/stale, trade through or pause opens? | brother | keep current behaviour (trade through), logged loudly | review-aug-08 phase2/060 |
 | [005](005-fact-finding.md) | Facts only the operator knows (live-log contents, licence-secret rotation, is the update client live, is retention on) | Darren / brother | assumptions recorded per item | scopes several tasks |
+| [006](006-onboarding-strings.md) | Onboarding wording: checklist rows, tab subtitles, empty-state prompts | Darren | review-proposed wording adopted; edit the data files | stage2 phase 1 |
 
 ## Status at a glance
 
-_Last updated: 2026-08-10._
+_Last updated: 2026-08-11._
 
-- **Answered:** 0 of 5
+- **Answered:** 0 of 6
 - Deployment topology (single, localhost-only) was answered 2026-08-08 and is
   already folded into the plan — see the review pack, not this queue.

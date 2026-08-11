@@ -28,7 +28,10 @@ Simon issuing Darren a key from his admin server.
 - **Simon issues a real key** — cleanest, but blocks all local work on Simon's availability, which
   is the exact dependency this pack exists to remove.
 
-ANSWER:
+ANSWER: PROVISIONAL — already implemented as the recommendation (`tools/generate_debug_licence.py`,
+real key, `guard.enforce()` untouched; see HANDOFF.md §3). **Simon still to bless** the fact that
+the repo's generator secret allows self-licensing (a pre-existing fact this documents, not a new
+capability).
 
 ## 2. Scenario format for fake ticks and fake signals
 
@@ -42,7 +45,9 @@ default for just clicking around the UI.
 - **Hardcoded Python scenarios in the fakes** — less to build, but every new case is a code edit
   and the files can't be shared with Simon as documentation.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, agent under Darren's "complete stage 2" instruction) — the
+recommendation: JSON scenarios under `tools/debug_scenarios/` + a deterministic seeded default
+stream when no scenario is given.
 
 ## 3. First-run password setup
 
@@ -56,7 +61,9 @@ time?
 - **Plaintext password in config.yaml, hashed on load** — simpler, but puts a secret in a file
   the repo rules say must never hold credentials that get committed.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, as above) — the recommendation. Debug mode already seeds
+`debug`/`debug` (shipped with the login task); the first-run setup page for non-debug mode is
+part of the handoff finish line.
 
 ## 4. Fill realism in the fake bridge
 
@@ -66,7 +73,8 @@ ANSWER:
 - **Modelled slippage/spread randomness** — more realistic, but non-deterministic tests and it
   starts becoming a backtester, which is out of scope.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, as above) — the recommendation: exact fills + error injection,
+no slippage modelling.
 
 ## 5. Debug DB + flag naming — confirm
 
@@ -75,7 +83,8 @@ the DB path becomes `forex_trader_debug.db` regardless of `account_env`, so demo
 are never touched from a debug session. Say if you'd rather a different name (e.g. `app_mode:
 debug|live`) or a different isolation scheme.
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, as above) — confirmed as already shipped (task 010):
+`debug_mode` / `FOREX_DEBUG_MODE` / `is_debug()` / `forex_trader_debug.db`.
 
 ## 6. What runs by default in debug mode?
 
@@ -87,7 +96,9 @@ Engines and auto-execution are DB-flag gated today (`sg_engine_enabled`, `auto_e
 - **Debug boots with today's defaults** — truer to production first-run, but you'd flip switches
   in the UI before anything happens (arguably also worth testing once, manually).
 
-ANSWER:
+ANSWER: PROVISIONAL (2026-08-11, as above) — the recommendation: the debug DB seeds a
+ready-to-demo state (engines on, auto-execute on, balance 1000) — debug DB only, never the
+demo/live files.
 
 ---
 
