@@ -37,18 +37,18 @@ doc, not a work log._
   *Deferral (Simon): the 3-line `_make_bridge` seam + `run.py` bridge-skip
   that make `FOREX_DEBUG_MODE=1` use the fake bridge in the running app —
   money-touching, needs sign-off + a demo session
-  (docs/todo/infra/local-debug-mode/020).*
+  (docs/todo/refactor/infra/local-debug-mode/020).*
 - [ ] **Money-path (stage 3 — Simon-gated).** Order-send de-duplication,
   broker↔DB reconciliation, never-record-a-refused-close, protective halts
-  on by default. Specced and test-planned in `docs/todo/stage3/`; ships only
+  on by default. Specced and test-planned in `docs/todo/refactor/stage3/`; ships only
   with Simon's sign-off + demo session. **The app must not be treated as
   handed over until this line is green.**
-- [x] **Docs.** HANDOFF.md current (docs/todo/HANDOFF.md); open decisions
+- [x] **Docs.** HANDOFF.md current (docs/todo/refactor/HANDOFF.md); open decisions
   parked in docs/questions/ (6 items, 0 answered — Simon/Darren triage them
   at handoff); knowledge base updated as work landed.
 - [ ] **CHANGELOG updated** for the stage-2 sweep. *Open — phase 7/030.*
 - [x] **`python -m tools.checks all` green** at every stage-2 commit (outputs
-  in docs/todo/stage2/PROGRESS.md).
+  in docs/todo/refactor/stage2/PROGRESS.md).
 - [ ] **CI green on the branch.** *Open — the workflow exists
   (.github/workflows/checks.yml) but activates on first push; the branch has
   not been pushed (docs/questions/003 — where does the remote live?).*

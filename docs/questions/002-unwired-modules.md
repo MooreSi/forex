@@ -6,7 +6,7 @@ allowlist); delete none; keep the backtest harness as a tool. Awaiting decisions
 business/security); Darren can call `backtest` and `test_signal/auth`.
 **Consumed by:** stage1 phase3/010 (dead-code deletion).
 **Evidence:** `tools/refactor_audit/orphan_module_allowlist.json` +
-[phase3/010 task notes](../todo/stage1/phase3-expansion-tax/010-delete-dead-code.md).
+[phase3/010 task notes](../todo/refactor/stage1/phase3-expansion-tax/010-delete-dead-code.md).
 
 ## The situation
 

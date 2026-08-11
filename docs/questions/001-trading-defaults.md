@@ -5,7 +5,7 @@ brother's behalf, so work could proceed). Awaiting the brother's confirmation.
 **Who decides:** the brother (trading/business calls).
 **Consumed by:** stage1 phase 1 (010/030/060) and phase 2 (050/070).
 **Full detail & the option write-ups:** the review pack's
-[QUESTIONS.md](../todo/stage1/QUESTIONS.md) — this file is the
+[QUESTIONS.md](../todo/refactor/stage1/QUESTIONS.md) — this file is the
 single-page summary for the answer pass; that file has the reasoning.
 
 ## The six, and what we're proceeding with
