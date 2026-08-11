@@ -33,4 +33,5 @@ button; a concrete "Start Here" proposal.
 - No jargon tab is unlabelled; empty states point to a next action.
 - All new UI lives in `frontend/components/` (its first real residents), not pasted into `app.py`.
 - `python -m tools.checks all` green; import contracts do not regress.
-- A screen bar (`BAR.md`) for the new surfaces is agreed by Darren before the UI is built.
+- The user-facing strings (checklist rows, tab names, empty-state prompts) are confirmed by Darren
+  before the UI is built — they're his words, not the builder's guess.

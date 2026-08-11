@@ -1,6 +1,6 @@
 # 040 — Real empty states ("do this next")
 
-**Status:** not started · **Depends on:** BAR.md agreed · **Touches money:** no · **Layer:** frontend
+**Status:** not started · **Touches money:** no · **Layer:** frontend
 
 ## Problem
 
@@ -17,7 +17,7 @@ a signal / trade.
 
 1. Write the tests; watch them fail.
 2. Replace the empty-state text on the Trading / Analysis / signals surfaces with the agreed next-step
-   prompts (BAR surface 4). Reuse a shared `components/empty_state.py`.
+   prompts (short next-step wording Darren confirms). Reuse a shared `components/empty_state.py`.
 3. `python -m tools.checks all`.
 
 ## Where

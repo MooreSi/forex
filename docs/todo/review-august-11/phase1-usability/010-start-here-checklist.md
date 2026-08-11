@@ -1,7 +1,7 @@
 # 010 — First-run "Start Here" checklist
 
 **Status:** not started
-**Depends on:** BAR.md agreed by Darren
+**Depends on:** Darren confirms the checklist rows/strings (QUESTIONS Q1)
 **Touches money:** no (pure view-layer; reads status the app already computes)
 **Layer:** frontend (+ a thin controller if new status is needed)
 **Leverage:** existing status the app computes — `conn_badge` (app.py:1228), `ea_badge` (:1249),
@@ -40,7 +40,7 @@ behaviour. Dismissing it sets `setup_seen`.
 
 ## What to do
 
-1. Agree BAR.md (Darren). Write the tests; watch them fail.
+1. Confirm the checklist rows + strings with Darren (QUESTIONS Q1). Write the tests; watch them fail.
 2. Build `frontend/components/start_here.py` (first real resident of components/) — a function that
    renders the checklist from a status dict provided by the caller (testable without a live app).
 3. Wire it into the app shell: show on first boot when `not app.storage.user.get("setup_seen")`;

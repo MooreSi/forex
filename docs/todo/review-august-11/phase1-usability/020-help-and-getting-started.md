@@ -1,6 +1,6 @@
 # 020 — Help button → Getting Started
 
-**Status:** not started · **Depends on:** BAR.md agreed · **Touches money:** no · **Layer:** frontend
+**Status:** not started · **Touches money:** no · **Layer:** frontend
 
 ## Problem
 
