@@ -10,7 +10,7 @@ items. Anything an implementing agent hits later goes in [../../questions/](../.
 1. Is the first-run "Start Here" checklist the right onboarding centerpiece? (Darren)
 2. The 4 unanswered frontend-restructure questions — needed to unblock phase 4. (Darren)
 3. Debug-mode open questions — fake-stream format, fill modeling, first-run password. (Darren/Simon)
-4. Confirm the money-path provisional defaults from review-august-08. (Simon)
+4. Confirm the money-path provisional defaults from stage1. (Simon)
 5. What is the bar for "giveable to Simon" — does he run it live himself, or does Darren demo it to him first? (Darren/Simon)
 
 ---
@@ -45,9 +45,9 @@ phase 5 (make debug mode actually tick).
 ANSWER:
 
 ## 4. Money-path defaults (Simon)
-review-august-08 `QUESTIONS.md` holds six provisional answers (order-id transport, reconciliation
+stage1 `QUESTIONS.md` holds six provisional answers (order-id transport, reconciliation
 mode, halt thresholds, backups, update channel, manual positions). They were adopted provisionally so
-work could proceed; **Simon confirms** before phase 6 ships.
+work could proceed; **Simon confirms** before the [stage 3](../stage3/README.md) money-path ships.
 
 - **Confirm the provisional set (Recommended)** — they keep trading no more aggressive than today.
 - **Change specific ones** — note which under ANSWER.

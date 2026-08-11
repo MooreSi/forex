@@ -18,7 +18,7 @@ session, both recorded in Notes.
 - Phase 3 (test remediation): not started — unblocked
 - Phase 4 (frontend split): blocked — Darren must answer the restructure QUESTIONS (0/4)
 - Phase 5 (debug complete): not started — 1 money task (fake-bridge wiring, Simon)
-- Phase 6 (money-path): blocked — Simon sign-off + demo session
+- Money-path: **moved to [stage 3](../stage3/README.md)** (Simon-gated) — not part of stage 2
 - Phase 7 (handoff): in progress — HANDOFF.md done; rest not started
 
 ## Tasks
@@ -43,7 +43,7 @@ session, both recorded in Notes.
 | 5 | [010 fake MT5 bridge](phase5-debug-complete/010-fake-bridge.md) | YES (wiring) | not started | — | drives local-debug-mode 020; fake+tests non-money, seam Simon-gated |
 | 5 | [020 fake telegram + canned news/AI/email](phase5-debug-complete/020-fakes-and-adapters.md) | no | not started | — | drives local-debug-mode 030/040 |
 | 5 | [030 banner + e2e signal→close](phase5-debug-complete/030-banner-and-e2e.md) | no | not started | — | drives local-debug-mode 070/080 |
-| 6 | [010 money-path (Simon)](phase6-money-path/010-money-path.md) | YES | blocked | — | drives review-august-08 phase 1; Simon sign-off + demo |
+| — | money-path → [stage 3](../stage3/README.md) | YES | moved out (Simon-gated) | — | order dedup / reconciliation / halts; not stage-2 work |
 | 7 | [010 HANDOFF.md](phase7-handoff/010-handoff-doc.md) | no | done (2026-08-11) | Claude/Darren | app-root HANDOFF.md + questions-routing in CLAUDE.md/00-start-here |
 | 7 | [020 give-to-Simon checklist](phase7-handoff/020-give-to-simon-checklist.md) | no | not started | — | the "ready?" gate |
 | 7 | [030 docs & retire packs](phase7-handoff/030-docs-and-retire.md) | no | not started | — | CHANGELOG, in-app help, /spec done on finished packs |
@@ -59,6 +59,6 @@ Paste the real `python -m tools.checks all` output (or its tail) each time a tas
 
 ## Blockers / open
 - Phase 4 blocked on Darren answering `docs/todo/frontend/restructure/QUESTIONS.md` (0/4).
-- Phase 6 + phase5/010 wiring blocked on Simon (sign-off + demo session).
-- Several debug-mode + money-path defaults already provisionally answered in review-august-08 and
+- The money-path ([stage 3](../stage3/README.md)) + phase5/010 wiring are blocked on Simon (sign-off + demo session).
+- Several debug-mode + money-path defaults already provisionally answered in stage1 and
   local-debug-mode QUESTIONS — Simon confirms.

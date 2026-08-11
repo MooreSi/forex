@@ -60,7 +60,7 @@ Then open **http://localhost:8890** and log in with **`debug`** / **`debug`**.
 Branch: `claude/refactor-plan-docs-pjn1hl`. Recent, verified-green work (each landed with
 `tools.checks all` green):
 
-- **Aug-08 review remediation** (`docs/todo/review-august-08/`, partially done): dashboard binds to
+- **Aug-08 review remediation** (`docs/todo/stage1/`, partially done): dashboard binds to
   localhost; the guardrail gates are real again (coverage ratchet fed, a module-reachability orphan
   gate that fails closed); schema migrations fail closed (skip duplicate-column, abort on real
   errors) with a `schema_version` stamp; daily DB backups + `busy_timeout`; the news fetch moved off
@@ -73,7 +73,7 @@ Branch: `claude/refactor-plan-docs-pjn1hl`. Recent, verified-green work (each la
   isolation, a genuine debug-licence generator, and a **dashboard login** (both modes) —
   browser-verified.
 
-**The master plan for getting this to a giveable state is `docs/todo/review-august-11/`** (the
+**The master plan for getting this to a giveable state is `docs/todo/stage2/`** (the
 road-to-handoff roadmap). Read its README and PROGRESS.md next.
 
 ## 5. What is parked for Simon (do not ship these without him)
@@ -81,14 +81,21 @@ road-to-handoff roadmap). Read its README and PROGRESS.md next.
 The money-path safety fixes are specced and test-planned but need **Simon's sign-off + a demo
 session** on his machine before they ship: order-send de-duplication, broker↔DB reconciliation,
 never-record-a-close-the-broker-refused, and turning the protective halts on by default. The one
-money-touching debug task (wiring the fake bridge into `_make_bridge`) is also his sign-off. These
-live in `docs/todo/review-august-08/phase1-stop-the-bleeding/` and the local-debug-mode pack.
+money-touching debug task (wiring the fake bridge into `_make_bridge`) is also his sign-off. The
+money-path lives in **`docs/todo/stage3/`** (a dedicated Simon-gated stage); the bridge wiring is in
+the local-debug-mode pack.
 
 ## 6. How work is tracked
 
-- **Plan packs** under `docs/todo/<name>/` — each has a `README.md` hub and a `PROGRESS.md` live
-  status log. Claim a task in PROGRESS.md, do it test-first, update PROGRESS. Follow the `/spec`
-  skill's conventions.
+- **The work is organized in three stages** under `docs/todo/`:
+  - **`stage1/`** — the Aug-08 remediation (mostly done: gates, migrations core, backups, dead-code).
+  - **`stage2/`** — the road-to-handoff roadmap, **workable today** (usability, proper migrations,
+    test remediation, frontend split, debug-mode completion, handoff). Start here.
+  - **`stage3/`** — the money-path, **blocked on Simon** (sign-off + demo). Kept separate so stage 2
+    never stalls on him.
+  - Plus `infra/local-debug-mode/` (debug mode) and `frontend/restructure/` (the 001 pack stage 2 drives).
+- Each pack has a `README.md` hub and a `PROGRESS.md` live status log. Claim a task in PROGRESS.md, do
+  it test-first, update PROGRESS. Follow the `/spec` skill's conventions.
 - **Reviews** under `docs/reviews/<date>/` — point-in-time findings that the packs remediate.
 - **Open decisions** → `docs/questions/` (§2).
 - **The knowledge base** is `docs/system/` (rules, domains, vision) — the single point of truth;

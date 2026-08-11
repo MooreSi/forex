@@ -5,7 +5,7 @@
 `.gitignore` already excludes secrets (`config.yaml`, `*.db`, `*.log`, `backups/`, `.coverage.json`).
 The earlier "not a repo" note referred to the parent `c:\dev\forex`, not `c:\dev\forex\app`.
 **Who decides:** Darren (dev/ops).
-**Consumed by:** review-august-08 phase4/010 (CI).
+**Consumed by:** stage1 phase4/010 (CI).
 
 ## Status
 

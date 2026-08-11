@@ -14,7 +14,7 @@ A money-touching task is **not** `done` on a green suite alone — it needs owne
 session, both recorded in Notes.
 
 ## Overall
-- Phase 1 (stop the bleeding): in progress — 050 done; 010/020/030/040/060 blocked on brother's `/safe-change` sign-off + demo session
+- Phase 1 (stop the bleeding): 050 (localhost bind) done; the money-path tasks moved to [stage 3](../stage3/README.md) (Simon-gated) on 2026-08-11
 - Phase 2 (safety net): non-money core COMPLETE — 010/020/060/070 done; 050 backups+busy_timeout done (write-lock + FK-deletes deferred within 050, lower risk). 030/040 money-gated on brother.
 - **"Trustworthy to run locally" bar essentially met:** guardrails real, localhost-only, no event-loop stalls, migrations fail closed, DB backed up daily, no lock-storms. Remaining toward the full goal: phase 3 structural cleanup + the money-path (brother).
 - Phase 3 (expansion tax): not started — dead-code deletion gated on phase2/010
@@ -26,12 +26,8 @@ session, both recorded in Notes.
 
 | Phase | Task | Money | Status | Owner | Notes |
 |---|---|---|---|---|---|
-| 1 | [010 order-send dedup](phase1-stop-the-bleeding/010-order-send-dedup.md) | YES | not started | — | SPEC-002 |
-| 1 | [020 timeout-means-unknown](phase1-stop-the-bleeding/020-timeout-means-unknown.md) | YES | not started | — | SPEC-002 |
-| 1 | [030 broker-db reconciliation](phase1-stop-the-bleeding/030-broker-db-reconciliation.md) | YES | not started | — | SPEC-003 |
-| 1 | [040 no-db-close-on-failed-close](phase1-stop-the-bleeding/040-no-db-close-on-failed-broker-close.md) | YES | not started | — | SPEC-003 |
-| 1 | [050 bind-localhost](phase1-stop-the-bleeding/050-bind-dashboard-localhost.md) | no | done (2026-08-10, no VCS) | Claude/Darren | dashboard now binds 127.0.0.1 by default; `host` config key + non-loopback warning; 7 new tests green |
-| 1 | [060 protective-halts-default-on](phase1-stop-the-bleeding/060-protective-halts-default-on.md) | YES | not started | — | defaults in QUESTIONS.md |
+| 1 | order-send dedup / timeout / reconciliation / no-db-close / halts | YES | **moved to [stage 3](../stage3/README.md)** (2026-08-11) | — | Simon-gated; extracted so stage2 is workable today |
+| 1 | [050 bind-localhost](phase1-stop-the-bleeding/050-bind-dashboard-localhost.md) | no | done (2026-08-10) | Claude/Darren | dashboard binds 127.0.0.1 by default; `host` config key + non-loopback warning; 7 new tests green |
 | 2 | [010 gates-fail-closed](phase2-safety-net/010-guardrail-gates-fail-closed.md) | no | done (2026-08-10) | Claude/Darren | coverage fed; pyproject fixed; NEW module-reachability orphan gate (fails closed) replaces vacuous one; structure+import gates hardened to fail closed. 25 new tests. Green means green now. |
 | 2 | [020 schema-migrations](phase2-safety-net/020-schema-migrations.md) | no | done (2026-08-10) | Claude | migrations fail closed (skip duplicate-column, abort on real error), schema_version stamp + pre-flight verify. Extracted db/migrations.py + db/schema_sql.py → database.py 1251→749 (bonus phase3/040 progress). Structure gate taught db/ = data layer. Full suite green. |
 | 2 | [030 risk-gate-atomicity](phase2-safety-net/030-risk-gate-atomicity.md) | YES | not started | — | |

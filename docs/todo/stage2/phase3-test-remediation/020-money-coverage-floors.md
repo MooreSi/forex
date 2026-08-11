@@ -19,7 +19,7 @@ path's least-covered code has the weakest guard.
 1. Write the tests; watch them fail.
 2. Add `backend/src/services/broker` and `backend/src/runtime.py` to `MONEY_CRITICAL_FLOORS` at their
    current achieved values (do not invent higher numbers here; raising coverage is phase-3 follow-up /
-   review-august-08 phase3/060). No existing floor lowered.
+   stage1 phase3/060). No existing floor lowered.
 3. `python -m tools.checks all`.
 
 ## Where

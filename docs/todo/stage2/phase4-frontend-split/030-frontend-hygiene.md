@@ -1,7 +1,7 @@
 # 030 — Frontend hygiene: silent excepts, blocking timers, upgrade canary
 
 **Status:** not started · **Touches money:** no · **Layer:** frontend
-**References:** [../../review-august-08/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md](../../review-august-08/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md).
+**References:** [../../stage1/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md](../../stage1/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md).
 
 ## Problem
 

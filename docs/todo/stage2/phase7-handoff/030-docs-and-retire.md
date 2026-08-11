@@ -14,7 +14,7 @@ should be retired so `docs/todo/` shows only live work.
 2. **In-app help**: finalize the Getting Started / About content (phase 1) to match shipped behaviour.
 3. **docs/system/**: update the affected domain files (frontend, data, engines) with what was learned;
    update the rules if any changed (fail-closed gates, cycle rule).
-4. **Retire packs**: `/spec done` on `review-august-08` and `local-debug-mode` once their work has
+4. **Retire packs**: `/spec done` on `stage1` and `local-debug-mode` once their work has
    landed and `tools.checks all` is green — harvest keepers (checklist, CHANGELOG, rules) first.
 
 ## Acceptance

@@ -1,9 +1,10 @@
 # Review remediation — August 2026 system review
 
-**Spec:** [docs/specs/002-order-send-idempotency.md](../../specs/002-order-send-idempotency.md) + [003-broker-db-reconciliation.md](../../specs/003-broker-db-reconciliation.md) (money-path anchors); phases 2–4 tasks carry their own scope
-**Status:** planning (pre-implementation)
-**Domain:** review-august-08 (cross-cutting remediation)
-**Touches money:** YES — phase1 tasks 010, 020, 030, 040, 060 and phase2 tasks 030, 040. `/safe-change` governs those; owner sign-off + demo session required before they are Done.
+**Spec:** the money-path anchors (SPEC-002/003) and the phase-1 money tasks now live in
+**[stage 3](../stage3/README.md)** (extracted 2026-08-11, Simon-gated); phases 2–4 tasks carry their own scope
+**Status:** phases 1–2 largely done; phases 3–4 folded into [stage 2](../stage2/README.md)
+**Domain:** stage1 (cross-cutting remediation — the Aug-08 review)
+**Touches money:** the money-path work moved to [stage 3](../stage3/README.md); phase2 tasks 030/040 (deferred within 050) are the only money-adjacent items left here.
 **Created:** 2026-08-08
 
 ## 👋 Picking this up (agents start here)
@@ -83,7 +84,7 @@ money-path fix lands under an anchor spec with a demo session.
 | [QUESTIONS.md](QUESTIONS.md) | Decisions to confirm before/while building |
 | [SUMMARY.md](SUMMARY.md) | Plain-English digest of every change (owner-facing) |
 | [REVIEW.md](REVIEW.md) | Evidence — pointers into the six review reports |
-| [phase1-stop-the-bleeding/](phase1-stop-the-bleeding/README.md) | P0: money-loss + exposure Criticals |
+| [phase1-stop-the-bleeding/](phase1-stop-the-bleeding/README.md) | P0: localhost bind (done). Money-path Criticals → [stage 3](../stage3/README.md) |
 | [phase2-safety-net/](phase2-safety-net/README.md) | P1: gates, migrations, atomic risk checks, backups |
 | [phase3-expansion-tax/](phase3-expansion-tax/README.md) | P2: dead code, duplication, oversized files, coverage |
 | [phase4-hygiene/](phase4-hygiene/README.md) | P3: CI, test layout, licensing, docs of what shipped |
@@ -92,12 +93,8 @@ money-path fix lands under an anchor spec with a demo session.
 
 | Phase | Task | Depends on | Money | Ships with |
 |---|---|---|---|---|
-| 1 | 010 order-send dedup (SPEC-002) | — | YES | — |
-| 1 | 020 timeout-means-unknown (SPEC-002) | 010 | YES | — |
-| 1 | 030 broker↔DB reconciliation (SPEC-003) | 020 | YES | — |
-| 1 | 040 no DB close on failed broker close (SPEC-003) | — | YES | 030 |
-| 1 | 050 bind dashboard to localhost | — | no | — |
-| 1 | 060 protective halts on by default | — | YES | — |
+| 1 | 050 bind dashboard to localhost (done) | — | no | — |
+| 1 | order-send dedup / timeout / reconciliation / no-db-close / halts | — | YES | → **[stage 3](../stage3/README.md)** (Simon-gated) |
 | 2 | 010 guardrail gates fail closed | phase 1 | no | — |
 | 2 | 020 schema migrations framework | — | no | — |
 | 2 | 030 risk-gate atomicity | phase 1 | YES | — |

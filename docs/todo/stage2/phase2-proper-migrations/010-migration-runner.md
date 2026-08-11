@@ -1,7 +1,7 @@
 # 010 — Numbered migration runner + registry
 
 **Status:** not started · **Touches money:** no (schema of money tables — care) · **Layer:** repo/db
-**Leverage:** review-august-08 phase2/020 already added `db/migrations.py` with `apply_migration`
+**Leverage:** stage1 phase2/020 already added `db/migrations.py` with `apply_migration`
 (fail-closed), `schema_version` stamp + `verify_critical_schema`. This adds the ORDERED, numbered
 structure on top.
 

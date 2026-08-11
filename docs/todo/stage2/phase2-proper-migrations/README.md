@@ -1,7 +1,7 @@
 # Phase 2 — Proper migrations (out of database.py)
 
 **Status:** not started — unblocked
-**Gated on:** nothing (builds on review-august-08 phase2/020's fail-closed core, already landed)
+**Gated on:** nothing (builds on stage1 phase2/020's fail-closed core, already landed)
 **Touches money:** no (but it governs the schema of live-money tables — treat with care)
 
 ## Goal of this phase

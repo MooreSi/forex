@@ -10,7 +10,7 @@ The giant frontend files are split and the stalled restructure is finished. Owne
 needs to be split, large files."* `settings.py` is 3,112 lines; `history.py` 1,416; `app.py` 1,633.
 The 001 restructure is 0/13 with 59 import-contract violations and an empty `components/`; silent
 excepts regressed 31→44. This phase **drives the existing restructure pack** rather than duplicating
-it, and folds in review-august-08 phase3's frontend hygiene.
+it, and folds in stage1 phase3's frontend hygiene.
 
 ## Docs
 
@@ -23,7 +23,7 @@ it, and folds in review-august-08 phase3's frontend hygiene.
 ## Drives / references
 
 - [../../frontend/restructure/](../../frontend/restructure/README.md) — the 001 pack (do not fork).
-- [../../review-august-08/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md](../../review-august-08/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md).
+- [../../stage1/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md](../../stage1/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md).
 
 ## Exit criteria
 

@@ -3,7 +3,7 @@
 **Decision:** PROVISIONAL — keep today's behaviour (trade as if no news when the
 feed is unavailable), but log it loudly so it's visible. Awaiting the brother.
 **Who decides:** the brother (this is a risk stance).
-**Consumed by:** review-august-08 phase2/060 (moving the news fetch off the event
+**Consumed by:** stage1 phase2/060 (moving the news fetch off the event
 loop).
 
 ## The question
