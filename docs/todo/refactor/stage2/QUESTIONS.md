@@ -4,7 +4,7 @@ Plain-English choices to settle. Each has a **recommendation** — "go with the 
 complete answer. Answer inline (write `ANSWER:` under each); answered items stay, annotated.
 
 Routing: **Simon** answers trading/money/licence items; **Darren** answers dev/usability/structure
-items. Anything an implementing agent hits later goes in [../../questions/](../../../questions).
+items. Anything an implementing agent hits later goes in [../../simon-handover/](../../../simon-handover).
 
 ## The decisions (quick list)
 1. Is the first-run "Start Here" checklist the right onboarding centerpiece? (Darren)
@@ -25,7 +25,7 @@ The onboarding review proposes a first-run "Start Here" checklist (Licence / MT5
 
 ANSWER: PROVISIONAL (2026-08-11, session run under Darren's "do all of stage 2" instruction) —
 went with the recommendation. The checklist shipped as `frontend/components/start_here.py`; the
-exact strings are queued for Darren's review in `docs/questions/006-onboarding-strings.md`.
+exact strings are queued for Darren's review in `docs/todo/refactor/darren-decisions/006-onboarding-strings.md`.
 
 ## 2. Frontend-restructure questions (Darren)
 Phase 4 (splitting the giant files, finishing the restructure) is blocked because

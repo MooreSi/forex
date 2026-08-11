@@ -68,7 +68,7 @@ output claimed without the paste is not evidence.
 - 2026-08-10, task 2/010 FINAL: `python -m tools.checks all` → All checks passed, EXITCODE=0.
   structure gates ok, import contracts ok, runtime facade ok, **orphan modules ok** (new
   fail-closed gate), boot smoke ok, test suite ok (2109 passed / 7 skipped), coverage ratchet ok.
-  Deferred decisions moved to docs/questions/ (answer-later queue for the brother).
+  Deferred decisions moved to docs/simon-handover/ (answer-later queue for the brother).
 
 - 2026-08-10, task 2/010 (partial): feeding the coverage ratchet (`--cov`) surfaced a latent
   ordering flake — `signals/repo.get_signals` ordered by `created_at DESC` (float seconds) with no

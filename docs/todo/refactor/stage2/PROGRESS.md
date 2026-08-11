@@ -25,7 +25,7 @@ session, both recorded in Notes.
 
 | Phase | Task | Money | Status | Owner | Notes |
 |---|---|---|---|---|---|
-| 1 | [010 start-here checklist](phase1-usability/010-start-here-checklist.md) | no | done (2026-08-11) | Claude (for Darren) | components/start_here.py; setup_seen gate; strings queued as docs/questions/006. Fix-this jumps land on the top-level tab (Settings sub-tab named in the hint — deep-link needs the phase-4 settings split) |
+| 1 | [010 start-here checklist](phase1-usability/010-start-here-checklist.md) | no | done (2026-08-11) | Claude (for Darren) | components/start_here.py; setup_seen gate; strings queued as docs/todo/refactor/darren-decisions/006-onboarding-strings.md. Fix-this jumps land on the top-level tab (Settings sub-tab named in the hint — deep-link needs the phase-4 settings split) |
 | 1 | [020 help button + getting-started](phase1-usability/020-help-and-getting-started.md) | no | done (2026-08-11) | Claude (for Darren) | components/getting_started.py + header "?"; links About sections by real ids |
 | 1 | [030 tab subtitles & renames](phase1-usability/030-tab-subtitles.md) | no | done (2026-08-11) | Claude (for Darren) | components/tab_labels.py, rendered as tab tooltips; names kept (load-bearing) |
 | 1 | [040 real empty states](phase1-usability/040-empty-states.md) | no | done (2026-08-11) | Claude (for Darren) | components/empty_state.py; TG-signals + 2 history surfaces + day dialog |
@@ -45,12 +45,12 @@ session, both recorded in Notes.
 | 5 | [030 banner + e2e signal→close](phase5-debug-complete/030-banner-and-e2e.md) | no | done (2026-08-11) | Claude (for Darren) | components/debug_banner.py behind the shell's is_debug() gate; tests/e2e/test_signal_to_close.py drives scripted signal → parser → auto-execute → fake ledger → monitor TP1 partial + BE move → frozen close path records the close (profit AND SL-loss paths). Deviation: drives the runtime facade directly rather than booting app.startup()'s task supervisors |
 | — | money-path → [stage 3](../stage3/README.md) | YES | moved out (Simon-gated) | — | order dedup / reconciliation / halts; not stage-2 work |
 | 7 | [010 HANDOFF.md](phase7-handoff/010-handoff-doc.md) | no | done (2026-08-11) | Claude/Darren | docs/todo/refactor/HANDOFF.md + questions-routing in CLAUDE.md/00-start-here |
-| 7 | [020 give-to-Simon checklist](phase7-handoff/020-give-to-simon-checklist.md) | no | done (2026-08-11) | Claude (for Darren) | docs/give-to-simon-checklist.md — honestly filled: green on phases 1/2/3/5-except-seam + docs; open on phase 4, stage-3 money-path, CHANGELOG-was-open-now-done, CI-push |
+| 7 | [020 give-to-Simon checklist](phase7-handoff/020-give-to-simon-checklist.md) | no | done (2026-08-11) | Claude (for Darren) | docs/simon-handover/readiness-checklist.md — honestly filled: green on phases 1/2/3/5-except-seam + docs; open on phase 4, stage-3 money-path, CHANGELOG-was-open-now-done, CI-push |
 | 7 | [030 docs & retire packs](phase7-handoff/030-docs-and-retire.md) | no | partially done (2026-08-11) | Claude (for Darren) | CHANGELOG "Unreleased — Road to Handoff" section added; domain files (data/broker/frontend) updated as work landed; in-app help IS the shipped phase-1 content. NOT retired: stage1 (remainder open) and local-debug-mode (seam + 090 open) — retiring an unfinished pack would falsify docs/todo |
 
 ## Decisions log
 - Roadmap structure → phased, one workstream per phase, references existing packs (source: user, 2026-08-11)
-- Questions-routing → docs/questions/ for Simon (source: user, 2026-08-11)
+- Questions-routing → docs/simon-handover/ for Simon (source: user, 2026-08-11)
 
 ## Verification log
 Paste the real `python -m tools.checks all` output (or its tail) each time a task lands.
@@ -100,5 +100,5 @@ Paste the real `python -m tools.checks all` output (or its tail) each time a tas
 - The money-path ([stage 3](../stage3/README.md)) + the phase5/010 `_make_bridge` seam are blocked
   on Simon (sign-off + demo session). Everything else in phase 5 has landed.
 - Provisional answers awaiting confirmation: stage1 + local-debug-mode QUESTIONS (Simon),
-  restructure QUESTIONS + onboarding strings `docs/questions/006` (Darren).
-- CI activates only on first push; no remote configured yet (docs/questions/003).
+  restructure QUESTIONS + onboarding strings `docs/todo/refactor/darren-decisions/006-onboarding-strings.md` (Darren).
+- CI activates only on first push; no remote configured yet (docs/todo/refactor/darren-decisions/003-version-control-and-ci.md).

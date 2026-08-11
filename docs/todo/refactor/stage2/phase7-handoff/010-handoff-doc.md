@@ -13,12 +13,12 @@ Simon can answer. There was no single entry point and no rule routing unanswerab
   creds + decides money), how to run it locally in debug mode, current state, what's parked for Simon,
   how work is tracked, and where questions go.
 - **Questions-routing wired in**: `docs/system/rules/00-start-here.md` gained a "Questions you cannot
-  answer go in docs/questions/" section (Simon answers); `CLAUDE.md` (always-loaded) points to
+  answer go in docs/simon-handover/" section (Simon answers); `CLAUDE.md` (always-loaded) points to
   HANDOFF.md and that rule.
 
 ## Acceptance
 - ✅ A cold-start agent is told, up front, to read HANDOFF.md and to park policy/money questions in
-  docs/questions/ for Simon. Keep HANDOFF.md current as phases land (update its "current state").
+  docs/simon-handover/ for Simon. Keep HANDOFF.md current as phases land (update its "current state").
 
 ## Notes
 Keep this DONE task as the record; update HANDOFF.md's §4 (current state) whenever a phase ships.

@@ -37,7 +37,7 @@ locally with confidence.** Concretely, done means:
 3. **Every money-path fix specced, test-planned and staged** — ready for the
    brother to sign off and watch on a demo terminal in one focused session,
    nothing half-applied.
-4. **The [questions queue](../../../questions) is complete** so his review is a
+4. **The [questions queue](../../../simon-handover) is complete** so his review is a
    single pass.
 
 Key line: running locally on demo *already works today*. This pack makes it

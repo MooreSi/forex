@@ -8,7 +8,7 @@ There's no single answer to "is it ready to give to Simon?" — the risk is hand
 
 ## What to do
 
-Create `docs/give-to-simon-checklist.md` (a keeper doc, harvested out of this pack on `/spec done`) — a
+Create `docs/simon-handover/readiness-checklist.md` (a keeper doc, harvested out of this pack on `/spec done`) — a
 gate that must be all-green or explicitly-deferred-with-Simon:
 
 - [ ] Usability: a non-expert can boot debug mode and follow Start Here to a working setup (phase 1).
@@ -17,7 +17,7 @@ gate that must be all-green or explicitly-deferred-with-Simon:
 - [ ] Frontend: no file over 800 lines under pages/; contract violations 0; excepts→0 (phase 4).
 - [ ] Debug mode: ticks offline; e2e signal→close passes; banner shows (phase 5).
 - [ ] Money-path: dedup/reconciliation/close-on-failure/halts done + **Simon-signed on a demo** (phase 6).
-- [ ] Docs: HANDOFF current; CHANGELOG updated; open decisions in docs/questions/ triaged.
+- [ ] Docs: HANDOFF current; CHANGELOG updated; open decisions in docs/simon-handover/ triaged.
 - [ ] `python -m tools.checks all` green; CI green on the branch.
 
 ## Acceptance

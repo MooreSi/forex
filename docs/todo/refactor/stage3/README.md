@@ -1,8 +1,8 @@
 # Stage 3 — Simon-gated work (the money path)
 
 **Status:** ready for Simon — not started, but everything he needs to run the session is prepared:
-**[SIMON-SESSION.md](SIMON-SESSION.md)** is the agenda (decisions first, then per-task sign-off +
-demo on his machine)
+**[the session agenda](../../../simon-handover/session-agenda.md)** (in docs/simon-handover/) covers
+decisions first, then per-task sign-off + demo on his machine
 **Touches money:** YES — every task here changes order placement, closing, sizing or the halts.
 **Created:** 2026-08-11 (extracted from stage1 phase 1 so stage2 is workable today)
 
@@ -18,7 +18,7 @@ roadmap never stalls waiting on him.
 1. Read [../HANDOFF.md](../HANDOFF.md) and the golden rules. Run `/safe-change` before
    touching any task here.
 2. **Do not ship any of this without Simon** — sign-off + demo session, both recorded in PROGRESS.
-3. Confirm the money-path provisional defaults first: [../../questions/001-trading-defaults.md](../../../questions/001-trading-defaults.md)
+3. Confirm the money-path provisional defaults first: [../../simon-handover/001-trading-defaults.md](../../../simon-handover/001-trading-defaults.md)
    (Simon confirms the six defaults adopted provisionally on 2026-08-10).
 4. Tests use fakes/sentinels only — **no real or demo order in any test**.
 

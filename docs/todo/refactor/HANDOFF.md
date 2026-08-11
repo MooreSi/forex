@@ -28,11 +28,11 @@ Write the test first and watch it fail. `python -m tools.checks all` must be gre
 **Consequence:** any question about trading policy, risk numbers, money-path behaviour, or licensing
 is **Simon's** to answer, and Darren usually cannot answer it. See §5.
 
-## 2. Where questions go — put them in `docs/questions/`
+## 2. Where questions go — put them in `docs/simon-handover/`
 
 If you hit a decision you cannot make from the code, the rules, or a sensible default — **do not
 block, and do not guess a money/policy answer.** Pick a safe provisional default, proceed, and
-**write the open decision as a file in [docs/questions/](../../questions)** (see its README for the
+**write the open decision as a file in [docs/simon-handover/](../../simon-handover)** (see its README for the
 format). Simon reviews that queue and answers. A provisional default must keep trading no more
 aggressive than today and is never silent — record what you chose and what changes if the answer
 differs. Confirming a queue item is a *decision*; it is **not** the money-path sign-off + demo
@@ -97,7 +97,7 @@ the local-debug-mode pack.
 - Each pack has a `README.md` hub and a `PROGRESS.md` live status log. Claim a task in PROGRESS.md, do
   it test-first, update PROGRESS. Follow the `/spec` skill's conventions.
 - **Reviews** under `docs/reviews/<date>/` — point-in-time findings that the packs remediate.
-- **Open decisions** → `docs/questions/` (§2).
+- **Open decisions** → `docs/simon-handover/` (§2).
 - **The knowledge base** is `docs/system/` (rules, domains, vision) — the single point of truth;
   update the relevant domain file when you learn something non-obvious.
 

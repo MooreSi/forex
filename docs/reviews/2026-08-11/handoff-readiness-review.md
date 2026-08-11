@@ -87,9 +87,9 @@ observability* gaps, and both are already specced for the Simon session (stage3/
 ### What this review says is left, in priority order
 
 1. **Stage 3 / the Simon session** — the only live-money blocker. The pack is session-ready:
-   [stage3/SIMON-SESSION.md](../../todo/refactor/stage3/SIMON-SESSION.md) (decisions Part A,
+   [docs/simon-handover/session-agenda.md](../../simon-handover/session-agenda.md) (decisions Part A,
    demos Part B incl. the debug seam), and the questions queue is a one-pass read
-   ([docs/questions/README.md](../../questions/README.md)).
+   ([docs/simon-handover/questions.md](../../simon-handover/questions.md)).
 2. **Push the branch** — CI exists but has never run; "CI green" on the give-to-simon checklist
    is unfalsifiable until the first push (Q003).
 3. **Phase-4 remainder** (maintainability, not safety): restructure lanes 030–060 (50 → 0 minus

@@ -4,7 +4,8 @@
 session). A green suite is necessary but NOT sufficient — Notes must record Simon's sign-off + the
 demo session before any task is `done`.
 
-_Last updated: 2026-08-11 — pack is READY FOR SIMON: SIMON-SESSION.md is the agenda; 060 (debug
+_Last updated: 2026-08-11 — pack is READY FOR SIMON: the agenda is
+[docs/simon-handover/session-agenda.md](../../../simon-handover/session-agenda.md); 060 (debug
 seam) added so everything Simon-gated lives in one view. No money code started._
 
 ## Status key
@@ -12,7 +13,7 @@ seam) added so everything Simon-gated lives in one view. No money code started._
 
 ## Overall
 - All tasks blocked on Simon (sign-off + demo). Confirm the money-path defaults
-  ([../../questions/001-trading-defaults.md](../../../questions/001-trading-defaults.md)) first.
+  ([../../simon-handover/001-trading-defaults.md](../../../simon-handover/001-trading-defaults.md)) first.
 
 ## Tasks
 
@@ -33,4 +34,4 @@ seam) added so everything Simon-gated lives in one view. No money code started._
 
 ## Blockers / open
 - Everything here needs Simon (sign-off + demo session).
-- Money-path provisional defaults await Simon's confirmation (docs/questions/001).
+- Money-path provisional defaults await Simon's confirmation (docs/simon-handover/001).

@@ -15,7 +15,7 @@ doc, not a work log._
   screen; the 10 tabs carry plain-language subtitles; empty states say what
   to do next; About reads as "Set up once / Every day".
   *Caveat: the wording is provisional — Darren reviews
-  `docs/questions/006-onboarding-strings.md`.*
+  `docs/todo/refactor/darren-decisions/006-onboarding-strings.md`.*
 - [x] **Migrations (stage2 phase 2).** Schema changes are an ordered,
   numbered registry (`db/migrations.py`) with per-step version stamps;
   legacy DB shapes are fixture-tested to head losslessly; data backfills are
@@ -27,7 +27,8 @@ doc, not a work log._
   duplication under a shrinking baseline.
 - [ ] **Frontend maintainable (stage2 phase 4).** Target: no pages file over
   800 lines, controller-boundary contract at 0, silent excepts at 0.
-  *Open — the boundary stands at 59 baselined; settings.py 3,112 /
+  *Open — the boundary stands at 50 (was 59; engine-panel lane done, gates on
+  silent excepts + a NiceGUI canary landed 2026-08-11); settings.py 3,112 /
   history.py / app.py splits and the hygiene sweep are the remaining stage-2
   work. Not a money risk; a maintainability debt.*
 - [x] **Debug mode complete except the seam (stage2 phase 5).** Fakes for
@@ -43,15 +44,19 @@ doc, not a work log._
   on by default. Specced and test-planned in `docs/todo/refactor/stage3/`; ships only
   with Simon's sign-off + demo session. **The app must not be treated as
   handed over until this line is green.**
+  *Ready for him: [session-agenda.md](session-agenda.md) is the sitting;
+  the circuit-breaker design review (docs/reviews/2026-08-11) confirms the
+  gaps 050 fixes.*
 - [x] **Docs.** HANDOFF.md current (docs/todo/refactor/HANDOFF.md); open decisions
-  parked in docs/questions/ (6 items, 0 answered — Simon/Darren triage them
+  parked in docs/simon-handover/ (6 items, 0 answered — Simon/Darren triage them
   at handoff); knowledge base updated as work landed.
-- [ ] **CHANGELOG updated** for the stage-2 sweep. *Open — phase 7/030.*
+- [x] **CHANGELOG updated** for the stage-2 sweep ("Unreleased — Road to
+  Handoff" section, each claim traceable to a PROGRESS Done row).
 - [x] **`python -m tools.checks all` green** at every stage-2 commit (outputs
   in docs/todo/refactor/stage2/PROGRESS.md).
-- [ ] **CI green on the branch.** *Open — the workflow exists
-  (.github/workflows/checks.yml) but activates on first push; the branch has
-  not been pushed (docs/questions/003 — where does the remote live?).*
+- [ ] **CI green on the branch.** *Branch pushed 2026-08-11 — the workflow
+  (.github/workflows/checks.yml) runs for the first time on that push;
+  verify the first run goes green on GitHub, then tick this.*
 
 ## How to read this at handoff
 

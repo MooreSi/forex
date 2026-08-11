@@ -17,7 +17,7 @@ stage 2 is workable today without Simon.
    and it *drives* three existing detailed packs (phases 4–6) rather than duplicating them.
 3. **Check [PROGRESS.md](PROGRESS.md)** — the live status log across all phases.
 4. **Claim a task** in PROGRESS.md, do it test-first, update PROGRESS.
-5. **A question you can't answer** → [../../questions/](../../../questions) (Simon decides). Don't block; don't guess money/policy.
+5. **A question you can't answer** → [../../simon-handover/](../../../simon-handover) (Simon decides). Don't block; don't guess money/policy.
 
 Gates: `/safe-change` before any money task · `/add-tunable` for user-editable numbers · `/split-file`
 for files over 800 lines · `python -m tools.checks all` green before every commit.
@@ -90,7 +90,7 @@ stated top pain and is pure view-layer, no money.
 | Decision | Choice | Source |
 |---|---|---|
 | Make a handoff roadmap now | Yes — this pack, plus HANDOFF.md + questions-routing | user |
-| Questions an agent can't answer | Go to docs/questions/ for Simon | user |
+| Questions an agent can't answer | Go to docs/simon-handover/ for Simon | user |
 | Structure | Phased, one workstream per phase; reference existing packs, don't fork | user + /spec rule |
 
 ## Open questions
