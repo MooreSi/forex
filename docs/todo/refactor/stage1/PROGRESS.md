@@ -5,7 +5,9 @@ Owner), flip its Status as you go, leave a one-line Note (commit / blocker / dec
 every agent sees where the work is. Keep it honest: a task reported Done that isn't is the exact
 failure mode this repo's rules exist to prevent.
 
-_Last updated: 2026-08-08 — pack scaffolded, no code started._
+_Last updated: 2026-08-11 — rows back-annotated: several phase-3/4 items landed via stage2
+(see Notes); remaining open work is the deferred 2/050 remainder, 3/020, 4/030, and the
+Simon-gated money tasks (stage 3)._
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
@@ -38,11 +40,11 @@ session, both recorded in Notes.
 | 3 | [010 delete-dead-code](phase3-expansion-tax/010-delete-dead-code.md) | no | partial (3 clones deleted; 4 unwired await Simon) | Claude/Darren | Deleted the 3 superseded-dead database.py clones + 6 files/3384 LOC (fixed 3 entangled tests — their "still needed" comments were STALE, verified empirically). 4 built-but-UNWIRED modules remain, ledgered, awaiting Simon's wire-vs-remove call (Q002). |
 | 3 | [020 engine-shared-code](phase3-expansion-tax/020-consolidate-engine-shared-code.md) | no | not started | — | |
 | 3 | [030 frontend-restructure](phase3-expansion-tax/030-execute-frontend-restructure-pack.md) | no* | not started | — | delegates to existing pack |
-| 3 | [040 split-database-py](phase3-expansion-tax/040-split-database-py.md) | no | not started | — | |
-| 3 | [050 frontend-hygiene](phase3-expansion-tax/050-frontend-exception-timer-hygiene.md) | no | not started | — | |
-| 3 | [060 money-path-coverage](phase3-expansion-tax/060-money-path-coverage-floors.md) | no | not started | — | |
+| 3 | [040 split-database-py](phase3-expansion-tax/040-split-database-py.md) | no | done (2026-08-10/11) | Claude | database.py 1251→749 via 2/020's extraction; DDL/registry/backfills now live in `backend/migrations/` (2026-08-11). Under the 800 gate |
+| 3 | [050 frontend-hygiene](phase3-expansion-tax/050-frontend-exception-timer-hygiene.md) | no | partial — via stage2 4/030 (2026-08-11) | Claude | silent-except gate at shrinking baseline 44→40 + NiceGUI canary; timer→poll migration still open |
+| 3 | [060 money-path-coverage](phase3-expansion-tax/060-money-path-coverage-floors.md) | no | done — via stage2 3/020 (2026-08-11) | Claude | broker 58.3 / runtime.py 72.2 floors in MONEY_CRITICAL_FLOORS |
 | 4 | [010 ci-job](phase4-hygiene/010-ci-job.md) | no | done — activates on push (2026-08-10) | Claude/Darren | repo+remote+gitignore already exist (Q003 corrected). `.github/workflows/checks.yml` runs `tools.checks all` on Windows on push/PR + guard tests. Red/green verification happens on first push. |
-| 4 | [020 test-layout](phase4-hygiene/020-test-layout-consolidation.md) | no | not started | — | |
+| 4 | [020 test-layout](phase4-hygiene/020-test-layout-consolidation.md) | no | done — via stage2 3/030 (2026-08-11) | Claude | packages everywhere, ghost testpath gone, import-time mutation fixed, gates in tests/refactor/test_layout.py |
 | 4 | [030 licence-signing](phase4-hygiene/030-licence-asymmetric-signing.md) | no | not started | — | |
 | 4 | [040 docs-of-what-shipped](phase4-hygiene/040-docs-of-what-shipped.md) | no | not started | — | last task before /spec done |
 
