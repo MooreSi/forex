@@ -17,7 +17,7 @@ session, both recorded in Notes.
 - Phase 2 (proper migrations): **done** (2026-08-11) — registry, legacy fixtures, explicit backfills
 - Phase 3 (test remediation): **done** (2026-08-11) — stubs deleted+gated, floors set, layout fixed+gated, fixtures deduped to a shrinking baseline
 - Phase 4 (frontend split): blocked — Darren must answer the restructure QUESTIONS (0/4)
-- Phase 5 (debug complete): not started — 1 money task (fake-bridge wiring, Simon)
+- Phase 5 (debug complete): **done except the `_make_bridge` seam** (2026-08-11) — fakes, guards, banner and the offline e2e all landed; the 3-line seam edit + run.py subprocess skip await Simon (sign-off + demo)
 - Money-path: **moved to [stage 3](../stage3/README.md)** (Simon-gated) — not part of stage 2
 - Phase 7 (handoff): in progress — HANDOFF.md done; rest not started
 
@@ -40,13 +40,13 @@ session, both recorded in Notes.
 | 4 | [010 drive the restructure pack](phase4-frontend-split/010-drive-restructure.md) | no | blocked | — | answer restructure QUESTIONS (Darren) first |
 | 4 | [020 split settings.py / history.py / app.py](phase4-frontend-split/020-split-giant-files.md) | no | not started | — | /split-file; seed components/ |
 | 4 | [030 frontend hygiene](phase4-frontend-split/030-frontend-hygiene.md) | no | not started | — | 44 silent excepts, 33 timers, canary |
-| 5 | [010 fake MT5 bridge](phase5-debug-complete/010-fake-bridge.md) | YES (wiring) | not started | — | drives local-debug-mode 020; fake+tests non-money, seam Simon-gated |
-| 5 | [020 fake telegram + canned news/AI/email](phase5-debug-complete/020-fakes-and-adapters.md) | no | not started | — | drives local-debug-mode 030/040 |
-| 5 | [030 banner + e2e signal→close](phase5-debug-complete/030-banner-and-e2e.md) | no | not started | — | drives local-debug-mode 070/080 |
+| 5 | [010 fake MT5 bridge](phase5-debug-complete/010-fake-bridge.md) | YES (wiring) | done except the Simon-gated seam (2026-08-11) | Claude (for Darren) | services/broker/fake_market.py + fake_bridge.py: full 21-name surface (introspection-pinned vs BOTH real clients), deterministic curve + JSON scenarios (tools/debug_scenarios/), ledger with server-side SL/TP settle, error injection. **`_make_bridge` NOT edited** — guarded by test_make_bridge_debug.py until Simon's sign-off + demo. Tests in tests/services/broker/ (NOT tests/core — that dir is closed) |
+| 5 | [020 fake telegram + canned news/AI/email](phase5-debug-complete/020-fakes-and-adapters.md) | no | done (2026-08-11) | Claude (for Darren) | services/telegram/fake_reader.py through the REAL scan/parser (killer test green); composition-root swap in backend/src/app._make_tg_reader; is_debug() guards: alerts, bot loop, news_calendar + news_filter (canned event 2h out), AI complete/vision/RSS/model-refresh, email. Each with a debug-off negative control |
+| 5 | [030 banner + e2e signal→close](phase5-debug-complete/030-banner-and-e2e.md) | no | done (2026-08-11) | Claude (for Darren) | components/debug_banner.py behind the shell's is_debug() gate; tests/e2e/test_signal_to_close.py drives scripted signal → parser → auto-execute → fake ledger → monitor TP1 partial + BE move → frozen close path records the close (profit AND SL-loss paths). Deviation: drives the runtime facade directly rather than booting app.startup()'s task supervisors |
 | — | money-path → [stage 3](../stage3/README.md) | YES | moved out (Simon-gated) | — | order dedup / reconciliation / halts; not stage-2 work |
 | 7 | [010 HANDOFF.md](phase7-handoff/010-handoff-doc.md) | no | done (2026-08-11) | Claude/Darren | docs/todo/HANDOFF.md + questions-routing in CLAUDE.md/00-start-here |
-| 7 | [020 give-to-Simon checklist](phase7-handoff/020-give-to-simon-checklist.md) | no | not started | — | the "ready?" gate |
-| 7 | [030 docs & retire packs](phase7-handoff/030-docs-and-retire.md) | no | not started | — | CHANGELOG, in-app help, /spec done on finished packs |
+| 7 | [020 give-to-Simon checklist](phase7-handoff/020-give-to-simon-checklist.md) | no | done (2026-08-11) | Claude (for Darren) | docs/give-to-simon-checklist.md — honestly filled: green on phases 1/2/3/5-except-seam + docs; open on phase 4, stage-3 money-path, CHANGELOG-was-open-now-done, CI-push |
+| 7 | [030 docs & retire packs](phase7-handoff/030-docs-and-retire.md) | no | partially done (2026-08-11) | Claude (for Darren) | CHANGELOG "Unreleased — Road to Handoff" section added; domain files (data/broker/frontend) updated as work landed; in-app help IS the shipped phase-1 content. NOT retired: stage1 (remainder open) and local-debug-mode (seam + 090 open) — retiring an unfinished pack would falsify docs/todo |
 
 ## Decisions log
 - Roadmap structure → phased, one workstream per phase, references existing packs (source: user, 2026-08-11)
@@ -63,6 +63,14 @@ Paste the real `python -m tools.checks all` output (or its tail) each time a tas
   orphan modules         ok   (4.6s)
   boot smoke             ok   (5.2s)
   test suite             ok   (395.7s)
+  coverage ratchet       ok   (0.3s)
+  All checks passed.
+  ```
+- 2026-08-11 — phase 5 (fakes, debug guards, banner, e2e) + phase 7 docs:
+  ```
+  structure gates        ok   ·  import contracts  ok  ·  runtime facade  ok
+  orphan modules         ok   ·  boot smoke        ok
+  test suite             ok   (450.0s)
   coverage ratchet       ok   (0.3s)
   All checks passed.
   ```
@@ -87,7 +95,10 @@ Paste the real `python -m tools.checks all` output (or its tail) each time a tas
   ```
 
 ## Blockers / open
-- Phase 4 blocked on Darren answering `docs/todo/frontend/restructure/QUESTIONS.md` (0/4).
-- The money-path ([stage 3](../stage3/README.md)) + phase5/010 wiring are blocked on Simon (sign-off + demo session).
-- Several debug-mode + money-path defaults already provisionally answered in stage1 and
-  local-debug-mode QUESTIONS — Simon confirms.
+- Phase 4 UNBLOCKED 2026-08-11: the 4 restructure QUESTIONS answered provisionally (each with its
+  own recommendation, marked PROVISIONAL inline) — Darren confirms or overrides.
+- The money-path ([stage 3](../stage3/README.md)) + the phase5/010 `_make_bridge` seam are blocked
+  on Simon (sign-off + demo session). Everything else in phase 5 has landed.
+- Provisional answers awaiting confirmation: stage1 + local-debug-mode QUESTIONS (Simon),
+  restructure QUESTIONS + onboarding strings `docs/questions/006` (Darren).
+- CI activates only on first push; no remote configured yet (docs/questions/003).
