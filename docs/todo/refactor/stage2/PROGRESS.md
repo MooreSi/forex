@@ -66,6 +66,12 @@ Paste the real `python -m tools.checks all` output (or its tail) each time a tas
   coverage ratchet       ok   (0.3s)
   All checks passed.
   ```
+- 2026-08-11 — harness hardening (/commit + /push skills, doc-links gate in checks, CLAUDE.md
+  session-mechanics, skill corrections):
+  ```
+  8 checks: structure/import/facade/orphan/boot/doc-links ok · suite ok (411.6s) · ratchet ok
+  All checks passed.
+  ```
 - 2026-08-11 — phase 5 (fakes, debug guards, banner, e2e) + phase 7 docs:
   ```
   structure gates        ok   ·  import contracts  ok  ·  runtime facade  ok
