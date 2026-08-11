@@ -6,7 +6,7 @@
 money-touching and governed **there**, under `/safe-change`, with its own sign-off + demo session.
 **Layer:** frontend
 **Leverage:** the whole point — the pack at [docs/todo/refactor/frontend/restructure/](../../frontend/restructure/)
-already exists, anchored on [docs/specs/001-frontend-restructure.md](../../../specs/001-frontend-restructure.md).
+already exists, anchored on [docs/specs/001-frontend-restructure.md](../../frontend/restructure/README.md).
 This pack extends, never forks.
 
 ## Problem

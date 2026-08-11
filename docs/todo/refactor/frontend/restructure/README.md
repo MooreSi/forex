@@ -1,6 +1,6 @@
 # Frontend restructure
 
-**Spec:** [docs/specs/001-frontend-restructure.md](../../../specs/001-frontend-restructure.md)
+**Spec:** this pack is its own spec (specs live in `docs/todo/`; the old standalone anchor file was lost in a docs reorg — its substance is "What we're building & why" below)
 **Status:** planning (pre-implementation)
 **Domain:** frontend
 **Touches money:** YES — one task only: `phase1-controller-boundary/020-trading-and-risk.md`. `/safe-change` governs it; owner sign-off + demo session required before it is Done. Every other task in this pack is money-free.
@@ -11,8 +11,7 @@
 1. **Read the rules first** — [CLAUDE.md](../../../../../CLAUDE.md) and
    [docs/system/rules/10-golden-rules.md](../../../../system/rules/10-golden-rules.md). This app places real orders with
    real money.
-2. **Read the plan** — the [anchor spec](../../../specs/001-frontend-restructure.md) for
-   Problem / Goal / **What must NOT change**; this hub for the index and decisions;
+2. **Read the plan** — "What we're building & why" and **What must NOT change** below; this hub for the index and decisions;
    [QUESTIONS.md](QUESTIONS.md) for what the owner still has to settle.
 3. **Check [PROGRESS.md](PROGRESS.md)** — the shared status log. See what's done / in progress / free.
 4. **Claim your task** in PROGRESS.md: set its row to `in progress`, add your name + date under Owner.
@@ -56,8 +55,7 @@ structural. The contract at 59 is the part that is straightforwardly unfinished 
 
 ## What must NOT change
 
-Full list in the [spec](../../../specs/001-frontend-restructure.md#what-must-not-change). The lines
-that constrain the tasks here:
+The lines that constrain the tasks here:
 
 - **Order placement, closing, partial closes, sizing.** Rerouting a call site through a controller
   changes which module is imported — never argument order, defaults, return shape or exception type.
