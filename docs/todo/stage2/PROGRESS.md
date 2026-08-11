@@ -15,7 +15,7 @@ session, both recorded in Notes.
 ## Overall
 - Phase 1 (usability): **done** (2026-08-11) — all five tasks, TDD, checks green
 - Phase 2 (proper migrations): **done** (2026-08-11) — registry, legacy fixtures, explicit backfills
-- Phase 3 (test remediation): not started — unblocked
+- Phase 3 (test remediation): **done** (2026-08-11) — stubs deleted+gated, floors set, layout fixed+gated, fixtures deduped to a shrinking baseline
 - Phase 4 (frontend split): blocked — Darren must answer the restructure QUESTIONS (0/4)
 - Phase 5 (debug complete): not started — 1 money task (fake-bridge wiring, Simon)
 - Money-path: **moved to [stage 3](../stage3/README.md)** (Simon-gated) — not part of stage 2
@@ -33,10 +33,10 @@ session, both recorded in Notes.
 | 2 | [010 numbered migration runner](phase2-proper-migrations/010-migration-runner.md) | no | done (2026-08-11) | Claude (for Darren) | db/migrations.py: 12 numbered steps (verbatim transcription), per-step version stamp, resume-from-version; database.py flat loop deleted (~215 lines) |
 | 2 | [020 legacy-DB upgrade tests](phase2-proper-migrations/020-legacy-upgrade-tests.md) | no | done (2026-08-11) | Claude (for Darren) | tests/db/test_legacy_upgrade.py: base-only / stopped-at-5 / stopped-at-10 shapes reach head losslessly; negative control on the pre-flight |
 | 2 | [030 retire except-pass backfills](phase2-proper-migrations/030-explicit-backfills.md) | no | done (2026-08-11) | Claude (for Darren) | db/backfills.py: 6 named every-boot backfills; missing-schema benign, all else aborts; zero except-pass left in the schema path (pinned by test) |
-| 3 | [010 delete assert-nothing stubs](phase3-test-remediation/010-delete-empty-stubs.md) | no | not started | — | 13 gutted files in tests/core, twins exist |
-| 3 | [020 broker+runtime coverage floors](phase3-test-remediation/020-money-coverage-floors.md) | no | not started | — | add to MONEY_CRITICAL_FLOORS |
-| 3 | [030 test-layout consolidation](phase3-test-remediation/030-test-layout.md) | no | not started | — | retire tests/core, __init__.py, ghost testpaths, test_engine.py import mutation |
-| 3 | [040 dedupe fixtures](phase3-test-remediation/040-fixture-dedup.md) | no | not started | — | fresh_db ×115, _FakeBridge ×69 → conftest |
+| 3 | [010 delete assert-nothing stubs](phase3-test-remediation/010-delete-empty-stubs.md) | no | done (2026-08-11) | Claude (for Darren) | 13 stubs deleted (each surface twin verified populated, 5–25 tests); gate tests/refactor/test_no_empty_test_files.py enforces the class at zero |
+| 3 | [020 broker+runtime coverage floors](phase3-test-remediation/020-money-coverage-floors.md) | no | done (2026-08-11) | Claude (for Darren) | broker 58.3 / runtime.py 72.2 added to MONEY_CRITICAL_FLOORS at measured values; negative control added |
+| 3 | [030 test-layout consolidation](phase3-test-remediation/030-test-layout.md) | no | done (2026-08-11) | Claude (for Darren) | reversal_engine __init__.py; frontend/tests ghost dropped from testpaths + deleted; test_engine.py/test_signal_parser.py import-time mutation moved to a fixture / removed; gate tests/refactor/test_layout.py; collected count 1998 unchanged. Bulk tests/core-to-mirror move noted as follow-up, not done |
+| 3 | [040 dedupe fixtures](phase3-test-remediation/040-fixture-dedup.md) | no | done (2026-08-11) | Claude (for Darren) | 35 byte-equivalent fresh_db copies migrated to conftest (517 tests in touched files green); remaining 66 fresh_db / 56 _FakeBridge under a shrinking baseline (tests/refactor/test_fixture_dedup.py) + no-MetaTrader5-import guard. Full 66→1 migration is follow-up (variants differ for real) |
 | 4 | [010 drive the restructure pack](phase4-frontend-split/010-drive-restructure.md) | no | blocked | — | answer restructure QUESTIONS (Darren) first |
 | 4 | [020 split settings.py / history.py / app.py](phase4-frontend-split/020-split-giant-files.md) | no | not started | — | /split-file; seed components/ |
 | 4 | [030 frontend hygiene](phase4-frontend-split/030-frontend-hygiene.md) | no | not started | — | 44 silent excepts, 33 timers, canary |
@@ -64,6 +64,14 @@ Paste the real `python -m tools.checks all` output (or its tail) each time a tas
   boot smoke             ok   (5.2s)
   test suite             ok   (395.7s)
   coverage ratchet       ok   (0.3s)
+  All checks passed.
+  ```
+- 2026-08-11 — phase 3 (stub deletion + gates, floors, layout, fixture dedup):
+  ```
+  structure gates        ok   ·  import contracts  ok  ·  runtime facade  ok
+  orphan modules         ok   ·  boot smoke        ok
+  test suite             ok   (313.5s)
+  coverage ratchet       ok   (0.2s)
   All checks passed.
   ```
 - 2026-08-11 — phase 2 (migration registry + backfills + legacy fixtures):
