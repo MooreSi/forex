@@ -62,7 +62,7 @@ Jupyter notebook (Run Cell, variables pane, inline plots) but they diff,
 grep and re-run top-to-bottom like normal scripts. No `.ipynb` JSON blobs.
 
 ```
-c:\dev\forex\notebooks\            <- SIBLING of app/, not inside it
+c:\dev\forex\app\notebooks\        <- inside app/ so it rides the main git repo
   README.md                        <- lab rules, index of experiments
   _shared\
     data\
@@ -85,11 +85,14 @@ c:\dev\forex\notebooks\            <- SIBLING of app/, not inside it
   ...
 ```
 
-Why **outside `app/`**: the app has LOC ratchets, orphan-module gates,
-layer-boundary contracts and a coverage ratchet. A lab must be free to make
-messes; the app must not be able to import from it (and vice versa — the lab
-talks only to the .db *copies* in `_shared/data`, never to the live backend,
-never to MT5). That is the isolation you asked for.
+Location *(updated 2026-08-11)*: originally planned as a sibling of `app/`,
+but Darren wants it version-controlled with the main repo, so it lives at
+`app/notebooks/`. The isolation is behavioural, not positional: the lab
+talks only to the .db *copies* in `_shared/data` (opened read-only, with
+credential tables blocked in code), never to the live backend, never to
+MT5, and no code imports across the `app`↔`notebooks` boundary in either
+direction. If the app's repo-wide gates ever start scanning `notebooks/`,
+exclude it the same way `docs/reviews/` is excluded.
 
 Conventions (put these in the lab README):
 
