@@ -44,7 +44,7 @@ session, both recorded in Notes.
 | 5 | [020 fake telegram + canned news/AI/email](phase5-debug-complete/020-fakes-and-adapters.md) | no | not started | — | drives local-debug-mode 030/040 |
 | 5 | [030 banner + e2e signal→close](phase5-debug-complete/030-banner-and-e2e.md) | no | not started | — | drives local-debug-mode 070/080 |
 | — | money-path → [stage 3](../stage3/README.md) | YES | moved out (Simon-gated) | — | order dedup / reconciliation / halts; not stage-2 work |
-| 7 | [010 HANDOFF.md](phase7-handoff/010-handoff-doc.md) | no | done (2026-08-11) | Claude/Darren | app-root HANDOFF.md + questions-routing in CLAUDE.md/00-start-here |
+| 7 | [010 HANDOFF.md](phase7-handoff/010-handoff-doc.md) | no | done (2026-08-11) | Claude/Darren | docs/todo/HANDOFF.md + questions-routing in CLAUDE.md/00-start-here |
 | 7 | [020 give-to-Simon checklist](phase7-handoff/020-give-to-simon-checklist.md) | no | not started | — | the "ready?" gate |
 | 7 | [030 docs & retire packs](phase7-handoff/030-docs-and-retire.md) | no | not started | — | CHANGELOG, in-app help, /spec done on finished packs |
 

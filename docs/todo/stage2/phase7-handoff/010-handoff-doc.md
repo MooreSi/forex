@@ -9,7 +9,7 @@ Simon can answer. There was no single entry point and no rule routing unanswerab
 
 ## What was done (2026-08-11)
 
-- **`HANDOFF.md`** at the app root — the money rule, who's who (Darren runs sessions; Simon holds
+- **`HANDOFF.md`** in docs/todo/ — the money rule, who's who (Darren runs sessions; Simon holds
   creds + decides money), how to run it locally in debug mode, current state, what's parked for Simon,
   how work is tracked, and where questions go.
 - **Questions-routing wired in**: `docs/system/rules/00-start-here.md` gained a "Questions you cannot

@@ -9,9 +9,9 @@ single entry point for a new agent or developer.
 ## 0. The one rule that overrides everything
 
 This app places **real orders on a real broker account with real money.** Before you change
-anything, read — in order — **[CLAUDE.md](CLAUDE.md)** and
-**[docs/system/rules/00-start-here.md](docs/system/rules/00-start-here.md)** →
-**[10-golden-rules.md](docs/system/rules/10-golden-rules.md)**. They are short and not optional.
+anything, read — in order — **[CLAUDE.md](../../CLAUDE.md)** and
+**[docs/system/rules/00-start-here.md](../system/rules/00-start-here.md)** →
+**[10-golden-rules.md](../system/rules/10-golden-rules.md)**. They are short and not optional.
 
 Never place/close/modify a real or demo order to test. Never edit a test to make a change pass.
 Write the test first and watch it fail. `python -m tools.checks all` must be green before any commit.
@@ -32,7 +32,7 @@ is **Simon's** to answer, and Darren usually cannot answer it. See §5.
 
 If you hit a decision you cannot make from the code, the rules, or a sensible default — **do not
 block, and do not guess a money/policy answer.** Pick a safe provisional default, proceed, and
-**write the open decision as a file in [docs/questions/](docs/questions/)** (see its README for the
+**write the open decision as a file in [docs/questions/](../questions/)** (see its README for the
 format). Simon reviews that queue and answers. A provisional default must keep trading no more
 aggressive than today and is never silent — record what you chose and what changes if the answer
 differs. Confirming a queue item is a *decision*; it is **not** the money-path sign-off + demo

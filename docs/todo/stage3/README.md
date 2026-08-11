@@ -13,7 +13,7 @@ roadmap never stalls waiting on him.
 
 ## 👋 Picking this up
 
-1. Read [../../../HANDOFF.md](../../../HANDOFF.md) and the golden rules. Run `/safe-change` before
+1. Read [../HANDOFF.md](../HANDOFF.md) and the golden rules. Run `/safe-change` before
    touching any task here.
 2. **Do not ship any of this without Simon** — sign-off + demo session, both recorded in PROGRESS.
 3. Confirm the money-path provisional defaults first: [../../questions/001-trading-defaults.md](../../questions/001-trading-defaults.md)

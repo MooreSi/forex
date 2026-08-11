@@ -10,7 +10,7 @@ stage 2 is workable today without Simon.
 
 ## 👋 Picking this up (agents start here)
 
-1. **New here? Read [../../../HANDOFF.md](../../../HANDOFF.md) first**, then the rules:
+1. **New here? Read [../HANDOFF.md](../HANDOFF.md) first**, then the rules:
    [CLAUDE.md](../../../CLAUDE.md) → [docs/system/rules/10-golden-rules.md](../../system/rules/10-golden-rules.md).
    This app places real orders with real money.
 2. **This pack is the master roadmap** to "giveable to Simon". It has its own new work (phases 1–3, 7)

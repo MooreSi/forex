@@ -13,7 +13,7 @@ give to Simon?" checklist, and the docs reflect what actually shipped.
 
 | Doc | Contents | Money |
 |---|---|---|
-| [010-handoff-doc.md](010-handoff-doc.md) | HANDOFF.md at the app root + questions-routing in CLAUDE.md/00-start-here (DONE 2026-08-11) | no |
+| [010-handoff-doc.md](010-handoff-doc.md) | HANDOFF.md in docs/todo/ + questions-routing in CLAUDE.md/00-start-here (DONE 2026-08-11) | no |
 | [020-give-to-simon-checklist.md](020-give-to-simon-checklist.md) | The readiness gate — what must be true across phases 1–6 before it goes to Simon | no |
 | [030-docs-and-retire.md](030-docs-and-retire.md) | CHANGELOG, in-app help finalization, docs/system updates; `/spec done` on finished packs | no |
 
