@@ -24,7 +24,26 @@ the intended replacement that never got plugged in.
 - **B. Remove this one — the connected one is the keeper**
 - **C. You remember choosing this feature — connect it**
 
-**ANSWER:**
+**ANSWER:** B — remove it. (Simon, 2026-08-25)
+
+> **Investigation done 2026-08-25, and it changes the question.** There are not
+> two files. There is **one**: `forex_trader/core/ai_rule_generator.py` was
+> renamed to `backend/src/services/channels/rule_generator.py` by the refactor,
+> byte-for-byte identical (git records it `R100`, commit `a154a54`). The
+> "connected one" this question assumed exists does not. Nothing imports or
+> calls it **in either repo** — checked `MooreSi/forex` `main` as well as this
+> branch. Its two entry points (`generate_rule`, `generate_sl_adjustment_rule`)
+> have zero callers; the only mentions anywhere are two stale comments
+> (`backend/migrations/schema_sql.py:431`,
+> `backend/src/services/signals/parser.py:647`) and a docstring in
+> `backend/src/services/cluster/sync/server.py:793`, all naming the old
+> filename. The orphan-allowlist reason (`tools/refactor_audit/
+> orphan_module_allowlist.json`) was written on the false premise and is wrong.
+>
+> **Follow-up work this authorises** (separate commit, not part of the upstream
+> merge): delete `backend/src/services/channels/rule_generator.py`, drop its
+> `orphan_module_allowlist.json` entry, and clear the three stale references
+> above. Recoverable from git history if it is ever wanted back.
 
 
 ---
@@ -41,7 +60,14 @@ on the future roadmap.
 - **B. Remove it**
 - **C. Connect it now**
 
-**ANSWER:**
+**ANSWER:** A — confirmed. Leave it parked; decide when the licence rework
+happens. (Simon, 2026-08-25)
+
+> **Note added 2026-08-25 during the upstream merge.** This area has already
+> moved under the question: the live app has since replaced the shared-secret
+> licence HMAC with **Ed25519 signing plus Telegram approval**, and added
+> auto-healing of old HMAC keys. Revisit this only after that work has landed
+> here and been reviewed.
 
 
 ---
@@ -56,7 +82,10 @@ touch live trading. Runs by hand; not reachable from the app's screens.
 - **B. Remove it**
 - **C. Give it a button in the app eventually**
 
-**ANSWER:**
+**ANSWER:** A — confirmed. Keep it as a hand-run safety tool.
+(Simon, 2026-08-25) A way to test a strategy change without risking money is
+exactly what this project's rules ask for; having no button does not make it
+dead weight.
 
 
 ---
@@ -70,5 +99,12 @@ whether that was deliberate.
 - **B. It should still be there — reconnect it**
 - **C. Don't remember — leave it parked** *(current default)*
 
-**ANSWER:**
+**ANSWER:** C — don't remember; leave it parked. (Simon, 2026-08-25)
+
+> Context noted while answering: the module's password helpers
+> (`hash_password` / `verify_password` in
+> `backend/src/services/test_signal/auth.py`) are still exercised by
+> `tests/controllers/test_remote_admin_password.py`, so the file is not inert
+> even though the tab's gate is disconnected. Check that test before any future
+> deletion.
 

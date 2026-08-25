@@ -30,5 +30,35 @@ outage stops all new trades.
   This is a real behaviour change, so it would also go through the demo
   session before shipping)*
 
-**ANSWER:**
+**ANSWER:** A — confirmed. Keep trading when news is unknown, and log it
+loudly. (Simon, 2026-08-25)
+
+> **Note added 2026-08-25 during the upstream merge — this changes the basis of
+> the answer, in Simon's favour.** Two facts were not known when this question
+> was written:
+>
+> 1. **At the fork point the blackout had never fired at all, on any data.** The
+>    ForexFactory feed names its currency field `country`; both calendar parsers
+>    read it as `currency`, so every event came back with currency `None`,
+>    nothing matched the USD/XAU filter, and the blackout returned "clear"
+>    forever — while looking healthy, because the fetch succeeded and the event
+>    list was non-empty. Fixed upstream on 2026-08-06 (`9e8172e`). The same bug
+>    pinned `news_proximity_norm` at 1.0 for every signal fed to all three ML
+>    engines, so any model trained on that feature learned from a constant.
+> 2. **"News unknown" is now a far narrower window.** `news_calendar.py` keeps
+>    the last good payload in a disk cache that survives restarts, retries with
+>    5/10/20-minute backoff capped at an hour, and when the calendar is genuinely
+>    unavailable `check_news_blackout()` falls back to a hardcoded schedule
+>    (FOMC days, NFP Friday, CPI Tuesday, top-of-hour) and **blocks** in those
+>    windows. A feed outage no longer means flying blind.
+>
+> So option A now costs much less than the question implies, and option B would
+> buy correspondingly little. **Revisit if** the loud logs show the remaining
+> blind spot (cold cache *and* a release outside the hardcoded windows) actually
+> occurring.
+>
+> **Follow-up to raise separately:** `_FOMC_DATES_2026` is a hardcoded year-
+> specific date list. It goes stale on 2027-01-01 and the fallback quietly loses
+> its FOMC coverage — the same silent-failure shape as the bug above. Needs
+> either a yearly refresh task or a derived source.
 

@@ -43,6 +43,12 @@ and watch it demonstrated. That work is prepared and waiting (see below).
 
 ## What we need from you — step by step
 
+> **Status update, 2026-08-25: Step 1 is done.** All five decision files are
+> answered and Part A of the session agenda is closed. Three of the questions
+> turned out to rest on premises that were false or out of date, and the answers
+> record what was actually found. See [questions.md](questions.md) for the
+> summary and the nine follow-up items the answers authorise.
+
 **Step 1 — Answer the questions (about 30 minutes, no computer skills
 needed).** Open [session-agenda.md](session-agenda.md) and work down Part A.
 Each row links to one of the numbered files in this folder; open the file,
