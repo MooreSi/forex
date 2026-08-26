@@ -112,11 +112,19 @@ exist. Coverage was two pure clock helpers and the controller — nothing that r
 section plus a negative control, watched red twice (a renamed caption, and a section made to
 return early as if the split had lost it).
 
-**Still outstanding, and this is the important part:** those tests assert the sections are
-BUILT. They do not assert the numbers. Win rate, profit factor, realised R, max drawdown and
-the equity curve's points are exactly as unpinned as before this task started, and this plan's
-"What must NOT change" list leads with them. A characterization test for the figures is still
-the right next piece of work on this page.
+**Now pinned (2026-08-26):** the figures are characterized after all, in
+`tests/core/test_mt5_history_characterization.py` -- profit factor, max drawdown, ROI and
+the five `daily_*` fields, plus a guard that every key the page reads is still present
+(the page uses `.get()` with defaults throughout, so a renamed key blanks a card and
+raises nothing). Expected values are derived by hand from the formulas, not copied from a
+run, and both a changed formula and a renamed key were watched go red. They live in the
+existing file rather than a new one so they reuse its `_FakeBridge` and `engine` fixtures
+instead of adding another copy of each to a ratchet that is already over baseline.
+
+**Still outstanding:** those tests assert the sections are
+BUILT. They do not assert the numbers. realised R and the equity curve's individual points are still unpinned, and the render
+tests assert the sections are BUILT rather than what they say. The summary numbers, which
+this plan's "What must NOT change" list leads with, are now covered.
 
 **Not attempted:** the summary-stats-to-`components/` question. The second-caller rule says
 move it only if a second caller exists today; that was not investigated, so it stayed put.
