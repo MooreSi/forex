@@ -1,6 +1,6 @@
 # 030 — Split `history.py` (1,416 lines)
 
-**Status:** not started
+**Status:** done -- see the outcome at the end
 **Depends on:** 2/010 (the convention), and phase-1 task 030 which rewires this file
 **Touches money:** no — but it renders the numbers the owner uses to judge whether the app is working, which deserves the same care.
 **Layer:** frontend
@@ -85,3 +85,44 @@ second caller genuinely exists today.
 - Two pages (`ai_summary.py`, `edge_dashboard.py`) read analytics too. If the same summary component
   appears in all three, that is a real shared component and the strongest candidate in this phase for
   `components/`. It is also the only one worth going looking for.
+
+---
+
+## Outcome (done)
+
+Seven modules, largest 451, nothing over the ceiling:
+
+| Module | Lines |
+|---|---|
+| `_calendar.py` | 451 |
+| `_trade_table.py` | 413 |
+| `_heatmap.py` | 246 |
+| `__init__.py` | 179 |
+| `_equity_curve.py` | 139 |
+| `_shared.py` | 136 |
+| `_channels.py` | 108 |
+
+Zero string literals lost against the pre-split file (1,263 -> 1,270; the seven gained are the
+`__all__` entries). Contract edges held at 61. Files over 800 repo-wide: 17 -> 16.
+
+**The stale premise.** This plan says phase-1 pinned every displayed number in
+`test_history_numbers_characterization.py` and that this task can reuse it. That file does not
+exist. Coverage was two pure clock helpers and the controller — nothing that rendered the page.
+`tests/frontend/test_history_page_renders.py` was written first instead, one landmark per
+section plus a negative control, watched red twice (a renamed caption, and a section made to
+return early as if the split had lost it).
+
+**Still outstanding, and this is the important part:** those tests assert the sections are
+BUILT. They do not assert the numbers. Win rate, profit factor, realised R, max drawdown and
+the equity curve's points are exactly as unpinned as before this task started, and this plan's
+"What must NOT change" list leads with them. A characterization test for the figures is still
+the right next piece of work on this page.
+
+**Not attempted:** the summary-stats-to-`components/` question. The second-caller rule says
+move it only if a second caller exists today; that was not investigated, so it stayed put.
+
+**Left alone deliberately:** `_platform_fee_rate`, a dead import chain through `runtime.py`
+that the split surfaced. Unpicking it means editing a negative-control test, which is not a
+thing to do inside a file move. Tracked in
+[031](031-platform-fee-rate-dead-reexport.md).
+
