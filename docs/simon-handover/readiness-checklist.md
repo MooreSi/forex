@@ -8,6 +8,16 @@ is the exact failure this repo's rules exist to prevent.
 _Status as of 2026-08-11 (stage-2 sweep). Update in place; this is a keeper
 doc, not a work log._
 
+> **The bar moved, 2026-08-26.** Simon answered Q007 #2 with **B — full
+> self-serve**: "handed over" now means he can install, configure and run the
+> app alone from the documentation, with nobody else present. That is a higher
+> bar than the guided session this list was written against, and it adds a row
+> below.
+>
+> It does **not** waive the Part B demos. The money-path work still has to be
+> watched on his demo account before it ships — that is a golden rule, not a
+> preference about handover style.
+
 ## The gate
 
 - [x] **Usability (stage2 phase 1).** First boot shows the Start Here
@@ -47,6 +57,12 @@ doc, not a work log._
   *Ready for him: [session-agenda.md](session-agenda.md) is the sitting;
   the circuit-breaker design review (docs/reviews/2026-08-11) confirms the
   gaps 050 fixes.*
+- [ ] **Self-serve documentation (Q007 #2 — the raised bar).** Install,
+  configure and first run achievable from the docs alone, by Simon, with no one
+  else present: MT5 credentials, Telegram API key, licence activation, and what
+  to do when each one fails. The Start Here checklist and Help button cover the
+  in-app half; the install-from-scratch half is not written.
+  *Open — this row did not exist until Simon raised the bar on 2026-08-26.*
 - [x] **Docs.** HANDOFF.md current (docs/todo/refactor/HANDOFF.md); open decisions
   parked in docs/simon-handover/ (6 items, 0 answered — Simon/Darren triage them
   at handoff); knowledge base updated as work landed.

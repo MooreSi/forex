@@ -1,10 +1,33 @@
 # 070 — Auto-update channel off by default until signed
 
-**Status:** not started
+**Status:** SHIPPED, then REVERSED by the owner — see the resolution below
 **Depends on:** none
 **Touches money:** no
 **Layer:** service + config
 **Leverage:** config default mechanism; nothing new is built — this fix is subtraction
+
+## Resolution (2026-08-26) — read this first
+
+This task shipped: the flag, the loud warning and their tests all landed. It has
+since been **reversed by Simon's own decision** (Q001 #5, amended, in
+docs/simon-handover/001-trading-defaults.md). The client now defaults **ON**.
+
+Both premises below turned out to be wrong:
+
+* *"Owner confirms single-node localhost deployment — nothing legitimate
+  currently needs this channel."* False. Simon uses the admin console for
+  licence permissions, revocation and seeing which clients are online. A client
+  that never connects is a broken feature.
+* *"accepts a pushed ZIP written over the app and run."* No longer true.
+  Upstream 0815cc6 deleted the zip-streaming protocol; an admin "update" now
+  only asks the client to run its own git pull.
+
+**What remains genuinely unauthenticated** is the TLS link: CERT_NONE with no
+certificate pinning (remote/tls.py). That is the live risk and the tracked
+follow-up. The warning at `backend/src/app.py` was rewritten to name it, because
+a warning describing a deleted risk trains people to ignore warnings.
+
+Left in place as the record of why the flag exists and how it was reasoned about.
 
 ## Problem
 

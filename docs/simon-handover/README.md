@@ -113,6 +113,7 @@ Darren and we fix the doc, not you.
 | [session-agenda.md](session-agenda.md) | The agenda for your two sittings — decisions, then demos |
 | [questions.md](questions.md) | The decision queue: how it works and the full list |
 | `001, 002, 004, 005, 007` | Your five decisions, one file each — options spelled out, you write on the **ANSWER:** lines |
+| [what-the-refactor-gave-you.md](what-the-refactor-gave-you.md) | What the refactor actually changed — better, cost, and still outstanding |
 | [readiness-checklist.md](readiness-checklist.md) | The honest "is it ready?" scorecard — what's green, what's not, and why |
 | [future-roadmap.md](future-roadmap.md) | Ideas for after the handover — not commitments, a menu |
 

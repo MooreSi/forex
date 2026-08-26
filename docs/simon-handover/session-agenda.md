@@ -49,6 +49,12 @@ they are built after Part A confirms the defaults they depend on.
 
 ## Part C — After the session
 
+**The bar Simon set (Q007 #2).** "Handed over" means full self-serve: he can
+install, configure and run the app alone from the docs. Part B's demos are still
+required on top — no answer here can waive watching the money-path changes run.
+So Part C now has a documentation deliverable as well as the demo sign-offs.
+
+
 - Every Part-B row Done with sign-off + demo recorded in PROGRESS → stage 3 is clear.
 - The go-live gate is [docs/simon-handover/readiness-checklist.md](readiness-checklist.md) —
   stage 3 is its last red row that matters.

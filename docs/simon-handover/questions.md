@@ -53,7 +53,11 @@ _Last updated: 2026-08-25._ Answered: **5 of 5 — Part A is closed.**
 
 ### Follow-up work these answers authorise
 
-Each is a separate commit, none of it part of the upstream merge itself:
+Each is a separate commit, none of it part of the upstream merge itself.
+
+**Status, 2026-08-26: 1, 2, 3, 4, 6, 8 and 9 are done. 5 is written up as a
+tracked task ([docs/todo/security/010](../todo/security/010-remote-channel-cert-pinning.md)).
+7 belongs to the Part B sitting.**
 
 1. Delete `backend/src/services/channels/rule_generator.py`, its
    `orphan_module_allowlist.json` entry, and three stale references (Q002 #1).
