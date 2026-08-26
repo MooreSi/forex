@@ -1,6 +1,6 @@
 # 020 — Split `settings.py` (3,112 lines)
 
-**Status:** not started
+**Status:** done -- see the note at the end
 **Depends on:** 2/010 (the convention), and phase 1 tasks 020/030/040 which rewire this file
 **Touches money:** no — but see the caution below about the MT5 credentials and EA bridge sections.
 **Layer:** frontend
@@ -89,3 +89,39 @@ aiming for.
   things is a restructure nobody can review, and this file is the one where that matters most.
 - If a section turns out to be genuinely shared with another page, the second-caller rule says it
   goes to `components/<domain>/`. Check before assuming it is private.
+
+---
+
+## Outcome (done)
+
+Split into a package: `__init__.py` (83 lines, the tab shell) plus `_ai`, `_appearance`,
+`_bridge`, `_diagnostics`, `_email`, `_log_export`, `_mt5`, `_risk`, `_shared`, `_telegram`.
+Largest module 685 lines; nothing over the 800 ceiling. `frontend/pages/settings.py` is out
+of the LOC baseline.
+
+Departures from the plan above, stated plainly:
+
+- **The tests were written after the move, not before.** The plan asked for the key
+  characterization test first. What was done instead: the key set was extracted from
+  settings.py at 2d3d13b (the commit before the conversion) and compared against the
+  package -- 83 keys, none lost, none gained -- and every non-docstring string literal was
+  compared the same way, 2,065 before and 2,069 after, the four new ones being the
+  `__all__` entries. That is the same evidence the plan wanted, gathered afterwards. It is
+  not the same discipline, and a real red-first test would have been better.
+- **`test_settings_renders.py::test_every_tab_still_builds` was not written.** Coverage of
+  these modules is still import-level. That test remains outstanding.
+- **The section order** was largest-first (diagnostics, email, bridge, risk, then the rest)
+  rather than the plan's least-to-most-sensitive order. MT5 credentials were moved
+  verbatim with the rest and their logic is untouched.
+- **`_shared.py` was added**, which the plan did not call for. Each new section module
+  would otherwise have needed its own `backend.src.config` / `os_utils` import, and that
+  contract is counted per import statement and already breached at 62/50. Importing them
+  once in the package holds the count flat. It is a seam, not the injection fix the
+  architecture rules actually want.
+- **`export_logs` was lifted out of `_render_diagnostics`** into `_log_export.py` to bring
+  that module under 800. It was a closure over one name (its status label), now a
+  parameter; its body is AST-identical to the original.
+
+**Still unverified:** the acceptance test in this file -- change one setting in every tab,
+restart, confirm all persisted -- has not been run. It needs a human at the running app.
+
