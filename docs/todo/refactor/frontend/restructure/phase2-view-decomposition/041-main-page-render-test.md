@@ -1,6 +1,6 @@
 # 041 — A render test for `main_page`, so the app shell can be split
 
-**Status:** not started
+**Status:** done
 **Blocks:** 040 (app shell split) — `frontend/app/__init__.py` is stuck at 1,288 lines
 **Touches money:** no
 **Layer:** frontend
@@ -55,3 +55,45 @@ failure mode a header extraction has.
 - A test renders `main_page` and asserts on the header's contents.
 - A deliberately broken header makes it fail.
 - `frontend/app/__init__.py` under 800 lines; `python -m tools.checks all` no worse.
+
+---
+
+## Outcome (done)
+
+`tests/frontend/test_main_page_renders.py`, eight tests, plus the harness at
+`tests/frontend/_render/main_shim.py`.
+
+Neither candidate above was needed in the form written. `guard.enforce()` turns out to be
+called by `run.py` **before** the server starts rather than as route middleware, so an
+in-process render never reaches the licence gate at all -- no sentinel licence, and
+`enforce()` was not touched. The second candidate (a NiceGUI client slot) is essentially
+what `nicegui.testing`'s `user_simulation` provides, and it is supported API rather than
+hand-built internals, which answers the old objection that this would "test NiceGUI more
+than this app".
+
+The shim is where the safety lives. `user_simulation` resets NiceGUI's globals on entry, so
+the route has to be registered inside that context; the shim also stubs both lifespan hooks
+**before** `frontend.app` binds them, because the real `backend.src.app.startup` opens the
+developer's live trading database and rewrites `bridge_credentials.json`, and the real
+engine opens an MT5 bridge connection. All four database namespaces are pointed at a temp
+file, and one of the tests asserts that isolation rather than assuming it.
+
+Watched red before being kept, in both directions:
+
+- replacing `"BID"` in the header failed `test_the_header_bar_is_built[BID]`, and nothing else
+- making one awaited engine call sync failed `test_the_header_refresh_runs_without_error`,
+  and nothing else
+
+That second one was not a contrivance. The fakes were sync at first, the suite was green,
+and the log carried `header refresh failed: object NoneType can't be used in 'await'
+expression` on every tick -- the header built correctly and its refresh died, which is
+exactly the failure this file exists to catch. The fakes are async now and the refresh path
+is covered.
+
+The header extraction followed immediately (`frontend/app/_header.py`) and this test passed
+unchanged against it.
+
+**Still not covered:** the test asserts the header is built and that its refresh completes,
+not that the values it writes are correct. A badge that refreshes cleanly with the wrong
+number still passes.
+

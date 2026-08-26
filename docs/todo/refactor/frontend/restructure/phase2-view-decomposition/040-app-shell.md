@@ -1,6 +1,6 @@
 # 040 — Split the app shell `app.py` (1,633 lines)
 
-**Status:** not started — **blocked on [QUESTIONS.md](../QUESTIONS.md) Q1**
+**Status:** done — see the outcome at the end
 **Depends on:** 2/010 (the convention); Q1 answered
 **Touches money:** no. But `app.py` holds the Local/Remote mode toggle, and switching modes decides **which node places trades**. Moving that code is not money-touching; getting it wrong is. Treat the mode toggle with the care of a money task even though the paperwork does not require it.
 **Layer:** frontend
@@ -117,3 +117,55 @@ If Q1 comes back "full split to under 800" or "leave it alone", rewrite this tas
 - `runtime.py` stopping at 1,310 lines is the precedent for a composition root having a floor. If
   `app.py` lands at 500 and will not go lower without inventing modules, that is the answer — record
   it in the phase-3 docs task as a deliberate exemption with the reason, the way M4 did.
+
+---
+
+## Outcome (done)
+
+`frontend/app.py` (1,746 by the time it was done, not the 1,633 above) is now a package:
+
+| Module | Lines | |
+|---|---|---|
+| `__init__.py` | 665 | patches, lifespan hooks, `main_page`, tab wiring |
+| `_header.py` | 595 | ticker strip, account panel, badges, the refresh, **the mode toggle** |
+| `_about.py` | 472 | About, Setup, Version History, Glossary |
+| `_shared.py` | 82 | `STATIC_DIR` and the two injected JS blobs |
+
+Nothing over the 800 ceiling. Files over 800 repo-wide: 19 -> 17 across this and the
+settings split.
+
+### The mode toggle — read this part
+
+This file's own header says: *moving that code is not money-touching; getting it wrong is.*
+`_toggle_mode`, `_refresh_mode_btn` and `_mode_sub_engines` sit inside the header bar, so
+they moved into `_header.py`. What protects them:
+
+- **The moved body is byte-identical to the original.** Asserted, not eyeballed: the
+  553-line chunk appears verbatim in `_header.py`, indentation included. `build_header`
+  rebinds `power_dialog`/`pause_dialog` to their original underscore names at the top
+  precisely so that no line inside had to change.
+- `tests/frontend/test_engine_panels_wiring.py::test_the_mode_toggle_import_stays_function_local`
+  still passes. It pins that the `engines_controller` import stays inside
+  `_mode_sub_engines` rather than being hoisted, because hoisting changes startup ordering.
+  It reads the whole package now, so it followed the code.
+
+**What is still not tested:** the toggle's actual behaviour — that switching to Remote
+stands the local node down and hands trading to the VPS, and back. No test exercises that,
+before this change or after it. The move did not make that worse and did not make it
+better. If anyone touches the mode toggle's logic rather than its location, that gap is
+the first thing to close.
+
+### Other notes
+
+- `_render_about` came out first and cleanly: one caller, no sibling dependencies.
+- The header extraction is a restructure, not a move, and it waited for
+  [041](041-main-page-render-test.md) — a render test for `main_page` — rather than being
+  done on judgement. That test passed unchanged against the extracted header.
+- A prerequisite landed before any of it: `_source_unit` in the import-contract audit only
+  grouped `frontend/pages/<page>/` packages, so a `frontend/app/` package would have counted
+  each module separately and scored the split as a regression on an already-breached
+  contract. The count held at 61 across the whole split.
+- `STATIC_DIR` was `Path(__file__).parent / "static"` and broke the moment the module gained
+  a directory level — the app would not start. It resolves from the repo marker now. Fourth
+  path-count bug of this kind in the codebase.
+
