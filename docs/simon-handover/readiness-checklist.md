@@ -37,10 +37,25 @@ doc, not a work log._
   duplication under a shrinking baseline.
 - [ ] **Frontend maintainable (stage2 phase 4).** Target: no pages file over
   800 lines, controller-boundary contract at 0, silent excepts at 0.
-  *Open — the boundary stands at 50 (was 59; engine-panel lane done, gates on
-  silent excepts + a NiceGUI canary landed 2026-08-11); settings.py 3,112 /
-  history.py / app.py splits and the hygiene sweep are the remaining stage-2
-  work. Not a money risk; a maintainability debt.*
+  *Open, but much smaller than when this row was written (updated 2026-08-27).*
+
+  Done since: `settings.py` 3,487 → 11 modules (largest 685), `app.py` 1,746 →
+  4, `history.py` 1,592 → 7, plus `chart`, `telegram`, `reversal_panel` and
+  `breakout_panel`. On the backend, `ea_bridge.py` 1,947 → 715 across 6
+  modules and `core_bot_panel.py` 1,689 → 604 across 6.
+
+  **Two frontend pages remain over 800 and both are blocked on a bug, not on
+  effort**: `ai_trade_analysis.py` (1,250) by
+  [bugs/011](../todo/bugs/011-signal-generator-analysis-nameerror.md) and
+  `test_panel.py` (1,245) by
+  [bugs/010](../todo/bugs/010-test-panel-reset-params-nameerror.md). Each page
+  carries a latent `NameError` that only fires when a button is clicked; a flat
+  module hides it from `test_page_packages_are_wired.py`, a package does not.
+  Splitting either one turns a silent dead button into a red gate. **Both fixes
+  need Simon's decision — see those two files.**
+
+  The controller-boundary ratchet still stands at 50. Not a money risk; a
+  maintainability debt.
 - [x] **Debug mode complete except the seam (stage2 phase 5).** Fakes for
   MT5/Telegram/news/AI/email, all outbound guarded behind `is_debug()`; the
   offline e2e proves signal → open → manage → close on the fakes; the debug

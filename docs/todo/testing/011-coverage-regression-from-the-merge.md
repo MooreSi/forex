@@ -1,8 +1,41 @@
 # 011 — The coverage ratchet is failing, and it is the merge's
 
-**Status:** measured, not fixed
-**Blocks:** `python -m tools.checks all` going green
+**Status:** RESOLVED 2026-08-27 — all three areas back above their floors
+**Blocks:** nothing. `python -m tools.checks all` passes all 8 checks.
 **Touches money:** yes, indirectly — two of the three areas are the money path
+
+## Resolved (2026-08-27)
+
+| area | at its worst | now | floor |
+|---|---|---|---|
+| `backend/src/runtime.py` | 63.9% | **77.7%** | 72.2 |
+| `backend/src/services/positions` | 75.8% | **87.4%** | 86.3 |
+| `backend/src/services/trading` | 86.4% | **88.2%** | 88.0 |
+
+**The floors were not touched.** They still read 72.2 / 86.3 / 88.0, the same
+numbers this document recorded as failing — check
+`tools/refactor_audit/coverage_baseline.json`, whose last change on this branch
+predates the whole recovery. The gap was closed by writing tests, which is the
+only way this document allowed it to be closed.
+
+Most of that coverage arrived as a side effect rather than as a campaign: the
+SQL sweep that took the structure gate's `sql` section from 56 statements
+across 22 files to zero required a test for each statement before it could
+move, and those statements were concentrated in exactly these areas. Roughly
+70 tests. Several turned out to be covering behaviour that had been
+line-covered but never asserted on — see the commit messages for
+`pending_activation`, `ea_bridge` and the trading services.
+
+**`services/trading` is 0.2 points above its floor.** That is one branch of one
+new function away from red. Anyone adding to `services/trading` should expect
+to add a test with it.
+
+Verified by `python -m tools.refactor_audit.coverage_gate --report`.
+
+---
+
+_Original analysis below, kept because the reasoning about why floors must not
+be lowered is still the standing rule._
 
 ## What the ratchet says
 

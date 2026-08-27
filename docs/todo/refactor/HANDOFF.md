@@ -55,10 +55,52 @@ Then open **http://localhost:8890** and log in with **`debug`** / **`debug`**.
 - Expect `LoopMonitor` stall warnings — the engines are heavy at idle; not an error (a known issue).
 - `python run.py` (no debug) is the real app and requires real credentials + a real licence.
 
-## 4. Current state (2026-08-11)
+## 4. Current state (2026-08-27)
 
-Branch: `claude/refactor-plan-docs-pjn1hl`. Recent, verified-green work (each landed with
-`tools.checks all` green):
+Branch: `claude/upstream-merge-and-handover-answers`, 292 commits ahead of `main`,
+0 behind. **`python -m tools.checks all` passes 8/8. Suite: 3,622 passing, 0
+failures.**
+
+### What happened since 2026-08-11
+
+The 2026-08-25 merge brought `MooreSi/forex` main into the refactored tree —
+roughly 8,000 lines into `runtime.py`, `services/positions` and
+`services/trading`. That broke the coverage ratchet, the LOC ratchet and the
+facade audit. All three are green again; see CHANGELOG's top section for the
+full list. The headlines:
+
+- **Two live money bugs found and fixed**, neither yet seen by a broker: the
+  harvest threshold was reading a pips field as currency and shipped defaulted
+  to on (it closed two real trades at ~C$1.40 against a $30 setting), and the
+  Telegram panel's IME button could switch Immediate Market Entry on but never
+  off. Both need the demo session — see §5.
+- **SQL gate: 56 statements across 22 files → 0.** Each statement moved into a
+  repo behind a test written first and confirmed by mutation. This is also
+  where most of the recovered coverage came from.
+- **`ea_bridge.py` 1,947 → 715** (split into a package), `core_bot_panel.py`
+  1,689 → 604, plus `settings.py`, `app.py`, `history.py` and four more
+  frontend pages.
+- **Five ratchet baselines were raised with the owner's sign-off**, each
+  recorded in `structure_baseline.json` with its reason; three others were
+  tightened in the same pass.
+
+### What is open
+
+- **Two frontend pages cannot be split** until a latent `NameError` on each is
+  decided: `docs/todo/bugs/010` (test panel) and `011` (signal generator).
+  Both are user-facing dead buttons and **both need Simon's decision**, not
+  just a fix — 010 would turn a destructive 50-parameter reset live on an
+  engine that places real orders, and 011's system prompt was never written.
+- **`cluster/remote` and `cluster/sync` have zero tests** across 4,995 lines of
+  token issuance and admin authority. Deferred by the owner
+  (`docs/todo/testing/012`). This is also why raising `remote/server.py`'s LOC
+  baseline is flagged as the least comfortable of the five.
+- **CI status is unverified.** The last recorded green run was 2026-08-11 on
+  `d2a1661`, ~292 commits ago. `gh` is installed but not authenticated.
+- `services/trading` sits 0.2 points above its coverage floor. Add a test with
+  anything you add there.
+
+### Earlier verified-green work (2026-08-11)
 
 - **Aug-08 review remediation** (`docs/todo/refactor/stage1/`, partially done): dashboard binds to
   localhost; the guardrail gates are real again (coverage ratchet fed, a module-reachability orphan
