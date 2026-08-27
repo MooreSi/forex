@@ -1,6 +1,34 @@
 # 011 — "Run Analysis" on the Signal Generator panel raises NameError
 
-**Status:** not started — **and it blocks the ai_trade_analysis split**
+**Status:** RESOLVED 2026-08-27 — the prompt existed all along
+
+## Resolved (2026-08-27)
+
+Option 1 in "What to do" below was the right one: the prompt was never
+missing. `_SIGNAL_GEN_SYSTEM` and `_SIGNAL_GEN_SCHEMA` live in
+`backend/src/services/analytics/ai_analysis_repo.py`, complete and carefully
+written. The M3 page drain moved them there and never repointed the caller, so
+the page went on naming a local constant that no longer existed and the repo's
+copy was referenced by nothing.
+
+No prompt was invented, which is what this document asked for.
+
+Wired repo -> service -> controller -> page, because the frontend talks to
+controllers and controllers do not import a service's repo:
+
+    ai_analysis.signal_generator_system_prompt()
+    ai_analysis_controller.signal_generator_system_prompt()
+    page: system = ai_ctl.signal_generator_system_prompt()
+
+Eight tests in `tests/frontend/test_signal_generator_analysis.py`, driven with
+a fake provider -- nothing reaches Anthropic or DeepSeek. Restoring the
+original broken call fails five of them.
+
+The Telegram-channel half of the panel needed no change: `_gather_channel_data`
+selects every channel with a parsed, directional signal in the window, with no
+LIMIT and no enabled-filter, so "all channels" was already true.
+
+**This unblocks the ai_trade_analysis split** (1,250 lines).
 **Found:** 2026-08-26, by a pyflakes sweep of the whole tree
 **Touches money:** no — it is an AI commentary call, not an order path
 **Severity:** live, user-facing, silent until clicked

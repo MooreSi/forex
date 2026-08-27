@@ -1,6 +1,23 @@
 # 010 — "Reset to defaults" on the signal test panel raises NameError
 
-**Status:** not started — **and it blocks the test_panel split**
+**Status:** RESOLVED 2026-08-27 — button REMOVED on the owner's instruction
+
+## Resolved: removed, not repaired (2026-08-27)
+
+The owner's call, and the right one. Making the button work meant wiring
+`adaptive_params.reset_to_defaults()` through new controller surface, and that
+call wipes all ~50 learned values for the Bounce engine back to factory --
+no undo, no snapshot, on an engine that places real orders through
+`open_trade_from_signal`. A single unconfirmed click discarding everything the
+engine has learned is not a button this panel needs.
+
+The parameter table above it still shows every value against its default, so
+the information the button implied is not lost. `reset_to_defaults()` is
+untouched in the service; only the dead UI is gone. If a reset is ever wanted
+back it needs a confirmation step and sign-off.
+
+**This unblocks the test_panel split** (1,245 lines) -- the NameError that
+would have failed `test_page_packages_are_wired.py` is gone with the button.
 **Found:** 2026-08-26, while splitting `frontend/pages/test_panel.py`
 **Touches money:** no — it is the bounce/test panel's parameter block, not an order path
 **Severity:** live, user-facing, and silent until clicked
