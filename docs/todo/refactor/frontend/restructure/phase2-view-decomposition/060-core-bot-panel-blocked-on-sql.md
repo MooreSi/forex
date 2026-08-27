@@ -1,6 +1,6 @@
 # 060 — `core_bot_panel.py` cannot come under 800 without the SQL drain
 
-**Status:** attempted 2026-08-27, reverted, blocked
+**Status:** DONE 2026-08-27 — the SQL was drained first, then the split landed
 **Blocks:** the `[loc]` drift item for `backend/src/services/positions/core_bot_panel.py` (1,712 lines)
 **Depends on:** the SQL drain — money path, needs a demo session
 
@@ -61,3 +61,46 @@ controller**, which `services-never-import-controllers` enforces at zero. It cam
 straight back on the next contract check. Import it from
 `backend.src.utils.models` in backend code; the controller re-export exists for
 the frontend, which is the only layer that needs it.
+
+---
+
+## Done
+
+The order in this doc turned out to be exactly right. Draining first removed
+the objection, and the split then went in unchanged.
+
+1. All six statements moved into `panel_repo.py` (a `*_repo.py`, so the data
+   layer recognises it). `core_bot_panel` holds no SQL at all now, so splitting
+   it can no longer spread a baselined violation across new files.
+2. The split then took it from 1,689 to **604**, six ways:
+
+| module | lines | |
+|---|---|---|
+| `_panel_settings.py` | 387 | field machinery and the screens that drive it |
+| `_panel_schedule.py` | 261 | the Trading Schedule editor |
+| `_panel_trade_ops.py` | 214 | market orders, pendings, risk-free, close, push SL |
+| `_panel_shared.py` | 150 | Screen, callback helpers, channel lookups |
+| `_panel_registration.py` | 108 | licence approval and rejection |
+| `core_bot_panel.py` | 604 | screens, pause, dispatch |
+
+Everything is re-exported from `core_bot_panel`, wholesale rather than only
+what it calls — that is the name every caller and test already imports, and a
+partial surface just moves the breakage to whoever reaches for the rest.
+
+### Two things that bit, both foreseeable
+
+`FIELDS` and `GLOBAL_FIELDS` are **annotated** assignments (`FIELDS: dict[str,
+dict] = {...}`), and the extractor only handled plain `ast.Assign`. It silently
+moved nothing and reported success; only pyflakes' undefined-name check caught
+it.
+
+`_panel_trade_ops` binds `_trade_push_sl_pips` at import, so a test patching
+that name on `core_bot_panel` no longer reaches the code that calls it. Two
+stop-loss tests failed the moment the split landed — correctly. They patch the
+binding site now.
+
+`_panel_settings` reaches back for `_dispatch` and `channel_settings_screen`
+through function-local imports. Those two genuinely live in the dispatcher, and
+a module-scope import would be the circular-import trap that caught the chart
+and reversal-panel splits.
+
