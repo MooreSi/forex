@@ -50,14 +50,26 @@ proved non-vacuous by mutation (mutants and results named in each commit):
 | `node_roles` | 17 |
 | `signal_bus_repo` | 25 |
 | `sync/client` — pending-proposal queue only | 24 |
+| `remote/server` — licence issuance, revocation, admin authority | 37 |
+| `remote/client` — machine identity, diagnostics filter | 30 |
+| `sync/server` — token gate, handshake, stand-down/resume | 26 |
+| `sync/server` — forwarded market and signal orders | 16 |
 
 `cluster/node.py` was skipped on purpose: 29 lines of pass-through delegation,
 where a test could only restate the forwarding.
 
-**Still untested, and still the reason this file exists:** `remote/server.py`
-(1,256), `sync/server.py` (1,085), `remote/client.py` (894), and the rest of
-`sync/client.py`. Token issuance and admin authority are in these four. "Where
-to start" above is unchanged and still applies.
+**What is now covered in the four big files:** licence issuance and revocation,
+admin-machine authority, the per-IP auth limiter, the sync token gate and
+handshake, stand-down/resume, forwarded order handling, and client machine
+identity. Those were the security-critical entry points named above.
+
+**Still untested:** the remaining websocket plumbing -- `remote/server.py`'s
+admin command handlers and its update/beacon loops, `sync/server.py`'s
+broadcast, heartbeat and liveness-watchdog loops and the stats payloads,
+`remote/client.py`'s `_connect_loop` and the restart/git-update path, and
+`sync/client.py` beyond the pending queue. These are mostly long-lived async
+loops and subprocess work, which want a different testing approach than the
+handler-level tests written so far.
 
 ## What the tests found
 
