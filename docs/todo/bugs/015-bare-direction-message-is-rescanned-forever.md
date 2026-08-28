@@ -32,12 +32,17 @@ Gold Diggers VIP, `tg_id=19886`, a 15-character bare SELL:
 
 ```
 first  2026-08-28 16:41:22,027   (1 ms after the message arrived)
-last   2026-08-28 17:51:17,438   (still going when this was written)
-count  3,954 identical lines
+last   2026-08-28 19:06:53       (still going, checked again later)
+count  8,319 identical lines and counting
 ```
 
 Nothing else in the app noticed. No `vantage_tg_signals` row exists for 19886,
 which is correct behaviour, and it is also why the loop never ends.
+
+Re-checked 19:06:53 the same evening: still the same single message, still
+about one line per second, 8,319 lines. It does not stop on its own -- the
+message stays inside the reader's fetch window indefinitely because nothing
+ever records it as handled.
 
 `forex_trader.log` is 47 MB. A steady drip of one line per second per parked
 bare message is a meaningful share of that.
