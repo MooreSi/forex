@@ -86,6 +86,27 @@ genuinely resting limit order is never killed, short enough that a slot is not
 lost for a day. Whatever it is, this is the close path, so it needs its own
 test written first and a demo session.
 
+### The existing tests already draw the line in the right place
+
+Worth knowing before anyone starts, because it looks at first like the fix has
+to fight a test. `tests/core/test_template_placeholder_repair.py` has:
+
+```python
+def test_leaves_placeholder_alone_when_no_leg_has_filled(fresh_db):
+    """Legs may still be resting as pending orders -- nothing to repair, and
+    certainly nothing to close."""
+```
+
+That asserts exactly the behaviour an age limit would change — but its fixture
+inserts the row with `open_time = time.time()`, i.e. a placeholder that is
+seconds old. A young placeholder must still be left alone, so **that test keeps
+passing unchanged**, and it is the right test to keep: it pins the half of the
+rule that must not break.
+
+The fix is therefore additive — a new test for an OLD placeholder with no
+broker deal, written first and watched fail. No existing test needs editing,
+which is the outcome the golden rules want.
+
 **Do not just delete the row.** Something wrote it, and the same thing will
 write another. Understanding why `_promote_leg_fill` never fired for this trade
 matters more than clearing one row — though clearing it does get the slot back
