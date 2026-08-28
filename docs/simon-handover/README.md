@@ -125,3 +125,5 @@ before you can trust it live is the work that was always going to need you
 in the room.
 
 - [Q009 — breached entry zone: drop or queue?](009-breached-zone-discard-or-queue.md)
+
+- [010-session-2026-08-28-evening.md](010-session-2026-08-28-evening.md) — what got done while you were out, and the two things that now need you
