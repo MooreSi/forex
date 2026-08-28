@@ -123,3 +123,5 @@ The app is easier to use, safer to change, provably testable, and can be
 demonstrated end-to-end without risking a penny — and the only work left
 before you can trust it live is the work that was always going to need you
 in the room.
+
+- [Q009 — breached entry zone: drop or queue?](009-breached-zone-discard-or-queue.md)
