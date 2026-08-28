@@ -60,7 +60,40 @@ right question.
 | # | Change | The demo he watches |
 |---|---|---|
 | M1 ✅ | **VERIFIED on demo 2026-08-28.** ticket 1883252429, SELL 0.1 @ 4577.88 on `template:Harvest $30`, closed 27s later at 4574.97 for **+$29.10** -- the template's own $30, not the global $75. Closing deal comment empty = EA `PositionClose()`, not a stop or target. All 22 templates read `harvest_pips=0.0` and the EA received it. **Harvest threshold fix** — `harvest_pips` (pips) was being read as `harvest_threshold` (account currency), and shipped defaulting to `1.0` rather than off. Two live trades closed at ~C$1.40 against a $30 setting. Migration 29 clears the stale `1.0`. | Set a harvest threshold of $30 on a demo template, open a position, let it run past +$1.40. **It must NOT close.** Then confirm the basket closes when the account-currency figure genuinely reaches $30. |
-| M2 | **IME toggle fix** — the Telegram panel's Immediate Market Entry button could turn IME on but never off; the two reads used different config keys, so the "off" write landed where the "on" read never looked. | Toggle IME **off** on a channel, send a signal whose price has already left the zone. **No market order.** Toggle on, repeat, confirm it fires. Re-open the panel between steps -- the original bug only showed on re-read. |
+| M2 ✅ **VERIFIED 2026-08-28** | **IME toggle fix** — the Telegram panel's Immediate Market Entry button could turn IME on but never off; the two reads used different config keys, so the "off" write landed where the "on" read never looked. | Toggle IME **off** on a channel, send a signal whose price has already left the zone. **No market order.** Toggle on, repeat, confirm it fires. Re-open the panel between steps -- the original bug only showed on re-read. |
+
+**M2 result — verified on the demo account, no order placed.**
+
+Evidence, all from the live run:
+
+* `vantage_risk_settings.immediate_market_entry = 0` (read from
+  `forex_trader_demo.db`) — the toggle's "off" write is landing where the read
+  looks, which is the thing 012 broke.
+* A real bare SELL arrived from Gold Diggers VIP, `tg_id=19886`, 16:41:22.
+  It produced **no market order, no `vantage_tg_signals` row, and no alert** —
+  only `scan_messages.py:236`'s gate declining it.
+* The contrast cases are still in the table from when IME was on:
+  `tg_message_id` 19869 `XAUUSD SELL NOW` and 19875 `XAUUSD BUY NOW`, both
+  `status='instant_activated'`.
+
+**Correction to the discriminator recorded earlier in this session.** I had
+written that `instant_pending` means IME is off. That is wrong.
+`process_instant_entry` inserts its row *before* checking `auto_execute`, so
+`instant_pending` means IME ran and parked the trade. With IME **off** the
+caller at `scan_messages.py:236` never runs, so there is **no row at all**.
+Absence of a row is the signal, not a particular status.
+
+**Not verified:** the "toggle on, repeat, confirm it fires" half. That needs
+IME switched back on and a market order placed, which is Simon's call.
+
+**Noted while doing this:** there is no log line when a risk setting changes,
+so the exact moment IME was switched off cannot be established from the log —
+only its current value from the database. Worth adding if these settings are
+going to be verified from logs again.
+
+**Also found:** that same message was re-parsed 3,954 times — see
+[bugs/015](../todo/bugs/015-bare-direction-message-is-rescanned-forever.md).
+
 | M3 | **~20 money-path files had their SQL moved into repos** (pending activation, ea_bridge, scan_auto_execute, open_from_signal, instant_followup, template placeholder repair, orphan reconcile, second-message merge). Statements moved verbatim; each is covered by a test written first and confirmed by mutation. | One full signal -> open -> manage -> close cycle on demo, then check the DB row against the terminal: entry, lots, SL/TP, and the closed P&L match. This is the broad "did the drain change anything" check. |
 | M4 | **Anti-compounding revert** in the pending-signal watcher. Its absence previously walked one signal's stop 110 pips over 80 passes. Now tested, never demo'd. | Queue a signal outside its zone with IME on, force the activation to fail (schedule gate is easiest). Watch the stored levels: they must return to what the channel sent, and stay there across repeated passes. |
 | M5 | **Fixed R:R post-fill SL/TP override** — corrects both levels from the actual fill and pushes them to the broker. Newly tested this session; the rejection arm has a live incident behind it. | Open a Fixed R:R trade on demo. Confirm MT5 holds **both** a stop and a target, and that both match the app's row. If the broker ever refuses the sync, the log must say REJECTED and the trade must still be tracked. |
