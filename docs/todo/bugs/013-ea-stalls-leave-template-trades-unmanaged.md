@@ -1,6 +1,7 @@
 # 013 — The EA stalls, and template trades have no fallback while it does
 
-**Status:** observed on the demo account 2026-08-28, not fixed
+**Status:** observed on the demo account 2026-08-28. **Step 1 done the same
+evening — see the findings at the bottom. Not fixed; step 3 still needs the owner.**
 **Found:** during the M1 harvest demo (docs/simon-handover/session-agenda.md, Part B2)
 **Touches money:** yes — an unmanaged live position
 **Severity:** intermittent, silent, and the app already knows it is happening
@@ -69,3 +70,45 @@ Do not add a Python fallback that manages template trades while the EA is
 merely *believed* unavailable. Two managers acting on one position is worse
 than none, and the health signal is a heartbeat timeout — exactly the thing
 that is unreliable when the system is stressed.
+
+---
+
+## Step 1 result, 2026-08-28 evening
+
+**It has not recurred on the recompiled build.** 76 `EA unhealthy` warnings
+today, and the last one is at **16:05:24** — the same minute the recompiled EA
+went in. Nothing in the 3.7 hours after that, with the app running throughout.
+
+That is consistent with the stale build being the cause, but it is 3.7 hours on
+one evening, not proof. The distribution by hour is worth keeping:
+
+```
+02:00   1
+07:00  12
+15:00  60      <- the M1 harvest demo window
+16:00   3      <- all at 16:05:xx, the tail of the last stall
+```
+
+**Two of the 76 are a different problem, and one of them is most of the count.**
+The warnings name three trades:
+
+```
+40   trade=83aa3510  ticket=0           template:Asian Reversal - ATR
+30   trade=5b1990d4  ticket=1883083490  template:Harvest $30
+ 6   trade=8fbabe87  ticket=1878717014  template:GD
+```
+
+`83aa3510` has **ticket 0 and does not exist at the broker** — it is a phantom
+placeholder row that has been `open` since 2026-08-27, and it is now
+[bugs/016](016-phantom-open-trade-consumes-a-trade-slot.md). It also holds one
+of the five trade slots.
+
+So **more than half of this bug's evidence was a trade that was never live**.
+The real unmanaged-position exposure is the 36 warnings against `5b1990d4` and
+`8fbabe87`, both of which had genuine tickets. The eight-second stall during the
+M1 demo is still real and still the thing worth understanding.
+
+**What is left:** step 2 (which side stalls) only matters if it recurs — worth
+re-checking after a longer session on the current build. Step 3 (whether "no
+Python fallback for template strategies" is acceptable) is unchanged and still
+needs your decision, and 016 does not affect it either way.

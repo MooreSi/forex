@@ -26,6 +26,21 @@ stopping it means recording the message as a parked signal, and that changes
 what the follow-up matcher can find. That is a decision about how a bare
 direction should be treated, not a cleanup.
 
+**3. [bugs/016](../todo/bugs/016-phantom-open-trade-consumes-a-trade-slot.md) —
+a trade that does not exist is holding one of your five trade slots.** Row
+`83aa3510`, `status=open`, `mt5_ticket=0`, open since **2026-08-27 17:45**. The
+broker has no positions and zero margin. The max-open-trades gate is a plain
+count of open rows and never asks the broker, so with `max_open_trades = 5` this
+ghost has been costing you **a fifth of your trading capacity for over a day**,
+with nothing on screen to say so.
+
+There is already a repair module for this class of row; its rule is to leave a
+placeholder alone when it has no matching broker deal, on the grounds its legs
+might still be resting. That rule has no age limit. Fixing it means giving it
+one, and the threshold is your call — long enough not to kill a genuine resting
+limit order, short enough not to lose a slot for a day. It is the close path, so
+it needs a test first and a demo session.
+
 Still open from earlier: **[009](009-breached-zone-discard-or-queue.md)** —
 breached-zone signals are discarded, not queued.
 
@@ -70,6 +85,16 @@ all written down in the commits rather than tidied away.
   the token to the allowed list with an empty licence key — trusted by the
   server while holding nothing that validates offline. Also pinned, not
   changed: it is a licensing policy call.
+
+## bugs/013 moved forward
+
+Step 1 of 013 (does the EA stall still happen on the recompiled build?) is done:
+**no recurrence since 16:05**, the minute the new build went in — 3.7 hours
+clean. Suggestive, not proof.
+
+It also turned out that **40 of the 76 warnings were the phantom trade above**,
+not a live position. So more than half of 013's evidence was a trade that was
+never at the broker. The eight-second stall during the M1 demo is still real.
 
 ## Note
 
