@@ -47,6 +47,32 @@ B6 is the only one whose implementation already exists (the fake and its tests s
 stage 2); it waits purely on this sign-off. B1–B5 are specced and test-planned but not built —
 they are built after Part A confirms the defaults they depend on.
 
+## Part B2 — The 2026-08-25 merge's money-path changes (added 2026-08-28)
+
+Everything below is **written, tested and green**, and **none of it has been near a
+broker**. It is not stage-3 work; it arrived with the upstream merge or was found
+while draining that code, and it needs the same demo treatment for the same reason.
+
+Two are live bug fixes with observed cost. The rest are relocations where the tests
+say behaviour is unchanged and only a demo can confirm the tests were asking the
+right question.
+
+| # | Change | The demo he watches |
+|---|---|---|
+| M1 | **Harvest threshold fix** — `harvest_pips` (pips) was being read as `harvest_threshold` (account currency), and shipped defaulting to `1.0` rather than off. Two live trades closed at ~C$1.40 against a $30 setting. Migration 29 clears the stale `1.0`. | Set a harvest threshold of $30 on a demo template, open a position, let it run past +$1.40. **It must NOT close.** Then confirm the basket closes when the account-currency figure genuinely reaches $30. |
+| M2 | **IME toggle fix** — the Telegram panel's Immediate Market Entry button could turn IME on but never off; the two reads used different config keys, so the "off" write landed where the "on" read never looked. | Toggle IME **off** on a channel, send a signal whose price has already left the zone. **No market order.** Toggle on, repeat, confirm it fires. Re-open the panel between steps -- the original bug only showed on re-read. |
+| M3 | **~20 money-path files had their SQL moved into repos** (pending activation, ea_bridge, scan_auto_execute, open_from_signal, instant_followup, template placeholder repair, orphan reconcile, second-message merge). Statements moved verbatim; each is covered by a test written first and confirmed by mutation. | One full signal -> open -> manage -> close cycle on demo, then check the DB row against the terminal: entry, lots, SL/TP, and the closed P&L match. This is the broad "did the drain change anything" check. |
+| M4 | **Anti-compounding revert** in the pending-signal watcher. Its absence previously walked one signal's stop 110 pips over 80 passes. Now tested, never demo'd. | Queue a signal outside its zone with IME on, force the activation to fail (schedule gate is easiest). Watch the stored levels: they must return to what the channel sent, and stay there across repeated passes. |
+| M5 | **Fixed R:R post-fill SL/TP override** — corrects both levels from the actual fill and pushes them to the broker. Newly tested this session; the rejection arm has a live incident behind it. | Open a Fixed R:R trade on demo. Confirm MT5 holds **both** a stop and a target, and that both match the app's row. If the broker ever refuses the sync, the log must say REJECTED and the trade must still be tracked. |
+| M6 | **EA template + global-config pushes now route through a controller** (`push_template`, `push_global_config`). Same calls, no longer holding the live bridge object. | Send a template to a connected EA from the Trading page, and save Global Parameters. Both must reach the EA exactly as before. With the EA disconnected, both must warn rather than error. |
+| M7 | **Two runtime loops relocated** into their services (auto-template regime picking, signal snapshot). | Leave the app running an hour on demo with an Auto channel configured. The regime baseline should still be applied, the AI review should fire at most ~4/hour, and the snapshot log should keep filling. |
+
+**Order matters.** M1 and M2 are fixes to observed live losses -- do those first and
+alone, so a surprise is unambiguous. M3 is the broad regression check. M4-M7 can share
+a session.
+
+**If any of these is wrong, it is wrong with real money.** None is a "probably fine".
+
 ## Part C — After the session
 
 **The bar Simon set (Q007 #2).** "Handed over" means full self-serve: he can
