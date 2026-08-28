@@ -57,6 +57,7 @@ proved non-vacuous by mutation (mutants and results named in each commit):
 | `remote/tls` | 15 |
 | `sync_repo` — ledger, node identity, generation switch | 26 |
 | `remote/server` — admin command handler | 31 |
+| `sync/client` — mirrored peer data (rules, AI queue) | 19 |
 
 `cluster/node.py` was skipped on purpose: 29 lines of pass-through delegation,
 where a test could only restate the forwarding.
