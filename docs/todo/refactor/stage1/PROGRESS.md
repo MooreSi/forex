@@ -34,12 +34,12 @@ session, both recorded in Notes.
 | 2 | [020 schema-migrations](phase2-safety-net/020-schema-migrations.md) | no | done (2026-08-10) | Claude | migrations fail closed (skip duplicate-column, abort on real error), schema_version stamp + pre-flight verify. Extracted db/migrations.py + db/schema_sql.py → database.py 1251→749 (bonus phase3/040 progress). Structure gate taught db/ = data layer. Full suite green. |
 | 2 | [030 risk-gate-atomicity](phase2-safety-net/030-risk-gate-atomicity.md) | YES | **code done (2026-08-29)** — awaiting demo | Claude | Race confirmed present. Simpler fix found: put the cap check INSIDE the atomic claim (one statement, no new counter). Stranded-claim sweep landed first, because a leaked claim would otherwise block all trading. See the design note in the task file. |
 | 2 | [040 record-close-idempotency](phase2-safety-net/040-record-close-idempotency.md) | YES | **code done (2026-08-29)** — awaiting demo | Claude | Compare-and-set on `apply_full_close`: only an `open` trade may close. Was double-crediting the balance on a duplicate call (`balance = balance + ?` with no guard). 10 tests, 4 mutants killed. |
-| 2 | [050 db-config-fk-backups](phase2-safety-net/050-db-connection-fk-backups.md) | no | partial (backups + busy_timeout done) | Claude | db/backup.py (daily snapshot, keep 30) wired at startup + `busy_timeout=5000`. 5 tests. Remaining: write-lock + FK-safe deletes (deferred, lower risk — see task notes). |
+| 2 | [050 db-config-fk-backups](phase2-safety-net/050-db-connection-fk-backups.md) | no | **done — row was stale** (audited 2026-08-29): `PRAGMA foreign_keys=ON` is set in BOTH `db/database.py` and `db/sqlite_adapter.py`; backups + busy_timeout were already done | Claude | db/backup.py (daily snapshot, keep 30) wired at startup + `busy_timeout=5000`. 5 tests. Remaining: write-lock + FK-safe deletes (deferred, lower risk — see task notes). |
 | 2 | [060 news-calendar-offload](phase2-safety-net/060-news-calendar-offload.md) | no | done (2026-08-10) | Claude/Darren | getter now a pure cache read (no ~10s inline urllib); background refresher started at boot; None result cached (fixed every-cycle refetch); fetch+decision logic byte-identical. 6 new tests. Q004 policy (trade-through) unchanged. Full suite green. |
 | 2 | [070 update-channel-disable](phase2-safety-net/070-update-channel-disable.md) | no | done (2026-08-10) | Claude/Darren | already off by default; added `_remote_client_enabled` regression guard + loud unauthenticated-warning on opt-in + honest update-panel banner. 5 new tests. Gates+boot green. |
 | 3 | [010 delete-dead-code](phase3-expansion-tax/010-delete-dead-code.md) | no | partial (3 clones deleted; 4 unwired await Simon) | Claude/Darren | Deleted the 3 superseded-dead database.py clones + 6 files/3384 LOC (fixed 3 entangled tests — their "still needed" comments were STALE, verified empirically). 4 built-but-UNWIRED modules remain, ledgered, awaiting Simon's wire-vs-remove call (Q002). |
 | 3 | [020 engine-shared-code](phase3-expansion-tax/020-consolidate-engine-shared-code.md) | no | not started | — | |
-| 3 | [030 frontend-restructure](phase3-expansion-tax/030-execute-frontend-restructure-pack.md) | no* | not started | — | delegates to existing pack |
+| 3 | [030 frontend-restructure](phase3-expansion-tax/030-execute-frontend-restructure-pack.md) | no* | **largely done — row was stale** (audited 2026-08-29): every specific it named is addressed — settings.py 3,112 → 11 modules (none over 800), `components/` populated, import contract 59 → **3**. Remaining: those 3 violations, incl. history importing `_apply_fee`/`_platform_fee_rate` from runtime | — | delegates to existing pack |
 | 3 | [040 split-database-py](phase3-expansion-tax/040-split-database-py.md) | no | done (2026-08-10/11) | Claude | database.py 1251→749 via 2/020's extraction; DDL/registry/backfills now live in `backend/migrations/` (2026-08-11). Under the 800 gate |
 | 3 | [050 frontend-hygiene](phase3-expansion-tax/050-frontend-exception-timer-hygiene.md) | no | partial — via stage2 4/030 (2026-08-11) | Claude | silent-except gate at shrinking baseline 44→40 + NiceGUI canary; timer→poll migration still open |
 | 3 | [060 money-path-coverage](phase3-expansion-tax/060-money-path-coverage-floors.md) | no | done — via stage2 3/020 (2026-08-11) | Claude | broker 58.3 / runtime.py 72.2 floors in MONEY_CRITICAL_FLOORS |
@@ -95,3 +95,29 @@ output claimed without the paste is not evidence.
   dead — each needs a wire-vs-remove call. The 3 database.py clones are superseded-dead but
   test-entangled. Nothing deleted pending those decisions. Not money-gated, but not obviously
   Darren-vs-brother either (licence/client is security/business). See orphan_module_allowlist.json.
+
+## Audit, 2026-08-29
+
+Every remaining non-`done` row was checked against the code rather than taken
+at its word, after two rows turned out to be stale earlier the same day.
+
+**Found stale (work was already done):**
+
+| Row | Evidence |
+|---|---|
+| 2/050 db-config-fk-backups | `PRAGMA foreign_keys=ON` in both `db/database.py` and `db/sqlite_adapter.py` |
+| 3/030 frontend-restructure | settings.py 3,112 → 11 modules; `components/` populated; import contract 59 → 3 |
+| 4/030 licence-signing | `verify.py` is Ed25519 public-key-only; the `CHANGEME` secret is gone |
+
+**Confirmed genuinely outstanding:**
+
+| Row | Evidence |
+|---|---|
+| 3/010 delete-dead-code | 4 orphan modules remain, and they are the ones awaiting Simon's keep/remove call — not effort |
+| 3/020 engine-shared-code | `breakout_signal` still imports its indicators from `test_signal`; the service cycles named in the task are unchanged |
+| 4/040 docs-of-what-shipped | not started |
+| 2/030, 2/040 | **code done 2026-08-29**, both awaiting their demo |
+
+**Why this audit happened:** two rows were quoted back to Simon as outstanding
+when they were finished. An estimate built on a stale tracker is worse than no
+estimate, because it looks precise.
