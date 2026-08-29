@@ -1,6 +1,7 @@
 # 030 — Risk gates: reserve before await, no check-then-act race
 
-**Status:** not started
+**Status:** **not started — but the design changed, see the note at the bottom
+(2026-08-29).** A prerequisite landed; the gate itself is still racy.
 **Depends on:** phase 1 landed (gates armed by 1/060; send path stabilised by 1/010–020)
 **Touches money:** YES — run `/safe-change` first. Not Done without owner sign-off + a demo session.
 **Layer:** service
@@ -69,3 +70,67 @@ transaction.
 
 - This is the task where the two writer threads meet the DB — coordinate with 050's write lock;
   land whichever first, but the claim must be correct under both.
+
+---
+
+## Design note, 2026-08-29 — a simpler fix than a new counter, and why it waits
+
+### The race is confirmed still present
+
+`open_trade` reads `count_open_trades()`, compares it to the cap, then does
+several awaits (tick fetch, EA handoff, `place_order`) before the INSERT. Two
+concurrent signals both see "under the cap" and both place.
+
+### The obvious fix does not work
+
+"Also count signals in `activating`" is wrong, and symmetrically so. With
+`max_open_trades=1` and two signals claiming at once, each sees one *other*
+claim in flight and **both** refuse. Counting cannot break a tie between equals.
+
+### What does work
+
+Move the cap check **into** the claim, so the test and the write are one
+statement. SQLite serialises writers, so the second claim sees the first:
+
+```sql
+UPDATE vantage_signals SET status='activating', activated_at=?
+WHERE signal_id=? AND status IN ('pending','active')
+  AND (SELECT COUNT(*) FROM vantage_simulated_trades WHERE status='open')
+    + (SELECT COUNT(*) FROM vantage_signals WHERE status='activating')
+    < :max_open_trades
+```
+
+First claim: `0 + 0 < 1`, claims. Second: `0 + 1 < 1` is false, refuses. No
+window, and it reuses the atomic claim that already exists rather than adding a
+reservation table.
+
+Keep the existing check in `open_trade` as well — it is the backstop for the
+paths that never claim a signal at all (manual market orders, IME).
+
+### Why it is not done tonight
+
+**The failure mode is worse than the bug.** A claim that leaks consumes a slot
+permanently, and once the cap fills nothing trades at all — silently. That is
+bugs/016 in a different table, and it is a far worse outcome than the
+occasional double-open this fixes.
+
+That risk is only acceptable with a release valve, which is why the sweep below
+came first.
+
+### Prerequisite: DONE (2026-08-29)
+
+`signal_state_repo.release_stranded_activations()` now puts abandoned
+`activating` claims back to `pending` after 15 minutes, and
+`claim_signal_activation` stamps `activated_at` with the claim time so the
+sweep can tell abandoned from in-flight. It runs from the reconciliation pass.
+
+That was a live bug on its own: **a crash between the claim and any exit path
+stranded the signal forever.** The scheduler only selects `pending`, so the
+signal was not failed, not queued and not visible anywhere — it was simply
+gone, and nothing swept for it.
+
+### Remaining work
+
+The single-statement claim above, plus its tests, plus a demo. One focused
+session — it should not be bolted onto the end of a long one, on the one gate
+that can stop all trading.
