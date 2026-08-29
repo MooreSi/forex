@@ -1,6 +1,7 @@
 # 030 — Broker↔DB reconciliation service
 
-**Status:** not started
+**Status:** **HALF built 2026-08-29 (market closed).** The diff engine and the
+report-only pass are in and wired. **The repairers are NOT built.** Not Done.
 **Depends on:** 020-timeout-means-unknown.md
 **Touches money:** YES — run `/safe-change` first. Not Done without owner sign-off + a demo session.
 **Layer:** service
@@ -82,3 +83,79 @@ in-process compensation; only an independent, restart-surviving pass closes the 
   defaults. The existing auto-adopt importer (risk H6) is *superseded or subordinated* here per the
   #6 answer — don't leave two adopters running.
 - Deals-history lookback shared with 010's dedup window — one tunable, not two.
+
+---
+
+## Built 2026-08-29: the arbiter, reporting only
+
+Simon's answer in [001-trading-defaults](../../../simon-handover/001-trading-defaults.md)
+is *"report-only for the first week, then switch to repair"*. That first week
+is what this delivers, and nothing more.
+
+### The diff engine
+
+`services/positions/reconciliation.py::diff_snapshots` — broker positions +
+broker deals + DB open trades + parked `unknown` signals in, typed differences
+out. **A pure function with no I/O**, which is the point: it is the part where
+a mistake is expensive and a test is cheap.
+
+| Kind | Meaning |
+|---|---|
+| `matched` | open at the broker and in the database |
+| `broker_only` | live at the broker, unknown to the DB — **nothing is managing it** |
+| `db_only_closed` | gone from the broker, and a closing deal explains it |
+| `db_only_no_evidence` | gone, and nothing explains it — flagged, never closed |
+| `unknown_filled` / `unknown_not_filled` | 020's parked signals, resolved from broker truth |
+
+Matching is by ticket, falling back to the order comment for a row that has no
+ticket yet (an EA template placeholder). The comment vocabulary is shared with
+`broker/dedup.py` so one trade is recognised the same way wherever it is looked
+for, and the deal-history window is the same one constant, per the spec's "one
+tunable, not two".
+
+`db_only_no_evidence` is the boundary that matters: no position and no deal is
+**not** proof a trade closed. It is equally consistent with a broker read that
+failed, and booking a close on that basis would fabricate an outcome.
+
+### Read-only at the broker, structurally
+
+An arbiter that can place or close orders is just another writer.
+`diff_snapshots` is never handed a bridge — a test asserts the signature
+contains no such parameter — and a second test parses the module's **AST** and
+fails if it calls `place_order`, `close_position`, `modify_order`,
+`order_send`, `open_trade`, `partial_close_trade`, `record_close` or
+`close_trade`.
+
+The AST matters. The first version of that test scanned the source text and
+failed on the docstring, which *explains why* those must not appear — it would
+have failed on an accurate comment and passed on an obfuscated call.
+
+### Wired, not shelved
+
+`collect_and_report` runs from the monitor cycle every 12 cycles. It reads both
+sides and logs what disagrees; it writes nothing, so it needed no
+startup-ordering change — *"reconcile before the monitor loop manages"* is
+load-bearing for **repair**, not for a report that cannot change anything.
+
+It was tempting to allowlist the module as an orphan and wire it later. That is
+exactly the failure this repo's CLAUDE.md opens with — thousands of lines of
+extracted code nothing called — so it is wired.
+
+A failed read on either side reports **nothing** rather than diffing half a
+picture: an empty broker read would otherwise look like every trade having
+vanished, and the report would be a page of false alarms. It also never raises
+into the monitor loop, because losing position management is far worse than
+losing a report.
+
+### Deliberately not done
+
+- **The repairers.** No `recovered` insert, no close-from-deal, no releasing a
+  parked signal. Those write, and they route through the frozen close path, so
+  they want their own change and a demo.
+- **The interval tunable.** The spec asks for one; it should land with the
+  repairers, when the cadence starts to mean something. A dial that only
+  changes how often a log line appears is not one a trader wants to move
+  ([60-adding-a-tunable](../../system/rules/60-adding-a-tunable.md): "expose a
+  constant when a TRADER would want to move it").
+- **The killer demo:** kill the app between place and DB-record, restart,
+  confirm the position is adopted exactly once. Needs a live broker.
