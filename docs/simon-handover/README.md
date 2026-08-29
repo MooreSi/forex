@@ -127,3 +127,4 @@ in the room.
 - [Q009 — breached entry zone: drop or queue?](009-breached-zone-discard-or-queue.md)
 
 - [010-session-2026-08-28-evening.md](010-session-2026-08-28-evening.md) — what got done while you were out, and the two things that now need you
+- [011-your-halt-settings-do-not-match-what-you-confirmed.md](011-your-halt-settings-do-not-match-what-you-confirmed.md) — your risk governor is off and your daily-loss limit is 20%, not the 3% you confirmed

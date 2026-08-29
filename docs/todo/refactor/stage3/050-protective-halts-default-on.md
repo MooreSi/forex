@@ -1,6 +1,8 @@
 # 060 — Protective halts ON by default; breaker recording un-swallowed
 
-**Status:** not started
+**Status:** **partly built 2026-08-29.** The number inconsistency and the swallowed
+failures are fixed. The default flips for the two enabled flags are NOT done, and
+the live account needs Simon (see 011). Not Done.
 **Depends on:** none
 **Touches money:** YES — run `/safe-change` first (it changes when the system may open trades).
 Not Done without owner sign-off + a demo session.
@@ -78,3 +80,67 @@ pause new opens only; they never auto-close existing positions.
   the gate call sites tidy for it.
 - Upgrade note for CHANGELOG (docs phase of this pack is folded into phase 4): existing users who
   never set the halts will see them switch on — that must be in the release notes.
+
+---
+
+## Built 2026-08-29 (market closed, no demo yet)
+
+Thresholds came from Simon's confirmed answer, not from me: **3% daily loss,
+10% drawdown, 3 consecutive losses** (001-trading-defaults, 25 Aug).
+
+### The same limit was written down three times, with three different numbers
+
+Not the problem the spec describes, and a worse one. `max_total_drawdown_pct`
+was 8.0 in the schema, 8.0 in the Settings screen, and **20.0** as the fallback
+in `governor.py` — the function that actually decides whether trading stops.
+`max_daily_loss_pct` was 3.0 in the schema and **20.0** in the same enforcement
+path.
+
+A fallback only applies when the key is missing, which is exactly when the
+configuration is least trustworthy — and the loosest of the three numbers was
+the one in the enforcement path. All three now read 3% and 10%.
+
+Tested behaviourally as well as textually: with the key absent, a 4% daily loss
+now halts and a 2% loss does not. A textual check alone would pass against a
+fallback of 0, which never halts at all.
+
+### The swallowed failures
+
+Both post-close blocks reported at DEBUG:
+
+```python
+except Exception as _rg_e:
+    log.debug("[RG] post-close halt check skipped: %s", _rg_e)
+except Exception as _cb_e:
+    log.debug("[CB] outcome recording skipped: %s", _cb_e)
+```
+
+In a 50 MB log that is invisible. A broken check makes the halts look like they
+simply have not fired yet, which is indistinguishable from not having lost
+enough. Both now go through `_notify_halt_check_failed`: an ERROR log and a
+Telegram message.
+
+**These sit inside `record_close`, which is frozen.** Only the reporting
+changed — the close still records and returns the same value — and the new
+notification is wrapped so it can never escape. A test plants a failure and
+asserts the notifier returns normally with no loop, no telegram and no
+database; removing that wrapper fails seven tests.
+
+### Not done
+
+- **The two `enabled` default flips.** They are ALTER-column defaults, so
+  flipping them changes nothing for any existing install, including Simon's.
+  The useful action there is a settings change on his account, which is
+  [011](../../../simon-handover/011-your-halt-settings-do-not-match-what-you-confirmed.md).
+- **The thresholds as Expert Tunables.** They are already editable in
+  Settings > Risk; a second place to set the same number invites drift, which
+  is the bug this task just fixed.
+- **The killer demo:** trip the breaker on demo and confirm the next signal is
+  refused.
+
+### Found, and it is Simon's to act on
+
+His demo account has the **risk governor OFF** and **max daily loss at 20%**,
+not the 3% he confirmed. The governor being off is why the daily-loss limit has
+never fired — `close_trade.py` already carried a note saying exactly that.
+Written up as 011.
