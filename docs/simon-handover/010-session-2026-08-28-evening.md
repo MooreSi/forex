@@ -1,7 +1,20 @@
 # What happened on the evening of 2026-08-28
 
-You were out. This is what got done, what it found, and the two things that
-now need you. Nothing was placed, closed or modified on any account.
+You were out. Nothing was placed, closed or modified on any account.
+
+**Two of the three bugs are now fixed** (016 and the sync half of 014), plus the
+log half of 015. What is left needs a decision from you rather than more work.
+
+## Fixed while you slept
+
+| | What | Effect |
+|---|---|---|
+| **016** | A placeholder the broker has never heard of is now written off after 24h (a new Expert Tunable) | Gets your lost trade slot back, and stops it happening again |
+| **014** | The sync channel now pins the VPS certificate and refuses a mismatch **before** sending the token | Closes the interception hole on the trade-forwarding link |
+| **015** | Bare-direction messages log once instead of once a second | 8,319 lines from one message becomes 1 |
+
+All three were written test-first and mutation-tested. `tools.checks all` is
+8/8 and the suite is 4,130.
 
 ## Needs a decision from you
 
