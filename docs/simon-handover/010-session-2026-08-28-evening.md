@@ -12,8 +12,20 @@ log half of 015. What is left needs a decision from you rather than more work.
 | **016** | A placeholder the broker has never heard of is now written off after 24h (a new Expert Tunable) | Gets your lost trade slot back, and stops it happening again |
 | **014** | The sync channel now pins the VPS certificate and refuses a mismatch **before** sending the token | Closes the interception hole on the trade-forwarding link |
 | **015** | Bare-direction messages log once instead of once a second | 8,319 lines from one message becomes 1 |
+| **017** | Backtests scored every timed-out trade as break-even | **Your backtest numbers will get worse, and they should** |
 
-All three were written test-first and mutation-tested. `tools.checks all` is
+**017 is the one to read.** A backtested trade still open when it ran out of
+bars was closed at the *entry* price, so it scored break-even wherever the
+market had actually gone — in seven of the eight simulators. The eighth always
+did it correctly, which is how it stands out as a bug rather than a choice.
+
+The bias ran one way: a strategy that holds losers and drifts looked
+break-even instead of losing. Nothing about live trading changed (the only
+consumer is the Backtest page you drive by hand — I checked it does not feed
+automatic strategy selection), but **if you chose a strategy partly on
+backtested numbers, re-run it.**
+
+All four were written test-first and mutation-tested. `tools.checks all` is
 8/8 and the suite is 4,130.
 
 ## Needs a decision from you
