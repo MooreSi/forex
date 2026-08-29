@@ -155,7 +155,7 @@ losing a report.
 - **The interval tunable.** The spec asks for one; it should land with the
   repairers, when the cadence starts to mean something. A dial that only
   changes how often a log line appears is not one a trader wants to move
-  ([60-adding-a-tunable](../../system/rules/60-adding-a-tunable.md): "expose a
+  ([60-adding-a-tunable](../../../system/rules/60-adding-a-tunable.md): "expose a
   constant when a TRADER would want to move it").
 - **The killer demo:** kill the app between place and DB-record, restart,
   confirm the position is adopted exactly once. Needs a live broker.
