@@ -83,6 +83,23 @@ One thing to know for next time: **there is no log line when a risk setting
 changes**, so the moment IME was switched off cannot be established from the
 log — only its current value from the database.
 
+## Where the coverage work got to
+
+Suite is **4,239 tests** (from ~3,720 at the start of the session).
+
+Beyond the cluster work below, tonight also covered three things that had never
+been tested and all inform decisions rather than execute them: the backtest
+simulators (0% — and they had bugs/017 in them), the breakout walk-forward
+harness (0% — checked for the same bug, it was already correct), and the
+AI-derived parse rules that run against live Telegram messages before the
+hand-written parsers get a look in.
+
+That last one is worth a line: those are regexes a language model wrote, and
+whatever they extract becomes an order. The tests now pin that a rule matching
+only *some* of what it needs yields nothing — a dict with an entry and no stop
+is a trade with no protection — and that an SL-adjustment rule cannot move a
+stop just because a message happened to contain a number.
+
 ## Tests
 
 The cluster campaign you deferred is largely done. Coverage of
