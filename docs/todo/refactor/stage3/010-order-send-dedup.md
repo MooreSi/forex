@@ -1,6 +1,7 @@
 # 010 — Order-send dedup: trade id at the broker, checked before every send
 
-**Status:** not started
+**Status:** **code + tests DONE 2026-08-29 (market closed). NOT Done** — the killer
+demo against a live EA is still outstanding, and this task is not `done` without it.
 **Depends on:** none
 **Touches money:** YES — run `/safe-change` first. Not Done without owner sign-off + a demo session.
 **Layer:** service (+ the two bridge programs)
@@ -73,3 +74,78 @@ All against the existing MT5 fakes; no real or demo MT5 order.
   must be answered before step 3 is final.
 - The EA change is deliberately minimal; EA-side dedup logic beyond echoing the id is out of scope.
 - Coordinates with 020 — both edit `open_trade.py`; land 010 first (README roadmap order).
+
+---
+
+## Built 2026-08-29 (market closed, no demo yet)
+
+### The hole, more precisely than the spec had it
+
+The spec says the fallback can double-fire. Reading the code, it is narrower
+and sharper than that:
+
+- For a **template** strategy a timed-out ack already records a placeholder
+  and does not retry (hardened after 2026-07-30). That path was safe.
+- For a **non-template** strategy the timeout `raise`s, the outer handler
+  catches it, logs *"handoff failed — falling back to Python bridge"*, and the
+  bridge sends. That is the live hole.
+
+And it was worse than a missing check: the two paths stamped **different
+identifiers**. The EA writes `ea:<trade_id[:10]>` on every leg; the bridge
+wrote `sig:<signal_id[:8]>`. No check could have correlated them even if one
+had existed.
+
+### What was built
+
+`backend/src/services/broker/dedup.py` — `find_trade(bridge, trade_id)` over
+open positions, then the last 24h of deals (a trade can fill *and* close while
+an ack is outstanding). It answers **three** states:
+
+| State | Meaning | Caller |
+|---|---|---|
+| FOUND | the broker shows it | adopt, do not send |
+| ABSENT | broker reachable, no record | safe to send |
+| UNKNOWN | broker could not be asked | see below |
+
+The third state is the point. A broker that could not be asked has not said
+no, and collapsing unknown into absent is how a retry doubles an order.
+
+`backend/src/services/trading/send_dedup.py` — the policy: the gate only runs
+when the EA was actually asked and did not confirm, so the ordinary path pays
+no extra round trip.
+
+Bridge orders now carry `py:<trade_id[:10]>` — the trade id, under a prefix
+deliberately distinct from `ea:` because four services parse `ea:` comments to
+map a position back onto a template row.
+
+### The limit I did NOT resolve
+
+**UNKNOWN still sends.** Refusing would be safer against duplication, but a
+non-template strategy has no placeholder row to reconcile from, so the signal
+would stay `pending` and PendingWatcher would re-activate it every 20 seconds
+— the failure that turned 5 signals into ~133 opens on 2026-07-30, which is
+worse than the duplicate this gate stops.
+
+Handling it properly needs the recorded-as-UNKNOWN state that
+[020](020-timeout-means-unknown.md) introduces. It logs loudly, and there is a
+test named for the behaviour so it is visible rather than assumed.
+
+### Two existing tests were changed, deliberately
+
+`test_open_trade_characterization.py` and `test_open_trade_surface.py` both
+pinned the literal comment `"sig:sig-1"`. That is the behaviour this task
+changes by design. They now assert **structurally** — that the comment carries
+the trade id this call returned, and does not wear the `ea:` prefix — rather
+than against a new literal, which would only say "the code emits what the code
+emits".
+
+### Not done
+
+The **killer demo**: pause the demo EA, force an ack timeout, confirm exactly
+one position exists and the log shows the fallback adopting. Market closed
+until Monday. Until that passes on Simon's terminal this task stays open.
+
+The **magic number** half of the spec is also not done — `place_order` takes
+only a comment, so a magic number means changing both bridge programs, and
+that cannot be verified without placing an order. The comment alone is
+sufficient for the dedup check.

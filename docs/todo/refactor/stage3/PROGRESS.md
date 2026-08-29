@@ -19,7 +19,7 @@ seam) added so everything Simon-gated lives in one view. No money code started._
 
 | Task | Money | Status | Owner | Notes |
 |---|---|---|---|---|
-| [010 order-send dedup](010-order-send-dedup.md) | YES | blocked (Simon) | — | SPEC-002 C1; trade id at broker + pre-send check |
+| [010 order-send dedup](010-order-send-dedup.md) | YES | **in progress** — code + 28 tests landed 2026-08-29, awaiting demo | — | Gate built and mutation-tested; killer demo (pause the EA, force an ack timeout) needs a live EA, market closed until Monday. UNKNOWN-state handling deferred to 020 on purpose. |
 | [020 timeout → UNKNOWN](020-timeout-means-unknown.md) | YES | blocked (Simon) | — | timeout/None/exception = UNKNOWN, never re-fired |
 | [030 broker↔DB reconciliation](030-broker-db-reconciliation.md) | YES | blocked (Simon) | — | startup + periodic; broker is source of truth |
 | [040 no DB close on failed broker close](040-no-db-close-on-failed-broker-close.md) | YES | blocked (Simon) | — | route through frozen wrappers |
@@ -30,7 +30,7 @@ seam) added so everything Simon-gated lives in one view. No money code started._
 - Extracted from stage1 phase 1 into its own Simon-gated stage so stage2 is workable today (source: user, 2026-08-11)
 
 ## Verification log
-- (none yet — blocked on Simon)
+- 2026-08-29 — 010: `python -m tools.checks all` 8/8 green; 28 dedup tests; twelve mutants all killed (two only after strengthening my own assertions). **No demo yet — market closed.** Nothing here is `done`.
 
 ## Blockers / open
 - Everything here needs Simon (sign-off + demo session).
