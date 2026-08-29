@@ -1,6 +1,8 @@
 # 014 — Both TLS channels are encrypted but not authenticated
 
-**Status:** found 2026-08-28 while writing tests for `sync/tls_util.py`. Not fixed.
+**Status:** found 2026-08-28 while writing tests for `sync/tls_util.py`.
+**SYNC CHANNEL FIXED the same evening — see the bottom. The licence/admin
+channel (`remote/tls.py`, `remote/client.py`) is still unauthenticated.**
 **Touches money:** indirectly — the sync channel carries trade state between
 nodes, and the remote channel carries licence issuance.
 **Severity:** needs an attacker on the network path. Not remotely triggerable
@@ -51,7 +53,7 @@ token on the first frame. They can then use it against the real VPS.
 
 `remote/tls.py` has the same shape on the licence/admin channel.
 
-## Not fixed here, deliberately
+## Why it was not fixed immediately
 
 Certificate pinning done badly is worse than none — a wrong comparison that
 always passes looks identical to a working one. This is also the licence
@@ -83,3 +85,76 @@ By writing tests. The first version of that test asserted the configuration was
 safe and cited `_verify_fingerprint` as the reason — repeating the docstring's
 claim without checking it existed. Grepping for the function to reference it
 properly is what turned this up.
+
+---
+
+## Fixed for the sync channel, 2026-08-28
+
+### What it does now
+
+`_connect_once` verifies the peer **before** the token is sent:
+
+```python
+_ok, _why = tls_util.verify_or_pin(self._host, tls_util.peer_fingerprint(ws))
+if not _ok:
+    self.conn_state = CONN_REJECTED
+    ...
+    return
+self._ws = ws
+await ws.send(json.dumps(make(MSG_HELLO, token=self._token)))
+```
+
+Trust-on-first-use: the first fingerprint seen for a host is stored in
+`app_config` and accepted; every later connection must match it. A mismatch is
+refused, the pin is **not** overwritten, and the connection state goes to
+`CONN_REJECTED` so it stays refused rather than quietly retrying into an
+interception.
+
+TOFU is what makes this safe to ship to an already-paired Mac/VPS: the first
+connection after the upgrade pins whatever they are already talking to, so
+nothing breaks. **The first connection is still exposed.** That is the known
+limit of trust-on-first-use, and it is stated here rather than papered over.
+
+### Recovery
+
+`ensure_cert()` never rotates a certificate that already exists, so a mismatch
+should mean something is wrong. If the VPS certificate genuinely was reissued,
+re-entering the connection details in **Settings > Remote Node** clears the pin
+and pairs again — `SyncClient.configure()` calls `clear_pin()`. That is the
+only route back, and it is deliberately the same action a user would already
+take, rather than a hidden flag. The refusal message says so.
+
+### The part that could have been faked, and was not
+
+`peer_fingerprint()` reaches through a websockets internal
+(`ws.transport.get_extra_info("ssl_object").getpeercert(binary_form=True)`).
+A mocked test would pass while that path was wrong — which is the exact shape
+of the original bug, a safeguard that looked present and was not. So it is
+proved against a **real TLS handshake**: the test starts a local websocket
+server using this app's own `server_ssl_context()`, connects with its own
+`client_ssl_context()`, and asserts the fingerprint read off the live
+connection equals `cert_fingerprint()`.
+
+### Also proved
+
+Ten mutants, all killed, including the two that matter most: verification
+skipped entirely, and verification moved to **after** the token is sent. The
+second is the whole point — pinning that happens after the token leaves is
+worth nothing.
+
+### A note on the LOC ratchet
+
+`sync/client.py` is shrink-only and the guard pushed it 867 -> 888. Rather than
+raise the baseline, the pending-proposal persistence was moved verbatim into
+`sync/_pending_store.py` as a mixin (a pure move — same methods, same bodies,
+covered by the 24 tests in `test_sync_pending_proposals.py`), bringing the file
+to 823. No baseline was raised.
+
+## Still open: the licence/admin channel
+
+`remote/tls.py` and `remote/client.py` have the identical hole and are **not**
+fixed. The same primitives apply, but that channel carries licence issuance and
+admin authority, and its client is the one an admin uses to recover a stranded
+install — a pin that refuses wrongly there locks someone out of the recovery
+path itself. That trade-off wants your decision before I wire it, so
+`tests/remote/test_remote_tls.py` still records the gap as it stands.
