@@ -1,6 +1,7 @@
 # 040 — Never record a DB close the broker refused
 
-**Status:** not started
+**Status:** **profit-close path fixed 2026-08-29 (market closed).** The SL-reconcile
+path is deliberately untouched — see below. Not Done: the killer demo needs a live broker.
 **Depends on:** none (ships with 030 — its flagged-open leftovers need the reconciler to settle)
 **Touches money:** YES — run `/safe-change` first. Not Done without owner sign-off + a demo session.
 **Layer:** service
@@ -72,3 +73,73 @@ the frozen path is frozen precisely so there is one close implementation.
   needs RETURN) is adjacent but separate — it makes close *failures more likely*, this task makes
   them *honest*. If trivial, fix the filling-mode fallback in the same demo session under the same
   sign-off; otherwise raise it as its own task. Decide with the owner at `/safe-change` time.
+
+---
+
+## Built 2026-08-29 (market closed, no demo yet)
+
+### The profit-close path
+
+```python
+if mt5_ticket:
+    try:
+        mt5_res = await bridge.close_position(int(mt5_ticket))
+        if mt5_res.get("success"):
+            close_price = float(mt5_res.get("close_price", cur))
+    except Exception as _e:
+        log.warning("Profit-close MT5 error: %s", _e)
+result = await record_close(...)          # ran either way
+```
+
+Two ways through. `success=False` was **never checked at all** — the `if` only
+decided whether to take the broker's price — and an exception was caught and
+warned. Both then recorded the trade closed while MT5 still held the position.
+
+That is the worst shape of wrong: the app believes the trade is finished, so it
+stops managing a position that is still live and moving, and books a P&L that
+never happened.
+
+Now only a **confirmed** close is recorded. A refusal, an exception, or a
+`None` result logs at ERROR, notifies, returns `False`, and leaves the row open
+for [030](030-broker-db-reconciliation.md) to settle — the trade stays managed
+in the meantime.
+
+The frozen close path itself is untouched. This is a caller-side change, as the
+spec requires.
+
+### TWO EXISTING TESTS HAD ENSHRINED THE BUG
+
+`tests/core/test_monitor_loop_surface.py`:
+
+- `test_profit_target_hit_mt5_close_rejected_falls_back_to_tick_price`
+- `test_profit_target_hit_close_position_raises_falls_back_to_tick_price`
+
+Both asserted that a **refused** broker close still produced a DB close row at
+the local tick price. The names say it outright. They were characterization
+tests -- they recorded what the code did, not what it should do -- so they
+passed for exactly as long as the defect existed.
+
+This spec anticipated it: *"if one exists it is evidence the bug was enshrined;
+flag it to the owner, do not silently rewrite."* They are rewritten to assert
+the corrected behaviour and **renamed** so the change shows up in the test list
+rather than only in a diff, and it is flagged here and in the handover.
+
+### Deliberately NOT changed: the SL-reconcile path
+
+`reconcile_sl_hit` also records a close when its broker check fails, but that
+is a **documented decision**, not an oversight — its own docstring says
+`"closed"` means *"either because the ticket is fully gone at the broker or
+because the MT5 check couldn't be trusted"*. The local price crossed the stop,
+so the trade almost certainly did stop out, and refusing to record it would
+leave a closed position showing as open.
+
+That trade-off is a different judgement from the profit-close one and it is
+Simon's to make, not a bug to fix quietly. Also still open from the spec: the
+near-copy consolidation into the runtime wrappers, and ladder-leg closing on
+the SL path (risk H2).
+
+### Not done
+
+- The **killer demo**: force a demo close rejection, confirm the DB stays open
+  and an alert fires.
+- The near-copy consolidation (step 3) and ladder-leg routing (step 4).
