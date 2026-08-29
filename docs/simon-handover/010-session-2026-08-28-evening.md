@@ -1,3 +1,13 @@
+# What happened, 28-29 August
+
+> **Update, 29 Aug (market closed):** all five stage-3 money-path tasks now have
+> code and tests. **None of them is done** — every one needs its killer demo on
+> your terminal, and PROGRESS.md says so per task. Two things below need you
+> before Monday: your halt settings (011), and a heads-up that two existing
+> tests had been enshrining a bug.
+
+---
+
 # What happened on the evening of 2026-08-28
 
 You were out. Nothing was placed, closed or modified on any account.
@@ -142,3 +152,44 @@ never at the broker. The eight-second stall during the M1 demo is still real.
 
 The running app still has the pre-fix code loaded, so the bugs/015 log spam
 continues until it is restarted.
+
+---
+
+# 29 August — the money path (market closed)
+
+You said to carry on with money-path work as long as nothing needed an executed
+trade. All five stage-3 tasks now have code and tests, written test-first and
+mutation-tested. **Nothing is marked done.** Each one's killer demo needs a live
+broker and your eyes.
+
+| Task | What it does now |
+|---|---|
+| 010 | A slow EA no longer means two orders. Both send paths stamp the trade id; the fallback asks the broker before sending |
+| 020 | A lost response parks the signal as `unknown` instead of putting it back in the queue. The bridge no longer re-sends after a `None` |
+| 030 | A reconciliation pass reports what the broker and the database disagree about. Report-only, writes nothing |
+| 040 | A close the broker **refused** is no longer recorded as a close |
+| 050 | The three copies of your risk limits now agree, and failed halt checks are no longer silent |
+
+## Two things for you
+
+**1. Your halt settings — [011](011-your-halt-settings-do-not-match-what-you-confirmed.md).**
+Your demo account has the **risk governor off** and **max daily loss at 20%**,
+not the 3% you confirmed. The governor being off is why your daily-loss limit
+has never fired; the code already carried a note saying exactly that. I did not
+change your settings — that is yours.
+
+**2. Two existing tests had been enshrining a bug.** They asserted that when
+the broker *refused* a close, the app should still record the trade closed at
+the local price. That is the phantom close: the app stops managing a position
+that is still open, and books a profit that never happened. They passed for as
+long as the bug existed, because they recorded what the code did rather than
+what it should do. I rewrote and renamed them, and I am telling you rather than
+leaving it in a diff.
+
+## What is still open in stage 3
+
+- Every killer demo (five of them, all needing a live broker).
+- 030's **repairers** — it only reports today. Repairing is the second half.
+- 040's SL-reconcile path, which records a close when its broker check fails.
+  That one is a *documented* trade-off rather than an oversight, so it is your
+  call, not mine to change quietly.
