@@ -75,8 +75,19 @@ doc, not a work log._
 - [ ] **Self-serve documentation (Q007 #2 — the raised bar).** Install,
   configure and first run achievable from the docs alone, by Simon, with no one
   else present: MT5 credentials, Telegram API key, licence activation, and what
-  to do when each one fails. The Start Here checklist and Help button cover the
-  in-app half; the install-from-scratch half is not written.
+  to do when each one fails.
+
+  *Written 2026-08-29:
+  [docs/guides/install-from-scratch.md](../guides/install-from-scratch.md)
+  covers the install half — Windows and macOS, the three things to have ready
+  before starting, and a "when it goes wrong" box on every step drawn from the
+  failures the setup script actually branches on. The Start Here checklist and
+  Help button cover the in-app half.*
+
+  **Left unticked on purpose.** The bar is "achievable by Simon with no one
+  else present", and the only proof of that is Simon doing it on a clean
+  machine. Ticking it on the strength of having written it would be marking my
+  own homework. Tick it after the first unaided install.
   *Open — this row did not exist until Simon raised the bar on 2026-08-26.*
 - [x] **Docs.** HANDOFF.md current (docs/todo/refactor/HANDOFF.md); open decisions
   parked in docs/simon-handover/ (6 items, 0 answered — Simon/Darren triage them
