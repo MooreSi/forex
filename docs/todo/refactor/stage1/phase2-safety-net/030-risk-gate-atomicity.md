@@ -1,7 +1,7 @@
 # 030 — Risk gates: reserve before await, no check-then-act race
 
-**Status:** **not started — but the design changed, see the note at the bottom
-(2026-08-29).** A prerequisite landed; the gate itself is still racy.
+**Status:** **code + tests DONE 2026-08-29 (market closed). NOT Done** — the killer
+demo (two signals at once against a cap of one) needs a live session.
 **Depends on:** phase 1 landed (gates armed by 1/060; send path stabilised by 1/010–020)
 **Touches money:** YES — run `/safe-change` first. Not Done without owner sign-off + a demo session.
 **Layer:** service
@@ -134,3 +134,57 @@ gone, and nothing swept for it.
 The single-statement claim above, plus its tests, plus a demo. One focused
 session — it should not be bolted onto the end of a long one, on the one gate
 that can stop all trading.
+
+---
+
+## Built 2026-08-29
+
+The design note above is what shipped. `claim_signal_activation` now carries
+the cap in its own `WHERE`:
+
+```sql
+UPDATE vantage_signals SET status='activating', activated_at=?
+ WHERE signal_id=? AND status IN ('pending','active')
+   AND (SELECT COUNT(*) FROM vantage_simulated_trades WHERE status='open')
+     + (SELECT COUNT(*) FROM vantage_signals WHERE status='activating')
+     < ?
+```
+
+One statement, so there is no window between the test and the write. The
+existing check in `open_trade` stays as the backstop for the paths that never
+claim a signal — manual market orders and IME.
+
+A refusal now means one of two things, so `explain_failed_claim` tells them
+apart: *"already being opened"* versus *"max open trades reached (1) — 1 open,
+0 being opened right now"*. They read very differently to whoever sees the
+error, and only the second is a reason to wait.
+
+### The failure mode, and why it is survivable now
+
+A claim holds a slot until the signal moves on. A **leaked** claim would hold
+one forever, and once the cap filled nothing would trade at all, silently —
+worse than the race it fixes. That is why `release_stranded_activations` had to
+land first: an abandoned claim returns to `pending` after 15 minutes. A test
+here asserts a released claim frees its slot.
+
+### Two things mutation caught
+
+- A safe-looking `else 1` fallback in `_max_open_trades` was never exercised,
+  because every test set the cap explicitly. Raising it to 9999 passed the
+  whole file — a fallback looser than the schema default silently disables the
+  only always-on protection there is, and applies exactly when the
+  configuration is least trustworthy. Now tested via a missing settings row
+  and a garbage value.
+- There is deliberately **no** NULL-cap test: the column is `NOT NULL`, so
+  that state is unreachable, and a test for it would only look like coverage.
+
+### Not done
+
+The **killer demo**: two signals arriving together against a cap of one, and
+exactly one position afterwards. Needs a live session.
+
+Also unchanged and worth knowing: `reversal_engine_repo` sets `activating`
+through its own statement without this cap, so that path can still race past
+it. Its claims *are* counted by the subquery above, so it cannot cause an
+over-open through the signal path — but it can still over-open on its own.
+Separate task, flagged rather than fixed quietly.
