@@ -159,3 +159,35 @@ losing a report.
   constant when a TRADER would want to move it").
 - **The killer demo:** kill the app between place and DB-record, restart,
   confirm the position is adopted exactly once. Needs a live broker.
+
+---
+
+## Correction 2026-08-29: the spec's "adopt as recovered" is overruled
+
+The spec asks for `test_broker_only_position_adopted_as_recovered`. Simon
+answered 001-trading-defaults #6 on **25 August, two weeks after this spec was
+written**:
+
+> **A — confirmed. Watch it only: show it, track its profit, never touch it.
+> Manual MT5 trades stay Simon's; the app still counts them toward exposure and
+> the risk limits, but never moves a stop or closes one.**
+
+His answer wins. But "broker position with no DB row" is **two** situations
+wearing one shape:
+
+- a trade **Simon** placed by hand in MT5 — his, watch only;
+- a trade **the app** placed and then crashed before recording — the app's own
+  orphan, which is the crash-recovery case this whole task exists for.
+
+stage3/010 made them separable: every order the app now sends carries `ea:` or
+`py:` plus the trade id, and a position with neither is not ours. The diff
+reports `broker_only_ours` and `broker_only_manual` separately, and the manual
+entry's text says *never touch it* in as many words.
+
+Collapsing the two would either abandon the app's own orphans or take over
+Simon's manual trades. Both still need attention in the report — watch-only
+does not mean ignore, since a manual position still counts toward exposure and
+the risk limits.
+
+**This narrows the eventual repairer**: it may only ever act on
+`broker_only_ours`.
