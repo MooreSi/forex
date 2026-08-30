@@ -73,3 +73,52 @@ it ratchets.
 - The level-detection divergence finding may turn out to be a real trading-behaviour question —
   if the three copies produce different levels today, the owner needs to see that diff regardless
   of this refactor.
+
+---
+
+## Correction to this task's premise, 2026-08-30
+
+The task says *"`breakout_signal` imports its ten core indicators from sibling
+`test_signal` — a **production** engine depending on a **test** engine's
+package"*.
+
+**`test_signal` is not a test engine.** It is the **Bounce engine**, and the
+package is simply misnamed. `controllers/engines_controller.py` imports it as
+`bounce`, and `breakout_signal/signal_generator.py`'s own comment above the
+import says *"Re-export shared utilities from the bounce engine"*.
+
+So the dependency is production→production. That is still untidy — shared
+indicators living inside one engine's package rather than a shared home — but
+it is **not** the layering violation the review described, and the urgency
+should be read down accordingly.
+
+### The naming had a real cost, now fixed
+
+pytest collects any module-level name matching `Test*` as a test class. Two
+test files imported `TestSignalEngine` (production code) directly, so pytest
+tried to collect it on every run and emitted a `PytestCollectionWarning` each
+time. It was saved from actually being instantiated and run **only** because
+the class happens to have an `__init__`.
+
+That is a latent hazard, not just noise: a `Test*`-prefixed production class
+without an `__init__`, imported into any test module, would be instantiated and
+"run" by pytest.
+
+Fixed at the import — both files now use `TestSignalEngine as BounceEngine`,
+which removes the warning and the hazard, and reads truthfully. Restricting
+`python_classes` in `pyproject.toml` was the obvious alternative and is the
+wrong one: it would silently stop collecting the suite's own `TestX` classes,
+which is a far worse failure than a warning.
+
+### Still open
+
+- The shared indicators still live in the Bounce engine's package. Moving them
+  to a shared home is a pure move, behaviour-neutral, and worth doing — but it
+  fixes no bug.
+- Renaming `test_signal` to `bounce` would remove the confusion at its source.
+  That is a wide rename touching imports across the app, and it deserves its
+  own change rather than riding along with anything else.
+- "Level detection exists three times (drifted?)" is **unverified**. If those
+  three have drifted, consolidating them changes signal generation on live
+  engines — that is a money-path change needing a demo, not a tidy-up. Check
+  whether they are identical before treating it as a refactor.
