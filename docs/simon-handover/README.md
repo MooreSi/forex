@@ -128,3 +128,4 @@ in the room.
 
 - [010-session-2026-08-28-evening.md](010-session-2026-08-28-evening.md) — what got done while you were out, and the two things that now need you
 - [011-your-halt-settings-do-not-match-what-you-confirmed.md](011-your-halt-settings-do-not-match-what-you-confirmed.md) — your risk governor is off and your daily-loss limit is 20%, not the 3% you confirmed
+- [012-should-a-resting-order-use-a-trade-slot.md](012-should-a-resting-order-use-a-trade-slot.md) — resting pending orders do not count toward max_open_trades; A/B/C on whether they should
