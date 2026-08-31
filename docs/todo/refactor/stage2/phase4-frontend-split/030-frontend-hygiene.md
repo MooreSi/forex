@@ -29,3 +29,49 @@ while the patch targets 3.12.1, with no canary (an upgrade breaks the app silent
 ## Acceptance
 - Silent-except AST count at 0 (shrinking baseline); timers offloaded; canary red on an incompatible
   NiceGUI. Green suite.
+
+
+---
+
+## Closed out, 2026-08-31 — and the timer premise was overstated
+
+**Silent excepts: 44 → 0.** Every one is now `except Exception as e:` followed
+by a debug log naming the page and what was being refreshed. None deleted, none
+narrowed away, no behaviour changed. The gate is a rule now rather than a
+ratchet, with a planted-violation control.
+
+**The timer half needed measuring before it needed doing.** The task says
+*"33 hand-rolled `ui.timer` polls run synchronously on the event loop"*. Counted
+on 2026-08-31, there are 36, and:
+
+| | |
+|---|---|
+| already `async def` | **23** |
+| sync, but only touching labels they already hold | 9 |
+| sync **and reaching a controller** | **4** |
+
+So the problem was four call sites, not thirty-three — and a shared
+`components/poll.py` helper for all of them would have been a large change
+justified by a number that was not true.
+
+The four were real, though. `_refresh_cb_badge` in the app shell polls the
+circuit-breaker badge every 5 seconds, and
+`get_circuit_breaker_state()` reaches `get_risk_settings()`, which is a
+synchronous SQLite read. A sync timer callback runs inline on the event loop,
+so every tick stalled every page, every websocket and every other timer for the
+duration of that read — on a machine also running the trading loops.
+
+**Fixed by making those four `async def`** and awaiting an offloaded twin.
+`get_risk_settings_async()` already existed; `circuit_breaker_state_async()`
+was added beside it, same shape, `to_db_thread`.
+
+`tests/frontend/test_timers_do_not_block.py` holds the rule at zero and names
+offenders rather than counting them — a baseline number would let a new
+blocking timer in as long as an old one was fixed. It also checks the twin
+genuinely offloads, since "the callback is async" is worth nothing if what it
+awaits still blocks.
+
+**Not done, and now the whole of what remains here:** `components/poll.py`. The
+case for it is no longer performance — it is that 36 timers each re-implement
+their own error handling. That is a tidiness argument, and it should be made on
+its own terms rather than inherited from this task's number.
