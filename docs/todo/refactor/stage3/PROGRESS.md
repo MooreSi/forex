@@ -20,7 +20,7 @@ seam) added so everything Simon-gated lives in one view. No money code started._
 | Task | Money | Status | Owner | Notes |
 |---|---|---|---|---|
 | [010 order-send dedup](010-order-send-dedup.md) | YES | **in progress** — code + 28 tests landed 2026-08-29, awaiting demo | — | Gate built and mutation-tested; killer demo (pause the EA, force an ack timeout) needs a live EA, market closed until Monday. UNKNOWN-state handling deferred to 020 on purpose. |
-| [020 timeout → UNKNOWN](020-timeout-means-unknown.md) | YES | **in progress** — code + 21 tests landed 2026-08-29, awaiting demo | — | Bridge no longer retries on a lost response; new `unknown` signal status; open_from_signal routes rejections vs no-answers. Also closed the UNKNOWN case 010 had deferred. |
+| [020 timeout → UNKNOWN](020-timeout-means-unknown.md) | YES | **in progress** — code + 21 tests 2026-08-29; **three further defects found and fixed 2026-08-31** (the fix never reached the primary Telegram path); awaiting demo | — | Bridge no longer retries on a lost response; new `unknown` signal status; open_from_signal routes rejections vs no-answers. Also closed the UNKNOWN case 010 had deferred. |
 | [030 broker↔DB reconciliation](030-broker-db-reconciliation.md) | YES | **in progress** — diff engine + report-only pass landed 2026-08-29 | — | Pure diff engine, wired into the monitor cycle, read-only at the broker (asserted via AST). **Repairers NOT built** — they write and route through the frozen close path. |
 | [040 no DB close on failed broker close](040-no-db-close-on-failed-broker-close.md) | YES | **in progress** — profit-close path fixed 2026-08-29 | — | success=False was never checked; a refused close became a DB close at the local tick. **Two existing tests had enshrined that** and are rewritten + renamed. SL-reconcile path left alone (documented trade-off, Simon's call). |
 | [050 protective halts on by default](050-protective-halts-default-on.md) | YES | **in progress** — number inconsistency + swallowed failures fixed 2026-08-29 | — | governor.py fell back to 20% for BOTH limits while the schema said 3%/8%; all three sources now agree with Simon's confirmed 3%/10%. Both post-close halt failures now loud. Default flips not done (they cannot reach an existing install) — see simon-handover/011. |
@@ -30,6 +30,16 @@ seam) added so everything Simon-gated lives in one view. No money code started._
 - Extracted from stage1 phase 1 into its own Simon-gated stage so stage2 is workable today (source: user, 2026-08-11)
 
 ## Verification log
+- 2026-08-31 — all five demos driven end-to-end offline against the fake broker
+  (`tests/e2e/test_killer_demos.py`, 10 tests: five scenarios, five negative
+  controls). `tools.checks all` 8/8. **Eleven mutations, all killed** — each
+  scenario was verified by re-introducing the original bug and watching it go
+  red. **NO DEMO YET; no order was placed, on any account.** The owner's
+  permission to use the demo account was declined per golden rule 1 and the
+  runbook written instead:
+  [docs/simon-handover/013-the-five-demos-runbook.md](../../../simon-handover/013-the-five-demos-runbook.md).
+  **020 was found broken on the primary signal path while doing this** — see
+  that task file. Nothing here is `done`.
 - 2026-08-29 — 040 (partial): `tools.checks all` 8/8; 22 tests; eight mutants killed (one malformed mutation of mine produced a syntax error and was redone; one real gap found -- the alert wrapper was never exercised because the tests run under a live loop). **No demo yet.**
 - 2026-08-29 — 050 (partial): `tools.checks all` 8/8; 15 tests; seven mutants all killed. Frozen close path: reporting only, close outcome asserted unaffected. **No demo yet.**
 - 2026-08-29 — 030 (half): `tools.checks all` 8/8; 31 tests; eleven mutants all killed. Report-only, writes nothing. **No demo yet.**

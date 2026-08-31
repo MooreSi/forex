@@ -139,3 +139,67 @@ parks and the scheduler never touches it again. Needs a live broker.
 Until [030](030-broker-db-reconciliation.md) ships, a parked `unknown` signal
 stays parked and its possible fill is unmanaged. That is strictly safer than
 today's double-fire, and it is why 030 follows immediately.
+
+---
+
+## The fix did not reach the primary path — found 2026-08-31
+
+Driving this task's killer demo end-to-end offline
+(`tests/e2e/test_killer_demos.py::test_020_*`) showed the signal coming to rest
+in **`pending`**, not `unknown`. Three separate defects, each of which alone
+was enough to undo the whole task, and **every unit test passed throughout**
+because none of them ran the caller.
+
+### 1. The routing was never wired into the Telegram path
+
+`_route_failed_open` lives in `open_from_signal.py` and runs in
+`open_trade_from_signal`'s `except`. But the fresh-Telegram-signal route does
+not call `open_trade_from_signal` at all — `scan_auto_execute` calls
+`core_open_trade.open_trade` directly, and its own handler called
+`reset_signal_to_pending(signal_id)` on **every** exception, `SendOutcomeUnknown`
+included.
+
+That is the primary path. The task shipped covering the internal-engine and
+queued-fill routes only.
+
+`scan_auto_execute.py` had already been bitten by exactly this shape once — its
+own comment records the trading-schedule gate being missed on this path
+"while queued zone-fills, pending-order fills, IME trades and the internal
+engines were all correctly blocked".
+
+**Fixed:** the handler now branches on `send_outcome_is_unknown(e)` and parks
+instead of resetting.
+
+### 2. `park_signal_unknown` could not park from this path's state
+
+Its guard was `status='activating'` — the status `open_trade_from_signal`
+leaves a signal in. On the Telegram path the signal is **`active`**. So even
+once the routing was wired, the UPDATE matched no row: the park logged
+success and changed nothing, leaving the signal re-claimable, since
+`claim_signal_activation` accepts `status IN ('pending','active')`.
+
+**Fixed:** guarded on both in-flight statuses. `closed`, `cancelled`,
+`pending` and `failed` still cannot be parked, with a test each.
+
+### 3. `reset_signal_to_pending` was the unguarded second door
+
+There are two functions that hand a signal back to the scheduler.
+`restore_signal_after_failed_open` was guarded (and tested — the guard was
+found untested by mutation while 020 was being written).
+`reset_signal_to_pending` was not, and it is the one this path calls. Even with
+1 and 2 fixed, the generic handler on the way out would overwrite the park.
+
+**Fixed:** `AND status != 'unknown'`.
+
+### Verification
+
+Eleven mutations across the five demos, all killed. For this task specifically:
+un-wiring the routing, narrowing the park guard back to `activating`, and
+dropping the `!= 'unknown'` clause each produce a red test.
+
+Mutation 2 is the one worth remembering: the routing fires, the log says
+`parking signal ... NOT retrying`, and the database is unchanged. A silent
+no-op that reports success is the failure mode this repo's rules exist for.
+
+**Still not `done`** — the demo needs a terminal. See
+[docs/simon-handover/013-the-five-demos-runbook.md](../../../simon-handover/013-the-five-demos-runbook.md).
