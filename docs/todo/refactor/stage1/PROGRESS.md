@@ -46,7 +46,7 @@ session, both recorded in Notes.
 | 4 | [010 ci-job](phase4-hygiene/010-ci-job.md) | no | done — activates on push (2026-08-10) | Claude/Darren | repo+remote+gitignore already exist (Q003 corrected). `.github/workflows/checks.yml` runs `tools.checks all` on Windows on push/PR + guard tests. Red/green verification happens on first push. |
 | 4 | [020 test-layout](phase4-hygiene/020-test-layout-consolidation.md) | no | done — via stage2 3/030 (2026-08-11) | Claude | packages everywhere, ghost testpath gone, import-time mutation fixed, gates in tests/refactor/test_layout.py |
 | 4 | [030 licence-signing](phase4-hygiene/030-licence-asymmetric-signing.md) | no | **done — row was stale** (audited 2026-08-29) | — | `config/licence/verify.py` is Ed25519 public-key-only; the `CHANGEME-BEFORE-PRODUCTION` secret is gone from the tree. Verified by grep, not by memory. |
-| 4 | [040 docs-of-what-shipped](phase4-hygiene/040-docs-of-what-shipped.md) | no | not started | — | last task before /spec done |
+| 4 | [040 docs-of-what-shipped](phase4-hygiene/040-docs-of-what-shipped.md) | no | **done (2026-08-31)** | Claude | CHANGELOG entry for 2026-08-28→31, with the money-path items marked IMPLEMENTED, NOT SIGNED OFF rather than shipped — every claim traces to a row here or a verification paste. `20-trading-safety.md` gains the found/absent/**unknown** rule, the gate-the-funnel lesson and the reconciliation contract; `40-testing.md` gains the fail-closed doctrine, canonical `fresh_db`, and the after-a-move undefined-names check. The no-cycle rule is NOT added to 30-architecture.md — 3/020 did not ship it |
 
 ## Decisions log
 - Pack layout → phased by priority tier (source: user, 2026-08-08)

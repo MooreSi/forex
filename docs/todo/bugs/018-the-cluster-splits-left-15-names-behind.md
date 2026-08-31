@@ -88,3 +88,21 @@ having no gate.
 The `/split-file` procedure said to check for module-level `global` state
 before splitting. It did not say to check that the code you moved can still
 see everything it uses. It does now, and the gate enforces it either way.
+
+## The rest of the survey, so nobody repeats it
+
+While the scanner was being validated, pyflakes' *other* categories were read
+through on the whole tree. **Nothing else in them is a bug**, which is why the
+gate is narrowed to undefined names only:
+
+| Category | Count | Verdict |
+|---|---|---|
+| unused imports | ~300 | tidiness; many are deliberate re-exports |
+| `global X` never assigned in scope | 8 | **not bugs** — every one mutates a dict in place (`_candle_cache[key] = ...`) rather than rebinding, so the `global` is redundant, not wrong |
+| f-string missing placeholders | 10 | **not bugs** — stray `f` prefixes on constant strings sitting in lists of otherwise-interpolated ones |
+| local assigned but never used | ~12 | dead locals; no behaviour |
+| redefinition of unused import | ~12 | function-local re-imports of a module already imported at top |
+
+The `global` category is the one worth remembering: it looks alarming and reads
+like "this function meant to update something and doesn't", but in-place
+mutation is the actual pattern everywhere it appears.
