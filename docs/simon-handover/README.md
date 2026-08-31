@@ -129,3 +129,6 @@ in the room.
 - [010-session-2026-08-28-evening.md](010-session-2026-08-28-evening.md) — what got done while you were out, and the two things that now need you
 - [011-your-halt-settings-do-not-match-what-you-confirmed.md](011-your-halt-settings-do-not-match-what-you-confirmed.md) — your risk governor is off and your daily-loss limit is 20%, not the 3% you confirmed
 - [012-should-a-resting-order-use-a-trade-slot.md](012-should-a-resting-order-use-a-trade-slot.md) — resting pending orders do not count toward max_open_trades; A/B/C on whether they should
+- **[013-the-five-demos-runbook.md](013-the-five-demos-runbook.md) — START HERE for the demo session.** All five money-path fixes, step by step on a demo account, about 40 minutes. Nothing in stage 3 is finished until these are run.
+- [014-a-wildcard-fingerprint-nothing-uses.md](014-a-wildcard-fingerprint-nothing-uses.md) — a one-word answer needed: does your KeyGen define `TEST_WILDCARD`?
+- [015-session-2026-08-31.md](015-session-2026-08-31.md) — what got done on 31 August, the two things that were actually broken, and the three that need you
