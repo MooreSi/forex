@@ -132,3 +132,4 @@ in the room.
 - **[013-the-five-demos-runbook.md](013-the-five-demos-runbook.md) — START HERE for the demo session.** All five money-path fixes, step by step on a demo account, about 40 minutes. Nothing in stage 3 is finished until these are run.
 - [014-a-wildcard-fingerprint-nothing-uses.md](014-a-wildcard-fingerprint-nothing-uses.md) — a one-word answer needed: does your KeyGen define `TEST_WILDCARD`?
 - [015-session-2026-08-31.md](015-session-2026-08-31.md) — what got done on 31 August, the two things that were actually broken, and the three that need you
+- [016-the-native-bridge-has-the-same-shape.md](016-the-native-bridge-has-the-same-shape.md) — is the native MT5 bridge in use anywhere? If not, this can wait

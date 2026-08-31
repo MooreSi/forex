@@ -203,3 +203,71 @@ no-op that reports success is the failure mode this repo's rules exist for.
 
 **Still not `done`** — the demo needs a terminal. See
 [docs/simon-handover/013-the-five-demos-runbook.md](../../../simon-handover/013-the-five-demos-runbook.md).
+
+---
+
+## A third route, found 2026-08-31: the answer lost between app and bridge
+
+020 was implemented **inside** `mt5_bridge`: `order_send` returning `None` is
+flagged `unknown: True`. That covers an answer lost inside the bridge process.
+It does not cover an answer lost between the app and the bridge.
+
+`MT5BridgeClient.place_order` wrapped its HTTP call in
+`except Exception: return {"error": str(e)}`. So a **read timeout** — which
+happens after the request reached the bridge, and after the bridge may already
+have called `order_send` — arrived at `open_trade` looking exactly like a
+broker rejection:
+
+```python
+_raise_if_send_unknown(mt5_result)      # only fires on unknown=True
+if mt5_result.get("error"):
+    raise RuntimeError(f"MT5 order rejected: ...")
+```
+
+A `RuntimeError` is not a `SendOutcomeUnknown`, so the signal was restored to
+`pending` and sent again — for an order that may already be on the book.
+
+**The dedup gate does not cover this.** `_resolve_fallback_send` only consults
+the broker when the EA was actually asked (`ea_attempted`). On a
+Python-bridge-only install there is no EA, so nothing checks.
+
+### The distinction that matters
+
+Not every transport failure is unknown, and treating them alike would be its
+own bug:
+
+| httpx exception | Meaning | Verdict |
+|---|---|---|
+| `ConnectError`, `ConnectTimeout`, `PoolTimeout` | nothing left this machine | retryable — and marking these unknown would park a signal every time the bridge restarts |
+| `ReadTimeout`, `ReadError`, `WriteTimeout`, `WriteError`, `RemoteProtocolError` | request was on the wire; reply lost | **unknown** |
+
+Anything not recognisably never-sent is treated as unknown — the conservative
+direction, since a wrongly-parked signal waits for reconciliation while a
+wrongly-retried one can become two live orders.
+
+### Two fixes
+
+1. `mt5_client._send_failure` classifies the exception, on all four send paths
+   (`place_order`, `close_position`, `partial_close`, `modify_order`). A lost
+   answer on a **close** matters for the same reason: recording it as closed
+   books a P&L that may not have happened.
+2. `send_outcome_is_unknown` now knows about httpx. `httpx.ReadTimeout` is not
+   a builtin `TimeoutError` and inherits from none of the types that tuple
+   listed, so one escaping the client was read as a rejection. The client
+   returns a dict rather than raising, so this is a backstop — but the
+   classification lived in one place and that place did not know about the
+   transport library actually in use.
+
+16 client tests, 8 classifier tests, one end-to-end through the real client.
+Five mutants, all killed, including both over-parking and under-parking.
+
+### Still open
+
+`mt5_native.py` (the in-process bridge, used when `mt5_native_bridge_enabled`)
+has the same `except Exception: return {"error": str(e)}` shape on its four
+send paths. It has **not** been changed: its failures come from a thread
+executor rather than a socket, and I cannot reason about which of them mean
+"the call never ran" without being able to exercise it. Deliberately left
+rather than guessed at — see `docs/simon-handover/016`.
+
+**Still not `done`** — the demo needs a terminal.
