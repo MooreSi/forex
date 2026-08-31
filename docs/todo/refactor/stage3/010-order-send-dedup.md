@@ -149,3 +149,61 @@ The **magic number** half of the spec is also not done — `place_order` takes
 only a comment, so a magic number means changing both bridge programs, and
 that cannot be verified without placing an order. The comment alone is
 sufficient for the dedup check.
+
+---
+
+## The guard was defeated by both real clients — found 2026-08-31
+
+`find_trade`'s docstring states the contract:
+
+> None means "could not look"; `[]` means "nothing there". Treating them alike
+> is the mistake this whole module exists to prevent.
+
+It branches on both. **Neither real client could ever produce the None.**
+`MT5BridgeClient.get_positions` and `NativeMT5Bridge.get_positions` swallowed
+every failure — HTTP error, timeout, non-200, unconfigured bridge, dead
+terminal — and returned `[]`.
+
+So a failed position query read as *"the broker has no record of this trade"*,
+`safe_to_send` came back True, and the order was sent again. **On the only two
+clients production uses.** The same for `get_deal_history`, which is the second
+half of the same question.
+
+The dedup unit tests passed throughout, because their fake bridge raises or
+returns None. Production never produced either shape. That is the same reason
+`test_020_a_lost_BRIDGE_response_also_parks_the_signal` had to be rewritten to
+drive the real client: **a fake that cannot produce the failure mode cannot
+test the guard against it.**
+
+This is the third instance of one root cause found the same day, after
+`place_order`'s lost response and `send_outcome_is_unknown` not knowing about
+httpx: *something that could not be asked, recorded as an answer.*
+
+### The fix, and how the blast radius was controlled
+
+`get_positions`, `get_deal_history` and `get_position_history` now return
+`None` when the read failed and `[]` only for a genuinely empty broker, on both
+clients.
+
+There are **23 call sites**. Every one that does not care got `or []` appended,
+which is byte-for-byte today's behaviour — so tonight's behaviour change is
+limited to the callers that already branch on `None`:
+
+| Caller | Effect |
+|---|---|
+| `dedup.find_trade` | now reports **unknown** instead of "absent". This is the fix. |
+| `reconciliation.collect_and_report` | already skipped on `None`; previously proceeded with `[]` and reported every open trade as having no broker record |
+| `position_sync.sync_closed_mt5_positions` | **new explicit `None` branch** |
+
+That last one is the worst consequence and has its own test. It decides whether
+a trade has closed *by its absence from the position list*, so a failed read
+arriving as `[]` made **every open trade look closed** — recorded shut in the
+database, with a Telegram alert for each. Its older health-check workaround for
+the same ambiguity is kept, because a disconnected-but-responding bridge can
+still answer with a genuine `[]`.
+
+26 tests. Six mutants, all killed, including the over-parking direction: an
+empty broker reported as a failed read would park every signal and stop the app
+trading.
+
+**Still not `done`** — the demo needs a terminal.
