@@ -183,3 +183,42 @@ engines take.
 (`compute_htf_bias`, `compute_adx`, `compute_macd_hist`, `detect_regime`, …)
 out of the Bounce package into a shared home. That is a pure move and fixes no
 bug. It does **not** include level detection.
+
+---
+
+## The indicator move: deliberately not done, 2026-08-31
+
+The remaining scope of this task is moving the shared indicators out of the
+Bounce engine's package into a shared home. I did not do it, and the reason is
+worth recording so the next person does not have to re-derive it.
+
+**It fixes no bug.** That is this task file's own assessment and mine. The
+dependency it removes is production→production (see the premise correction
+above), not a layering violation.
+
+**And it is not the clean lift it looks like.** The ten functions are split
+across *both* halves of a mutually-dependent pair:
+
+| In `signal_generator.py` | In `signal_indicators.py` |
+|---|---|
+| `compute_htf_bias`, `get_session`, `session_quality`, `session_is_active` | `compute_h4_bias`, `compute_adx`, `compute_macd_hist`, `detect_regime` |
+
+Those two modules import each other. That is precisely the structure that
+produced `docs/todo/bugs/018` (15 names left behind by a verbatim move) and the
+one-way import cycle fixed the same day. Moving code across it, unattended,
+for no behavioural gain, is the worst trade available.
+
+Two of the ten should **not** move regardless:
+
+- `identify_key_levels` is level detection. Relocating Bounce's version to a
+  "shared" home implies it is the blessed one, which is the exact misleading
+  implication the level-detection finding above warns against.
+- `is_news_window` delegates to `test_signal.news_filter`, so moving it drags a
+  Bounce-specific dependency into the shared home.
+
+**So the real remaining scope is eight functions, and it is a one-sitting job
+for someone with the suite in front of them.** The gates that make it safe now
+exist — `tests/refactor/test_undefined_names.py` catches a dependency left
+behind, `tests/test_signal/test_import_order.py` catches a re-introduced cycle,
+and `tests/test_signal/test_indicators.py` pins what all eight compute. Do it
+with those, not without them.
