@@ -49,3 +49,36 @@ seam) added so everything Simon-gated lives in one view. No money code started._
 ## Blockers / open
 - Everything here needs Simon (sign-off + demo session).
 - Money-path provisional defaults await Simon's confirmation (docs/simon-handover/001).
+
+## Parallel-route audit, 2026-08-31
+
+020 was found broken because its fix reached one signal route and not the
+parallel one. That is a shape of failure, not a one-off, so the other four
+tasks were checked the same way: **for each fix, is there a second path to the
+same outcome that it does not cover?**
+
+| Task | Paths to the outcome | Verdict |
+|---|---|---|
+| 010 no duplicate order | `bridge.place_order` has **one** call site in the whole tree (`open_trade.py`); the EA handoff is inside the same function | **sound** — the gate is on the funnel |
+| 020 timeout → unknown | two: `open_trade_from_signal` and `scan_auto_execute` | **was broken** — see the task file; three defects, fixed |
+| 030 reconciliation | one entry point, report-only | sound |
+| 040 no DB close on a refused close | **four** `close_position` call sites | three were already correct (frozen path raises; ladder legs skip; residual close alerts); the fourth was `monitor_loop`, fixed on 2026-08-29 |
+| 050 protective halts | the check is in `open_trade` **before** the EA handoff, so it gates both send paths | **sound** — gate on the funnel, not per caller |
+
+The lesson worth keeping: **010 and 050 are safe because they gate a single
+funnel; 020 was unsafe because it gated callers.** Where a check is repeated
+per route, a route will eventually be missed.
+
+Three properties nothing was pinning are now pinned, since all three would
+break silently:
+
+- `tests/refactor/test_order_paths_have_one_funnel.py` — `place_order` keeps
+  exactly one call site, and the halt check stays above both send paths
+  (4 tests, 3 mutants killed)
+- `tests/trading/test_close_response_contract.py` — every branch of the real
+  bridge's `_close_position` returns exactly one of `{"success": True, ...}` or
+  `{"error": ...}`. The frozen close path reads `success`, so a response
+  carrying neither would record a database close at the app's own local tick —
+  040's exact bug, in the one function that may not be reshaped. Includes the
+  non-obvious dependency that keeps it true: `_last_error` is never empty when
+  the bridge is down (15 tests, 3 mutants killed)
