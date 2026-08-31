@@ -1,48 +1,74 @@
-# 016 — the native bridge may have the same hole, and I could not check
+# 016 — the native MT5 bridge: answered, and I had it backwards
 
-**Decision needed:** whether the native bridge is in use, and whether to fix it blind
+**Status:** fixed 2026-08-31. No decision needed from you any more.
 **Money:** yes — it is an order-send path
-**Urgency:** only matters if `mt5_native_bridge_enabled` is on
+**Correction:** the first version of this note said the native bridge probably
+was not the one your installs use. That was wrong, and wrong in the direction
+that mattered.
 
-## What I found and fixed
+## Your question: if we're only using the Expert Advisor, do we need the bridge?
 
-The app talks to MetaTrader through one of two clients:
+**Yes.** The bridge is not the order route — it is the connection to
+MetaTrader. Even with the EA placing and managing every trade, the app has no
+other source of:
 
-- **`mt5_client.py`** — over HTTP to the bridge program. This is the usual one.
-- **`mt5_native.py`** — in-process, when `mt5_native_bridge_enabled` is set.
+| | Used by |
+|---|---|
+| **Prices** (`get_tick`) | the monitor loop, every stop and target check |
+| **Candles** | every signal generator, every backtest |
+| **Account** (balance, equity) | position sizing, the daily-loss and drawdown halts |
+| **Open positions** | reconciliation, and the duplicate-order check |
+| **Deal history** | reconciliation's evidence that a trade actually closed |
 
-On 2026-08-31 I found that the HTTP one could not tell "the broker said no"
-from "we never heard back". A read timeout — where the request reached the
-bridge, the order may have filled, and only the reply was lost — came back
-looking like a rejection, so the signal was put back in the queue and sent
-again. That is the failure stage3/020 exists to prevent, on a route it had not
-covered. Fixed, with tests.
+Roughly 97 places across ten areas of the app read one of those. Turn the
+bridge off and the EA would keep managing whatever it already holds, while the
+app went blind: no new signals, no risk figures, no reconciliation.
 
-## What I did not fix, and why
+What the EA changes is **which code places and manages orders**, not whether
+the app needs a connection. And it only covers strategies it can run — EA
+Templates plus the portable list. Anything else, and any time the EA is
+unhealthy or the handoff fails, falls through to the bridge's own send path.
 
-`mt5_native.py` has the same shape: `except Exception: return {"error": ...}`
-on all four send paths.
+## Where I had it backwards
 
-I have not changed it. The HTTP case is decidable — httpx tells you whether the
-request ever left the machine, so "retry safely" and "we do not know" can be
-told apart precisely. The native client's failures come out of a thread
-executor talking to the MetaTrader5 Python package directly, and I cannot tell
-from reading it which of those mean the call never ran.
+There are two bridges, and I assumed the wrong one was in use:
 
-Guessing here is not safe in either direction:
+- **`NativeMT5Bridge`** — imports MetaTrader5 directly, in-process. **This is
+  the default on Windows**, and `run.py` explicitly skips launching the
+  separate bridge program when it is on.
+- **`MT5BridgeClient`** — talks HTTP to `mt5_bridge.py` as a subprocess. This
+  is the **macOS** path, where MT5 runs under Wine and the app's own Python
+  cannot import MetaTrader5 at all.
 
-- Treat everything as unknown → signals park whenever the native bridge
-  hiccups, and only reconciliation releases them.
-- Treat everything as retryable → the original bug, on the native path.
+So on your Windows machine it is the native one. My first note said the HTTP
+path was "the one your installs actually use", and fixed that one first. That
+was the wrong way round.
 
-## What I need from you
+## Now fixed, and the reasoning is stronger here
 
-1. **Is the native bridge actually in use on any install?** If it is off
-   everywhere, this is documentation rather than a fix, and can wait.
-2. If it is in use, it needs one demo-session experiment: stall the native
-   bridge mid-send and see what exception comes back. Ten minutes at the
-   terminal answers it properly, and then the fix is the same three lines as
-   the HTTP one.
+I had said I could not tell which native failures meant "the call never ran".
+Reading it properly, I can — and the timeout case is clearer than the HTTP one.
 
-Until then the HTTP path — the one your installs actually use — is fixed, and
-the native path is no worse than it was.
+`_call` runs the MetaTrader5 function as
+`asyncio.wait_for(asyncio.to_thread(fn, ...))`. `wait_for` cancels the *wait*.
+**It cannot stop the thread.** After the timeout fires, the MT5 call is still
+running to completion. So a timeout on `place_order` does not mean the order
+failed — it means the order is very likely still on its way to the broker,
+and we stopped listening.
+
+That is exactly the case where retrying produces two live orders, and until
+today it came back looking like a plain rejection.
+
+The one failure that provably never ran is a missing function name — `getattr`
+raises before anything is dispatched — so that stays retryable. Parking a
+signal over a plain programming error would be a second bug, not caution.
+
+18 tests, three mutations, all caught, covering over-parking as well as
+under-parking.
+
+## What this means for your demo session
+
+Nothing changes in the runbook. It does mean **demo 2 is now testing the path
+your machine actually uses** — pull the connection mid-send and confirm the
+signal shows `unknown` rather than `pending`. Before today that demo would have
+exercised the fixed code on macOS and the unfixed code on Windows.
