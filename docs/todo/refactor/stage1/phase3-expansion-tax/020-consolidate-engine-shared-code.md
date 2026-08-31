@@ -122,3 +122,64 @@ which is a far worse failure than a warning.
   three have drifted, consolidating them changes signal generation on live
   engines — that is a money-path change needing a demo, not a tidy-up. Check
   whether they are identical before treating it as a refactor.
+
+---
+
+## The level-detection question, answered — 2026-08-31
+
+The task asked whether the three level-detection implementations had *drifted*.
+They have not, because **they were never one implementation**. There is no
+common ancestor to converge back to. They are three different algorithms
+answering three different questions, and the differences are not cosmetic.
+
+Pinned in code by `tests/refactor/test_level_detection_is_not_duplicated.py`
+(10 tests, 8 mutants killed).
+
+### Where they live and who reads them
+
+| Implementation | Consumers |
+|---|---|
+| `test_signal/signal_generator.identify_key_levels` (via `_swing_pivots`, `_round_number_levels`) | Bounce, Breakout service, Breakout backtest |
+| `reversal_engine/level_detector.get_all_levels` (via `get_swing_levels`, `get_round_levels`) | Reversal |
+| `test_signal/test_signal_velocity._compute_swing_levels` | the Reversal velocity/sweep tripwire |
+
+`breakout_signal` has no level detection of its own — it imports Bounce's.
+
+### How the two real ones differ
+
+| | Bounce | Reversal |
+|---|---|---|
+| Bars scanned | every candle in the series | last `SWING_LOOKBACK` (30) only |
+| Pivot window | 3 either side | `SWING_WINDOW` (3) either side |
+| Pivot test | `>=` against neighbours | `>=` against neighbours |
+| Strength | constant `2` | count of neighbours beaten (up to `2*SWING_WINDOW`), plus 1 per merged duplicate |
+| Types | `support` / `resistance` | `swing_low` / `swing_high` |
+| Rounding | none | 2dp |
+| Extra keys | — | `idx` |
+| De-duplication | at aggregate level, 2.5 pts | per-call, `MIN_LEVEL_SEPARATION_PTS` (3.0) |
+| Round levels | $10 only, `floor` base, strength 1 | $10 **and** $5, `round` base, strengths 3 and 2 |
+| Distance filter | 60 pts on rounds, 150 on the aggregate | none |
+
+On one fixed 60-bar series the same candles yield **7 Bounce pivots and 3
+Reversal swings**, at different prices.
+
+The third, `_compute_swing_levels`, is not pivot detection at all — it is the
+plain high and low of the last 20 M15 bars, returned as a bare `(hi, lo)` pair
+with no type and no strength. It shares only the name.
+
+### What this means for the task
+
+**Step 3 of "What to do" is void as written.** "Diff the three copies; report
+divergence to the owner; relocate all three beside each other" assumes copies.
+Relocating them next to each other under a shared home would suggest to the
+next reader that one of them is redundant, which is the opposite of true.
+
+Choosing a survivor is **a trading-behaviour decision for Simon plus a demo
+session**, not a refactor. Both live implementations feed signal generation on
+running engines; swapping either for the other changes which trades those
+engines take.
+
+**Still worth doing, and still safe:** moving the ten shared *indicators*
+(`compute_htf_bias`, `compute_adx`, `compute_macd_hist`, `detect_regime`, …)
+out of the Bounce package into a shared home. That is a pure move and fixes no
+bug. It does **not** include level detection.
