@@ -1,7 +1,10 @@
 # Q001 — Six trading & operations defaults
 
 **Who answers:** Simon.
-**Status:** working defaults were chosen on 2026-08-10 so the build could
+**Status:** **ANSWERED 2026-08-25** — all six confirmed as the standing
+defaults, with item 5 later amended (see the amendment below).
+
+Working defaults were chosen on 2026-08-10 so the build could
 continue. Nothing here has made the app trade more aggressively — every
 default is watch-only, off-by-default, or stricter than before. You are
 confirming or changing them.

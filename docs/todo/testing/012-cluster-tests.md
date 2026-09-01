@@ -1,10 +1,23 @@
 # 012 — Tests for cluster/remote and cluster/sync
 
-**Status:** deferred by the owner, 2026-08-27 — "we'll do this later"
-**Blocks:** the `[loc]` drift items for `cluster/remote/server.py` (1,256),
-`cluster/sync/server.py` (1,085), `cluster/remote/client.py` (894) and
-`cluster/sync/client.py` (867)
-**Size:** 4,995 lines, zero tests
+**Status:** deferred by the owner 2026-08-27 ("we'll do this later"), then
+worked on anyway under a standing "keep going". **Substantially done, not
+finished.** Measured 2026-09-01:
+
+| File | Lines | Coverage |
+|---|---|---|
+| `cluster/sync/server.py` | 721 | 75% |
+| `cluster/sync/client.py` | 744 | 66% |
+| `cluster/remote/server.py` | 1,204 | 64% |
+| `cluster/remote/client.py` | 732 | 57% |
+
+**Blocks:** nothing any more. Three of the four came under the 800 ceiling on
+2026-08-29/30 and came off the LOC baseline entirely on 2026-09-01.
+`remote/server.py` is still over it, but is **no longer blocked on tests** —
+it is blocked on the six sets of module globals it rebinds, which a split
+would fork. See `docs/system/rules/70-file-organisation.md`.
+
+**Size:** was 4,995 lines with zero tests.
 
 ## Why it matters
 
@@ -90,3 +103,38 @@ handler-level tests written so far.
 - `remote_stats_facade._is_remote_active()` carries on to the client check when
   settings are unreadable, so it can still answer True. Narrow but real, and
   now visible.
+
+## What has been covered (2026-09-01)
+
+Each proved non-vacuous by mutation testing, with the mutants named in its
+commit message. Several passed on the first run and only mutation showed which
+ones were worth keeping.
+
+admin auth · admin IP check · sync ledger · sync `tls_util` · model transfer ·
+remote stats facade · `node_roles` · `signal_bus_repo` · the sync
+pending-proposal queue · the clock-offset sync · the Mac's order-forwarding
+half (`send_market_order`, `send_signal_order`, `send_signal_followup`,
+`push_trade_closed`) · `SyncClient._dispatch`.
+
+## What it found
+
+Two real defects, both the same shape — **two paths to one place and only one
+of them defended**, which is the pattern this codebase keeps producing:
+
+- **[bugs/014](../bugs/014-sync-and-licence-tls-are-unauthenticated.md)** —
+  both TLS channels are encrypted but unauthenticated. **NOT fixed**: it is the
+  licence channel and needs Simon. Pinning done badly is worse than none, and a
+  comparison that always passes looks identical to a working one.
+- **[bugs/019](../bugs/019-a-bad-ledger-row-drops-the-sync-link.md)** — one
+  ledger-push row missing a NOT NULL id raised inside the receive loop, which
+  dropped the link, abandoned the rest of the batch silently, and repeated on
+  every reconnect. Fixed 2026-09-01.
+
+## Where to go next
+
+`remote/client.py` (57%) is the weakest, with its largest untested block at
+lines 584-691. Then the rest of `remote/server.py`.
+
+**One rule learned the hard way here:** make a fake refuse what the real table
+refuses. A permissive `record_consolidated_trade` fake hid bugs/019 — two tests
+passed against it while the real schema would have raised.

@@ -2,7 +2,10 @@
 
 **Who answers:** Simon (the first two are yours; the last two Darren has
 already leaned on — just confirm unless you know better).
-**Status:** an audit found four pieces of the app that were written but never
+**Status:** **ANSWERED 2026-08-25** — see the answer table in
+[questions.md](questions.md) and the per-item notes below.
+
+An audit found four pieces of the app that were written but never
 plugged in. Nothing was deleted — removing an intended feature by accident
 would be worse than carrying it — so each one needs a call.
 

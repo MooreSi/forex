@@ -1,8 +1,10 @@
 # Q009 — When a signal's zone is breached before entry, drop it or queue it?
 
 **Who answers:** Simon (this is a trading stance, not a technical choice).
-**Status:** the app currently DISCARDS the signal entirely. Nothing is
-changed; you choose whether that stays.
+**Status:** **ANSWERED 2026-08-31 — A, plus realignment on the market path
+when the option is selected.** Discarding stays; the realignment half was
+built (`services/trading/entry_realignment.py`, gated on
+`lk_entry_realignment`). Both answers are recorded in full below.
 **Raised:** 2026-08-28, from a real signal during the demo session — Simon
 asked the question unprompted while watching it happen.
 

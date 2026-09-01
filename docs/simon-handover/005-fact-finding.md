@@ -4,6 +4,9 @@
 system has actually been run, which the code can't tell us. Each one has a
 worst-case assumption we're working under; your answer either relaxes it or
 confirms the work is needed.
+**Status:** **ANSWERED 2026-08-25.** 1: yes, the logs carry the account
+number. 2: the secret was never changed; 1-3 licences. 3: the admin console
+**is** in active use — the assumption was wrong. 4: retention was never on.
 
 How to answer: write what you know on each **ANSWER:** line. "Don't know"
 is a useful answer too — it keeps the cautious assumption.

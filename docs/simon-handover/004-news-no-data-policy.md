@@ -1,7 +1,11 @@
 # Q004 — When the news feed is down, keep trading or pause?
 
 **Who answers:** Simon (this is a risk stance, not a technical choice).
-**Status:** the app currently trades as if the calendar were clear whenever
+**Status:** **ANSWERED 2026-08-25 — A**, keep trading when news is unknown
+and log loudly. Recorded here because the body below still describes the
+question as open.
+
+The app trades as if the calendar were clear whenever
 the news feed can't be fetched — that behaviour has been kept (it's what the
 app has always done) but it now logs loudly when it happens. You choose
 whether to keep it.

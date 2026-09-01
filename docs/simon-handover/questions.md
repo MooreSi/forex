@@ -31,7 +31,13 @@ the technical docs, not in your folder.)*
 
 ## Status
 
-_Last updated: 2026-08-25._ Answered: **5 of 5 — Part A is closed.**
+_Last updated: 2026-09-01._ Part A (Q001-Q007): **5 of 5, closed.**
+Everything raised since then is in the second table below.
+
+**Q008 onward were raised during the build, and several were answered
+verbally in a working session rather than written into their files. That gap
+is closed as of 2026-09-01** — where an answer was given out loud, it is
+recorded here and in the file, marked as such.
 
 | # | File | Answer |
 |---|---|---|
@@ -40,6 +46,39 @@ _Last updated: 2026-08-25._ Answered: **5 of 5 — Part A is closed.**
 | 3 | [004-news-no-data-policy.md](004-news-no-data-policy.md) | A — keep trading when news is unknown, log loudly. The upstream fix narrows the blind spot substantially. |
 | 4 | [005-fact-finding.md](005-fact-finding.md) | 1: **yes**, logs carry the account number (evidence). 2: secret **never changed**, fixed upstream; 1-3 licences. 3: admin console **is in active use** — assumption was wrong. 4: retention never on. |
 | 5 | [007-remaining-approvals.md](007-remaining-approvals.md) | 1: **B** — Simon issues the dev licence from the admin console. 2: **B** — full self-serve is the handover bar. |
+
+### Everything raised since Part A
+
+Numbered files 008 onward. "Fixed" means the code change landed with tests;
+"decided" means you chose and nothing needed building.
+
+| # | File | State |
+|---|---|---|
+| 008 | [zone signals and real pending orders](008-zone-signals-and-real-pending-orders.md) | **Answered: A.** |
+| 009 | [breached zone: discard or queue](009-breached-zone-discard-or-queue.md) | **Answered 2026-08-31, verbally: "A, and yes realignment on the market path if the option is selected."** Built: `services/trading/entry_realignment.py`, gated on `lk_entry_realignment`. |
+| 010 | [session 2026-08-28 evening](010-session-2026-08-28-evening.md) | Session note, not a question. |
+| 011 | [your halt settings do not match what you confirmed](011-your-halt-settings-do-not-match-what-you-confirmed.md) | **Answered 2026-09-01: "I will do it in the UI, keep it as is."** Still needs you to set governor on, daily loss 3%, drawdown 10%. |
+| 012 | [should a resting order use a trade slot](012-should-a-resting-order-use-a-trade-slot.md) | **Answered 2026-08-31, verbally: A.** |
+| 013 | [the five demos runbook](013-the-five-demos-runbook.md) | **Not a question — the session you still owe.** This is the largest remaining item in the whole project. |
+| 014 | [a wildcard fingerprint nothing uses](014-a-wildcard-fingerprint-nothing-uses.md) | **Answered 2026-09-01:** no master key; the keygen stays in its own folder. Removed. |
+| 015 | [session 2026-08-31](015-session-2026-08-31.md) | Session note. |
+| 016 | [the native bridge has the same shape](016-the-native-bridge-has-the-same-shape.md) | **Answered 2026-09-01** — and I had it backwards; corrected in the file. |
+| 017 | [which clock is your trading schedule in](017-which-clock-is-your-trading-schedule-in.md) | **Answered and implemented 2026-09-01.** |
+| 018 | [the partial close can pay twice](018-the-partial-close-can-pay-twice.md) | **Answered and implemented 2026-09-01.** |
+| 019 | [editing a pending signal used the wrong row's numbers](019-editing-a-pending-signal-used-the-wrong-rows-numbers.md) | Fixed. No decision needed. |
+| 020 | [out of hours still runs on UTC](020-out-of-hours-still-runs-on-utc.md) | **Partly answered.** The clock question is answered and the offset sync and its UI control are built. **Out of Hours itself is still on UTC and still waiting on you** — moving it changes when a different strategy takes over. |
+| 021 | [the day boundary was London's](021-the-day-boundary-was-londons.md) | Fixed. No decision needed. |
+
+### Still open, in one place
+
+1. **The demo session** ([013](013-the-five-demos-runbook.md)) — five money-path
+   fixes are written, tested and mutation-tested, and none of them is `done`
+   without you at a demo terminal.
+2. **Out of Hours on UTC** ([020](020-out-of-hours-still-runs-on-utc.md)).
+3. **Your halt settings** ([011](011-your-halt-settings-do-not-match-what-you-confirmed.md))
+   — yours to set in the UI, ten minutes.
+
+Nothing else in this folder is waiting on you.
 
 ### Two answers that changed other things
 

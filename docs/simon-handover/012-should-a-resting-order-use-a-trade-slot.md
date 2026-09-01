@@ -2,8 +2,9 @@
 
 **Who answers:** Simon. This is a trading-exposure question, not a technical
 one.
-**Status:** unresolved. The code does **not** count them today, and I have not
-changed that.
+**Status:** **ANSWERED 2026-08-31 — A.** Resting orders stay free; only
+positions count against `max_open_trades`. That is what the code already did,
+so nothing changed. Full answer at the bottom of this file.
 **Raised:** 2026-08-30, while closing the risk-gate race (stage1 phase2/030).
 
 ## The situation

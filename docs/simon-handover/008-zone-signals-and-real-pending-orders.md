@@ -1,6 +1,8 @@
 # Q008 — Should a zone signal rest as a real broker order?
 
 **Who answers:** Simon. This is a trading-behaviour decision, not a bug.
+**Status:** **ANSWERED — A.** Recorded in the file below and in
+[questions.md](questions.md).
 **Raised:** 2026-08-27, out of the "signals sit in pending and nothing happens"
 investigation.
 **Touches money:** yes — it changes how and when entries are filled.

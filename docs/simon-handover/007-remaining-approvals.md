@@ -2,6 +2,8 @@
 
 **Who answers:** Simon. Two smaller yes/no items that came up during the
 build, gathered here so everything you answer lives in this folder.
+**Status:** **ANSWERED 2026-08-25.** 1: **B** — Simon issues the dev licence
+from the admin console. 2: **B** — full self-serve is the handover bar.
 
 ---
 
