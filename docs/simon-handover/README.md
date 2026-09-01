@@ -133,3 +133,4 @@ in the room.
 - [014-a-wildcard-fingerprint-nothing-uses.md](014-a-wildcard-fingerprint-nothing-uses.md) — a one-word answer needed: does your KeyGen define `TEST_WILDCARD`?
 - [015-session-2026-08-31.md](015-session-2026-08-31.md) — what got done on 31 August, the two things that were actually broken, and the three that need you
 - [016-the-native-bridge-has-the-same-shape.md](016-the-native-bridge-has-the-same-shape.md) — **answered, no decision needed**: yes the bridge is still required with the EA, and it turned out to be the one your Windows machine actually uses
+- **[017-which-clock-is-your-trading-schedule-in.md](017-which-clock-is-your-trading-schedule-in.md) — needs one answer.** Your Trading Schedule runs on each machine's own clock while the sessions run on UTC, and the schedule is synced between the Mac and the VPS
