@@ -58,19 +58,60 @@ returns the retcodes we assume, or that the timings hold on a real socket.
 **The failure it prevents:** on 2026-07-30 five signals became roughly 133
 opens and 36 live positions the app could not see.
 
-1. Send a signal to a channel the app auto-executes.
-2. The moment it arrives, **pause the EA** in the terminal (remove it from the
-   chart, or turn AutoTrading off) so its acknowledgement cannot get back in
-   time.
-3. Wait for the ack timeout (5s, or 10s + 5s per leg for a template,
-   **[2026-09-01]** capped at 60s — so the longest you will ever wait here is
-   a minute; verified at `services/trading/open_trade.py:581-585`).
+1. Send a signal to a channel the app auto-executes — **or place a Market
+   Order from the Trading page**, which is better: it removes the channel, the
+   parser and the scan loop as variables and leaves only the code under test.
 
-**Expect:** exactly **one** position on the account. The log says
-`[dedup] adopted existing broker order ... instead of sending a duplicate`.
+   **[2026-09-01] The strategy matters, and it is not optional.** Use a
+   non-template EA-portable strategy — `trail_stop`, `scale_out`,
+   `adaptive_runner`, `be_runner`, `conservative`, `conservative_trial`,
+   `fixed_rr`, `limit_runner`, `no_sl_scale`, `orb_fixed`, `protected_scale`,
+   `reversal_runner`, `scalp_runner`, `signal_climber`. **Anything starting
+   `template:` takes a different branch entirely**: an EA-template ack timeout
+   records a placeholder row and never falls back, so no dedup line is ever
+   printed and the demo cannot pass. That is not a failure — it is the other
+   half of the same fix, and it is what produced the two placeholder rows on
+   the owner's account overnight on 2026-09-01.
+2. The moment it arrives, **remove the EA from the chart** — right-click the
+   chart, Expert Advisors, Remove. The smiley in the top-right corner
+   disappears when it is gone. Rehearse the click path before you start: the
+   window is 5 seconds.
 
-**If you see two positions, stop.** That is the original bug and nothing below
-should be run until it is understood.
+   **[2026-09-01] It must be Remove, NOT AutoTrading off.** This step used to
+   offer them as equivalent. They are not, and the difference decides whether
+   the demo tests anything.
+
+   The EA places the order and acks afterwards
+   (`mql5/ForexTraderBridge.mq5:1104` then `:1212`), so there is a real window
+   where the broker holds an order stamped `ea:<trade id>` and the app has not
+   heard back. Removing the EA lands in that window, and the dedup guard finds
+   that stamp and adopts the order instead of sending a second.
+
+   With AutoTrading off, `trade.Buy` fails outright, the EA immediately sends
+   `trade_open_failed`, and the app gets a clean **rejection** rather than a
+   timeout. It falls back to the Python bridge, places one order, prints no
+   dedup line — and you have tested nothing while everything looks correct.
+
+   (AutoTrading off IS the right tool for demo 4, where the point is to make
+   MT5 refuse a close.)
+3. Wait for the ack timeout. **[2026-09-01]** A non-template strategy — which
+   is what this demo needs — is a flat **5 seconds**. Templates are
+   `10s + 5s per leg`, capped at 60s, which is why the owner's overnight
+   placeholders timed out at 15s (one leg). Verified at
+   `services/trading/open_trade.py:581-585`.
+
+**Three outcomes, and only one is a pass:**
+
+- `[dedup] adopted existing broker order ... instead of sending a duplicate`
+  — **pass**. One position on the account.
+- One position, no dedup line, and `[EA] handoff failed ... falling back to
+  Python bridge` — **inconclusive, retry.** The EA was removed before it
+  placed anything, so there was nothing to adopt. Correct behaviour, but it
+  does not exercise the guard.
+- **Two positions — stop.** That is the original bug and nothing below should
+  be run until it is understood.
+
+**Re-attach the EA afterwards** — demos 2, 4 and 5 need it.
 
 ---
 
