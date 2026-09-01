@@ -60,7 +60,13 @@ Both readings are defensible:
 - **C. Queue it, but only for a bounded window** — e.g. re-entry within N
   minutes counts, after that the setup is stale. Needs a number from you.
 
-**ANSWER:**
+**ANSWER: A** (owner, 2026-09-01) — keep discarding. No code change; this is
+current behaviour, recorded so it is a decision rather than an accident.
+
+The reasoning that survives: price pushing toward the stop before entry is
+evidence against the setup, and a channel's zone is a statement about a moment.
+If this is ever revisited, C (queue for a bounded window) is the middle ground
+and needs a number.
 
 ## A related setting you should know exists
 
@@ -82,4 +88,45 @@ on, it would not have applied here.
 That is arguably its own gap: the same situation is handled two different ways
 depending on which path the signal took. Worth deciding alongside A/B/C above.
 
-**ANSWER (should realignment exist on the market path too?):**
+**ANSWER (should realignment exist on the market path too?): YES — when the
+option is selected** (owner, 2026-09-01). Implemented.
+
+### What was built
+
+`Entry Realignment` now applies on the market auto-execute path as well as the
+limit-order path. **It is still off by default**, so nothing changes for anyone
+who has not switched it on — that is decision A above, untouched.
+
+When it IS on and a zone is breached, the stop and every target move by the
+breach distance, so the trade keeps the shape the channel sent, at a worse
+price. On the signal that prompted this:
+
+| | Sent | Entered at 4540.45 |
+|---|---|---|
+| Stop | 4544.00 | **4545.45** |
+| TP1 | 4535.00 | **4536.45** |
+
+5.00 of stop and 5.00 to TP1 — as specified. Entering flat would have left 3.55.
+
+### The safety rule inside it
+
+It refuses rather than realigns whenever the numbers would not be safe: not an
+actual breach, exactly on the zone edge (which `price_in_entry_range` counts as
+*in* the zone, and the two must not disagree about the same price), or a
+realigned stop that would land on the wrong side of the entry. That last one is
+not a wide stop — it is an immediate close, and no trade is better than that
+trade.
+
+A refusal falls through to the discard, so the worst case is exactly today's
+behaviour.
+
+### Verification
+
+17 unit tests on the arithmetic, 4 end-to-end through the real pipeline, and 7
+mutations all caught — including the setting being ignored, the stop or targets
+not moving, the delta taken from the wrong edge, and a favourable move being
+treated as a breach.
+
+**It has not been run on a broker.** Add it to the demo session: switch the
+setting on, wait for a breached signal, and check the stop lands where the
+table above says.
