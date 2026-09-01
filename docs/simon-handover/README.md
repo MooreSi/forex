@@ -133,5 +133,5 @@ in the room.
 - [014-a-wildcard-fingerprint-nothing-uses.md](014-a-wildcard-fingerprint-nothing-uses.md) — a one-word answer needed: does your KeyGen define `TEST_WILDCARD`?
 - [015-session-2026-08-31.md](015-session-2026-08-31.md) — what got done on 31 August, the two things that were actually broken, and the three that need you
 - [016-the-native-bridge-has-the-same-shape.md](016-the-native-bridge-has-the-same-shape.md) — **answered, no decision needed**: yes the bridge is still required with the EA, and it turned out to be the one your Windows machine actually uses
-- **[017-which-clock-is-your-trading-schedule-in.md](017-which-clock-is-your-trading-schedule-in.md) — needs one answer.** Your Trading Schedule runs on each machine's own clock while the sessions run on UTC, and the schedule is synced between the Mac and the VPS
-- **[018-the-partial-close-can-pay-twice.md](018-the-partial-close-can-pay-twice.md) — needs one answer.** The partial close has the same double-credit shape we fixed on the full close in August; the fix needs a small design choice from you first
+- [017-which-clock-is-your-trading-schedule-in.md](017-which-clock-is-your-trading-schedule-in.md) — **answered and done**: the Trading Schedule now reads UK time on both machines, with no new dependency
+- [018-the-partial-close-can-pay-twice.md](018-the-partial-close-can-pay-twice.md) — **answered and done**: one partial per TP level per trade. Check for any `_dup` rows after your next start — those are places this bug already fired
