@@ -144,3 +144,58 @@ His demo account has the **risk governor OFF** and **max daily loss at 20%**,
 not the 3% he confirmed. The governor being off is why the daily-loss limit has
 never fired — `close_trade.py` already carried a note saying exactly that.
 Written up as 011.
+
+---
+
+## The halt failed OPEN on a database error — found 2026-09-01
+
+`is_trading_paused()` is the last line of defence. `open_trade` checks it
+before both send paths, and `tests/refactor/test_order_paths_have_one_funnel.py`
+pins that ordering.
+
+It read `trade_pause_until` through `get_app_config`, which **swallows every
+database error and returns `None`** — and `None` is also what an unset key
+returns, which means "not paused". So:
+
+```
+a locked or failing database  ->  get_app_config returns None
+                              ->  "not paused"
+                              ->  the halt stops applying, silently
+```
+
+A protective halt that stops protecting on a transient read error is worse than
+no halt, because the operator believes one is in place. SQLite reads here run
+with a 5 second busy timeout and this repo has a recorded history of lock
+storms, so it is not hypothetical.
+
+### The same root cause as 010 and 020
+
+This is the fourth instance in two days of *something that could not be asked
+being recorded as an answer*:
+
+| | |
+|---|---|
+| `place_order` | a lost response read as a rejection |
+| `send_outcome_is_unknown` | did not know httpx's exceptions at all |
+| `get_positions` | a failed read returned `[]`, i.e. "the broker has nothing" |
+| `is_trading_paused` | a failed read returned `False`, i.e. "not halted" |
+
+Every one is a two-valued answer where the third state — "could not tell" —
+had nowhere to go.
+
+### The fix
+
+`app_config_repo.read_app_config_strict()` does the same query but lets a
+database failure raise. `get_app_config` is deliberately unchanged: around
+forty callers read optional configuration through it and expect `None`.
+
+`is_trading_paused` now uses the strict read and **fails closed** — an
+unreadable or unparseable value reports PAUSED and logs why. It is
+self-healing: the next call re-reads, so a momentary blip pauses one check
+rather than latching.
+
+Both directions are tested, because failing closed must not mean refusing to
+trade on a healthy install: an unset key, an empty value, `"0"` (what the
+Resume button writes) and an expired timestamp all still report *not* paused.
+
+9 tests, four mutants, all killed — including the over-blocking direction.
