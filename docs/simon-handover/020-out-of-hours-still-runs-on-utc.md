@@ -54,3 +54,71 @@ configured strategy rather than raising inside the path that opens a trade.
 
 The clock it uses is asserted in a test, so whichever way you answer, the
 change is deliberate.
+
+
+---
+
+## ANSWERED, 2026-09-01 — and it changed the design
+
+> "It should always be local time — so if I'm based in the UK use my local time
+> based on the time of the year, and if there are other users in other
+> countries use their specific local time."
+
+That is a better answer than either option I offered, and it means yesterday's
+UK-only change was aimed at the wrong thing.
+
+### What I had got wrong
+
+**The original code was not wrong about the clock.** A bare `datetime.now()` is
+the machine's local time — which, on your own Mac, *is* your local time, with
+daylight saving handled by the operating system, and it would have been a user
+in Singapore's local time on their machine.
+
+It was wrong about **one machine**. A VPS is not where its user is. Because the
+Trading Schedule is mirrored between the Mac and the VPS, the setting travels
+and the clock does not, so a 09:00 window set here gated a different part of the
+day on a server abroad.
+
+I fixed that by hardcoding UK. That works for you and is wrong for everyone
+else — exactly what you have just told me.
+
+### What it is now
+
+A **trading clock** with two modes:
+
+- **No offset set (the default).** The machine's own local time. Correct for
+  every ordinary single-machine install, in any country, daylight saving
+  included, and no timezone database needed.
+- **An offset set.** That offset from UTC instead — for a machine that is not
+  where its user is.
+
+Offsets are in **minutes**, not hours, because India is +5:30 and Nepal +5:45,
+and "other users in other countries" includes them.
+
+The Trading Schedule, the schedule screen, the balance report and the emailed
+daily report all read this one clock, so they cannot disagree with each other.
+
+### Two things still to do, and one is a question
+
+1. **There is no UI control for the offset yet.** The column exists and the
+   code reads it; nothing sets it. Straightforward to add — say where you want
+   it and I will.
+
+2. **A fixed offset does not follow daylight saving on its own.** For your Mac
+   that never matters, because it uses the machine's clock. For the VPS it
+   would: set it to +60 for British Summer Time and it stays +60 in November.
+
+   The clean fix is for the **Mac to tell the VPS its current offset** over the
+   sync link — it already sends a heartbeat, so the VPS would follow your
+   clocks automatically, including the changes. That is a small piece of work
+   and I would rather do it than leave you a setting that quietly goes an hour
+   wrong twice a year.
+
+   **Shall I build that?**
+
+### Out of Hours
+
+Still UTC, and now the odd one out. Once the trading clock has a UI control the
+sensible thing is to move OOH onto it as well — but that is a real change to
+when a different strategy takes over, so it waits for your word rather than
+riding along with this.
