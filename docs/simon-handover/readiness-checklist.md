@@ -35,9 +35,25 @@ doc, not a work log._
   files (gated); broker + runtime carry absolute coverage floors; layout
   hazards gated (packages, ghost testpaths, import-time mutation); fixture
   duplication under a shrinking baseline.
-- [ ] **Frontend maintainable (stage2 phase 4).** Target: no pages file over
+- [x] **Frontend maintainable (stage2 phase 4).** Target: no pages file over
   800 lines, controller-boundary contract at 0, silent excepts at 0.
-  *Open, but much smaller than when this row was written (updated 2026-08-27).*
+  *Green as of 2026-09-01, measured not remembered.*
+
+  **No file under `frontend/` exceeds 800 lines** — largest is
+  `pages/ai_trade_analysis/__init__.py` at 715. The two pages this row named as
+  blocked, `ai_trade_analysis.py` and `test_panel.py`, are packages: both
+  bugs ([010](../todo/bugs/010-test-panel-reset-params-nameerror.md),
+  [011](../todo/bugs/011-signal-generator-analysis-nameerror.md)) were resolved
+  2026-08-27 and the splits followed.
+
+  **The controller-boundary contract is at 2, not the 50 this row recorded** —
+  and no frontend file imports `backend.src.services` at all. The two remaining
+  sites are `backend.src.app` for the engine handle, one of them the
+  composition root. Getting to a literal 0 needs a decision about whether the
+  composition root is a named exception; see
+  `docs/todo/refactor/frontend/restructure/PROGRESS.md` task 1/060.
+
+  Silent excepts in the frontend: 0.
 
   Done since: `settings.py` 3,487 → 11 modules (largest 685), `app.py` 1,746 →
   4, `history.py` 1,592 → 7, plus `chart`, `telegram`, `reversal_panel` and
@@ -64,11 +80,25 @@ doc, not a work log._
   that make `FOREX_DEBUG_MODE=1` use the fake bridge in the running app —
   money-touching, needs sign-off + a demo session
   (docs/todo/refactor/infra/local-debug-mode/020).*
-- [ ] **Money-path (stage 3 — Simon-gated).** Order-send de-duplication,
+- [~] **Money-path (stage 3 — Simon-gated).** Order-send de-duplication,
   broker↔DB reconciliation, never-record-a-refused-close, protective halts
-  on by default. Specced and test-planned in `docs/todo/refactor/stage3/`; ships only
-  with Simon's sign-off + demo session. **The app must not be treated as
-  handed over until this line is green.**
+  on by default. Ships only with Simon's sign-off + demo session. **The app
+  must not be treated as handed over until this line is green.**
+
+  **Demo session held 2026-09-01.** Four of the five are done:
+  010 (dedup), 020 (timeout → unknown), 040 (refused close — PASSED live on
+  both halves) and 050 (halts — passed after the halt reason was surfaced,
+  a gap the demo itself found). Full records in
+  [stage3/PROGRESS.md](../todo/refactor/stage3/PROGRESS.md).
+
+  **030 is the one left**, and deliberately: the diff engine and report-only
+  pass are in and were seen working on live data during the session, but the
+  **repairers are not built**. They would write, and they would write through
+  the frozen close path. That is an owner decision, not remaining effort.
+
+  Also still owner-side: the two `enabled` default flips in 050, which are
+  ALTER-column defaults and cannot reach an existing install — see
+  [011](011-your-halt-settings-do-not-match-what-you-confirmed.md).
   *Ready for him: [session-agenda.md](session-agenda.md) is the sitting;
   the circuit-breaker design review (docs/reviews/2026-08-11) confirms the
   gaps 050 fixes.*
