@@ -61,3 +61,21 @@ Then trip it once on demo to watch it work. That is the killer demo for
 stage3/050 and it needs a live session anyway.
 
 **ANSWER (do you want these three set as above?):**
+
+
+---
+
+## ANSWERED, 2026-09-01
+
+> **"I will do it in the UI, keep it as is."**
+
+So: **no code change.** The three sources now agree on 3% / 10% and the
+enforcement path no longer carries the loosest number of the three — that part
+was fixed on 2026-08-29 and stands. Changing the values on the account is
+Simon's, through Settings.
+
+**Still to do on the account, by Simon:** turn the risk governor ON, set max
+daily loss to 3%, set max drawdown to 10%. Until the governor is on, the
+daily-loss limit cannot fire regardless of what it is set to — that is the one
+that matters, and it is why demo 5 in the runbook shows nothing until it is
+done.

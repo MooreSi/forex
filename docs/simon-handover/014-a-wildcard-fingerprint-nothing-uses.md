@@ -67,3 +67,20 @@ Related: the licence signing itself is sound — `config/licence/verify.py` is
 Ed25519, public-key-only, and the old `CHANGEME-BEFORE-PRODUCTION` secret is
 gone from the tree. Every path that stores a licence verifies its signature
 first, pinned by `tests/licence/test_no_unverified_save.py`.
+
+
+---
+
+## ANSWERED, 2026-09-01 — removed
+
+> **"There should be no master key, the keygen is kept in a separate folder
+> purposely."**
+
+`TEST_WILDCARD` and `is_test_wildcard()` are deleted, and the module docstring
+now records that there is no wildcard by design, with the reason.
+
+The test that guarded them is replaced by a stronger one. Rather than checking
+nothing *uses* the hook, it checks the hook does not exist — and that no
+equivalent has reappeared under another name (`MASTER_FINGERPRINT`,
+`WILDCARD_MACHINE`, or the old names). A different name for the same idea is
+the same problem.

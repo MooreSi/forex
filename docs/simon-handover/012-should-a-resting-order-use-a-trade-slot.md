@@ -45,7 +45,13 @@ bug anyone has hit.
 The trade-off is genuinely two-sided: **A** can overshoot your position limit;
 **B** can stop you trading because of orders that never filled.
 
-**ANSWER:**
+**ANSWER: A** (owner, 2026-09-01) — resting orders stay free; only positions
+count toward `max_open_trades`. No code change; this is current behaviour.
+
+Recorded rather than just closed, because the trade-off is real: a burst of
+signals whose resting orders all fill can still overshoot the position limit.
+If that is ever observed, this is the decision to revisit, and option C (a
+second, larger limit including resting orders) is the middle ground.
 
 ## What was fixed regardless
 
