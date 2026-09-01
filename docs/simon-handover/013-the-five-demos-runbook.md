@@ -120,8 +120,58 @@ opens and 36 live positions the app could not see.
 **The failure it prevents:** a signal whose send got no answer being handed
 straight back to the scheduler, which retries it every 20 seconds.
 
-1. Send a signal with the EA paused, **and** pull the bridge connection
-   (close the bridge program) before the fallback can ask the broker anything.
+**[2026-09-01] DO NOT run this as written. The instruction below was wrong,
+and following it would have looked like a failure.**
+
+~~1. Send a signal with the EA paused, **and** pull the bridge connection
+(close the bridge program) before the fallback can ask the broker anything.~~
+
+Closing the bridge produces `httpx.ConnectError`, and that is in
+`_NEVER_SENT` (`services/broker/mt5_client.py`) — the deliberately **safe**
+branch. Nothing left the machine, so nothing was placed and retrying is
+correct. The signal would go back to `pending`, which is right, and which
+this demo's own "Expect" line calls the original bug.
+
+To reach UNKNOWN the request has to be **already on the wire** when the
+connection breaks. Stopping the bridge first cannot produce that.
+
+### What was done instead, and why the live run was dropped
+
+**Owner's decision, 2026-09-01: do not run this live.**
+
+The part of this demo that genuinely needed a real network was never the
+signal parking — the offline killer demo drives that end to end. It was the
+premise underneath: **what does httpx actually raise when a send is cut off
+mid-flight?** Every test of `_send_failure` built those exceptions by hand,
+proving the branching while assuming the premise. If httpx raised
+`ConnectError` for a mid-request disconnect, a lost answer would be
+classified "never sent", the signal retried, and stage3/010's runaway is
+back.
+
+That was settled with real listening sockets instead of a real order
+(`tests/services/broker/test_send_failure_against_a_real_socket.py`).
+Measured:
+
+| what happened | httpx raises | verdict |
+|---|---|---|
+| mid-request, server drops the connection | `ReadError` | **unknown** |
+| mid-request, headers sent then gone | `ReadError` | **unknown** |
+| connection refused (bridge stopped) | `ConnectError` | never sent, safe to retry |
+
+The premise holds. Each test asserts the request actually reached the server
+before the break, so "unknown" cannot pass on a connection that never got
+that far. Four mutations, all killed, including adding `ReadError` to the
+safe list and emptying the list entirely.
+
+**The rejected alternative, recorded so nobody re-derives it.** A faithful
+live run is possible: a small proxy on a spare port with the app's
+`mt5_bridge_url` pointed at it, forwarding `POST /order` to the real bridge so
+MT5 genuinely places the order, then dropping the connection before returning
+the reply. Deterministic, no race. It was declined because it spends a real
+order to confirm a `ReadError` that a socket has already confirmed. If it is
+ever wanted, that is the design.
+
+### If you do run it anyway
 
 **Expect:** the signal shows as **`unknown`**, not `pending`. No order is
 re-sent. Leave it five minutes and confirm nothing else happens.

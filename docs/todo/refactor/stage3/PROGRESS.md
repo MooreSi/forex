@@ -20,7 +20,7 @@ seam) added so everything Simon-gated lives in one view. No money code started._
 | Task | Money | Status | Owner | Notes |
 |---|---|---|---|---|
 | [010 order-send dedup](010-order-send-dedup.md) | YES | **done (2026-09-01)** — Simon's demo session; live race judged not hand-reproducible, offline coverage accepted as the answer | Simon + Claude | See "Demo 1" below. |
-| [020 timeout → UNKNOWN](020-timeout-means-unknown.md) | YES | **in progress** — code + 21 tests 2026-08-29; **three further defects found and fixed 2026-08-31** (the fix never reached the primary Telegram path); awaiting demo | — | Bridge no longer retries on a lost response; new `unknown` signal status; open_from_signal routes rejections vs no-answers. Also closed the UNKNOWN case 010 had deferred. |
+| [020 timeout → UNKNOWN](020-timeout-means-unknown.md) | YES | **done (2026-09-01)** — premise verified against real broken sockets; live run declined by the owner, with the rejected design recorded | Simon + Claude | See "Demo 2" below. |
 | [030 broker↔DB reconciliation](030-broker-db-reconciliation.md) | YES | **in progress** — diff engine + report-only pass landed 2026-08-29 | — | Pure diff engine, wired into the monitor cycle, read-only at the broker (asserted via AST). **Repairers NOT built** — they write and route through the frozen close path. |
 | [040 no DB close on failed broker close](040-no-db-close-on-failed-broker-close.md) | YES | **done (2026-09-01)** — demo run and PASSED on the live demo account, both halves | Simon + Claude | See "Demo 4" below. |
 | [050 protective halts on by default](050-protective-halts-default-on.md) | YES | **in progress** — demo 2026-09-01: halting and refusing PASS, "the reason names the number" FAILS (the reason is never shown to the user) | Simon + Claude | See "Demo 5" below. |
@@ -285,3 +285,55 @@ The drawdown halt fired as a direct result of two pre-flight steps: setting
 will re-halt after every close until the drawdown or the peak changes. Raising
 the limit, re-baselining the peak, or leaving it halted is the owner's
 decision and nothing has been changed.
+
+---
+
+## Demo 2 (task 020) — the runbook was wrong, and the live run was declined
+
+**Owner's decision, 2026-09-01: do not run it live.**
+
+### The instruction was wrong
+
+The runbook said to stop the bridge before the fallback could reach the
+broker. That produces `httpx.ConnectError`, which is in `_NEVER_SENT`
+(`services/broker/mt5_client.py`) — the deliberately **safe** branch. Nothing
+left the machine, so nothing was placed and retrying is correct, and the
+signal returns to `pending`, which the demo's own "Expect" line calls the
+original bug.
+
+Following it would have produced an apparent failure of a working fix. To
+reach UNKNOWN the request has to be already on the wire when the connection
+breaks, and stopping the bridge first cannot produce that.
+
+### What was verified instead, and why it was the part that mattered
+
+The signal parking as `unknown` is driven end to end by the offline killer
+demo. What no offline test could check was the premise underneath: **what does
+httpx actually raise when a send is cut off mid-flight?** Every test of
+`_send_failure` constructed those exceptions by hand — proving the branching
+while assuming the premise. Had httpx raised `ConnectError` for a mid-request
+disconnect, a lost answer would be classified "never sent", the signal
+retried, and stage3/010's runaway is back.
+
+Settled with real listening sockets rather than a real order
+(`tests/services/broker/test_send_failure_against_a_real_socket.py`):
+
+| what happened | httpx raises | verdict |
+|---|---|---|
+| mid-request, server drops | `ReadError` | **unknown** |
+| mid-request, headers then gone | `ReadError` | **unknown** |
+| connection refused | `ConnectError` | never sent, safe to retry |
+
+Each asserts the request reached the server before the break, so "unknown"
+cannot pass on a connection that never got that far. Four mutations, all
+killed, including adding `ReadError` to the safe list and emptying it.
+
+### The rejected design, recorded so nobody re-derives it
+
+A faithful live run is possible: a proxy on a spare port with the app's
+`mt5_bridge_url` pointed at it, forwarding `POST /order` to the real bridge so
+MT5 genuinely places the order, then dropping the connection before returning
+the reply. Deterministic, no race, roughly an hour to build.
+
+Declined because it spends a real order to confirm a `ReadError` that a socket
+has already confirmed.
