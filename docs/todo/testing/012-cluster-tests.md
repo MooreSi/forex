@@ -8,8 +8,13 @@ finished.** Measured 2026-09-01:
 |---|---|---|
 | `cluster/sync/server.py` | 721 | 75% |
 | `cluster/sync/client.py` | 744 | 66% |
-| `cluster/remote/server.py` | 1,204 | 64% |
-| `cluster/remote/client.py` | 732 | 57% |
+| `cluster/remote/server.py` | 1,204 | **78%** |
+| `cluster/remote/client.py` | 732 | **69%** |
+
+_remote/* updated 2026-09-01 evening: the licence and revocation message
+loop, the IP gate that stops the licence-issuing server binding on the wrong
+machine, and the three fleet-wide maintenance paths (startup re-signing, the
+ping reaper, the update push)._
 
 **Blocks:** nothing any more. Three of the four came under the 800 ceiling on
 2026-08-29/30 and came off the LOC baseline entirely on 2026-09-01.
