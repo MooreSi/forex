@@ -110,9 +110,28 @@ Six mutations, all caught: a week-early spring change, always-GMT, always-BST,
 an inclusive autumn boundary (an hour late), a midnight rather than 01:00 UTC
 transition, and the gate reverting to the machine clock.
 
-### One thing left, and it is yours
+### The reports too, on your say-so
 
-The **balance report periods** (`cmd_report`, `period_totals`) still use the
-machine clock for "today" and "this week". That changes which trades count in a
-report rather than which trades are allowed, so I have left it alone — but if
-you want those on UK time too, say and it is a five-minute change.
+> **"Yes do the balance report on UK time too."**
+
+Done. "Today", "this week" and "this month" in the balance report and the
+emailed daily report are now UK calendar periods, and so are the dates printed
+on them.
+
+There were **two** conversions to fix, not one, and the second is the subtle
+part. Trade close times are stored as plain epoch seconds, and the code turned
+them back into dates using the machine's own zone — so a trade closed at 00:10
+UK on a Thursday would be filed under Wednesday on a VPS behind us. Both the
+boundaries and the trades are now placed on the same UK clock.
+
+One honest caveat about how that is tested. On a machine that is in the UK, the
+broken conversion and the correct one give **identical answers** — and the same
+is true on a UTC machine in winter, which is what CI is. So no behavioural test
+run here can tell them apart; the difference only shows on a machine in another
+zone, which is exactly the machine nobody runs tests on. Confirmed by mutation:
+reverting either conversion left every behavioural test green.
+
+The property is therefore held by structural tests that read the code and fail
+if it goes back to the machine clock. That is the right instrument here rather
+than a shortcut, and it is written down in the test file so nobody replaces it
+with something that looks stronger and proves less.
