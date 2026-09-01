@@ -136,3 +136,4 @@ in the room.
 - [017-which-clock-is-your-trading-schedule-in.md](017-which-clock-is-your-trading-schedule-in.md) — **answered and done**: the Trading Schedule now reads UK time on both machines, with no new dependency
 - [018-the-partial-close-can-pay-twice.md](018-the-partial-close-can-pay-twice.md) — **answered and done**: one partial per TP level per trade. Check for any `_dup` rows after your next start — those are places this bug already fired
 - **[019-editing-a-pending-signal-used-the-wrong-rows-numbers.md](019-editing-a-pending-signal-used-the-wrong-rows-numbers.md) — no decision needed, but worth reading.** Save on any pending-signal row used the LAST row's numbers; if you ever saw "Saved" appear on the wrong row, that was this
+- [020-out-of-hours-still-runs-on-utc.md](020-out-of-hours-still-runs-on-utc.md) — a small consistency question: your Trading Schedule now follows UK time, Out of Hours still follows UTC. May well be right as it is
