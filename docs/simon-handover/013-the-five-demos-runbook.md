@@ -111,9 +111,13 @@ Seeing neither, with the signal back at `pending`, is the original bug.
 1. Send a signal and **kill the app** (close the window) between the order
    reaching MT5 and the row reaching the database. A second or two after the
    fill is about right; repeat if you miss the window.
-2. Restart the app and wait for a reconciliation pass. **[2026-09-01]** That
-   is every 12 monitor cycles at 5s each, so **about a minute** — verified at
-   `reconciliation.py:264` and `runtime.py:1284`.
+2. Restart the app and wait for a reconciliation pass. **[2026-09-01, corrected
+   during the session]** Every 12 monitor cycles — but the monitor loop is
+   `asyncio.sleep(1 if fast_poll else 5)`, and with any trade open it
+   fast-polls. So it is **about 12 seconds** with open trades and about a
+   minute without. Measured on the live log, not read off the constant: the
+   first version of this line quoted the 5 without checking which branch was
+   running.
 
 **Expect:** the log names the position as ours, once —
 `we placed this and then lost its row — nothing is managing it`. It is **not**
