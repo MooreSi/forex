@@ -1,8 +1,9 @@
 # 013 — The EA stalls, and template trades have no fallback while it does
 
 **Status:** observed on the demo account 2026-08-28. **Steps 1 and 2 answered
-2026-09-01 from 30 days of rotated logs — and step 1's earlier conclusion is
-SUPERSEDED. Step 3 still needs the owner; the options are now written out.**
+2026-09-01 from 30 days of rotated logs — step 1's earlier conclusion is
+SUPERSEDED. Option B built the same day; awaiting an EA recompile and a
+week's data before the remaining decision.**
 **Found:** during the M1 harvest demo (docs/simon-handover/session-agenda.md, Part B2)
 **Touches money:** yes — an unmanaged live position
 **Severity:** intermittent, silent, and the app already knows it is happening
@@ -256,3 +257,74 @@ If B shows the EA really does stop working, **C** for the grid-TP case and
 
 If B shows the EA keeps managing through the silence, this bug is a logging
 problem and the answer is **D** plus the throttle that already landed.
+
+---
+
+## Option B, built 2026-09-01
+
+**Owner's decision: do B.** The EA now reports what it actually did, so
+"we stopped hearing it" and "it stopped working" stop being the same fact.
+
+### What it reports
+
+Two monotonic counters ride on the existing 2-second ping, which previously
+carried nothing but its own type:
+
+```
+g_tickCount      every OnTick, counted BEFORE the early return
+g_managePasses   every COMPLETED pass over the tracked trades
+```
+
+Both placements are deliberate and both are pinned by tests that read the EA
+source, because the two halves of this contract are in different languages
+with no compiler between them:
+
+* ticks are counted **before** the early return, because the question is "did
+  the market move at all". Counting after it would report "no ticks" during a
+  moving market and turn the one outcome meaning *not a fault* into a lie.
+* passes are counted **after** the management loop, so the number means "a
+  pass completed" rather than "a pass began". A pass that blocked half way
+  through is exactly the stall being hunted; counting it at the top would
+  report that stall as healthy.
+
+### What the app concludes
+
+`services/broker/ea_health.py`, consulted when a ping arrives after the app had
+already written the EA off. Five outcomes:
+
+| outcome | means | act on it? |
+|---|---|---|
+| `ran` | passes advanced through the silence | no — missed pings, a logging problem |
+| `no_ticks` | no ticks arrived at all | no — nothing to manage against |
+| `stalled` | ticks arrived, no passes | **yes — the real thing** |
+| `restarted` | a counter went backwards | no — a new EA, not a stalled one |
+| `unknown` | an EA build without the fields, or nothing to compare | no |
+
+`stalled` logs at ERROR, the other real outcomes at WARNING, and a healthy
+ping says nothing — it fires every two seconds forever, which would be 43,200
+lines a day.
+
+`no_ticks` and `restarted` exist because both would otherwise be counted as
+faults. A quiet market is exactly when a stall looks most alarming and matters
+least, and calling a chart reload a stall would put a fault in the log every
+time the owner touches MetaTrader.
+
+### What is needed before the remaining decision
+
+1. **The EA must be recompiled in MetaEditor.** Until then every verdict is
+   `unknown` — which is the honest answer, not a guess. The app is deliberately
+   tolerant of the old build: an app that broke against it would take the whole
+   estate down at upgrade time.
+2. **A week of data.** Then grep for `recovered after a silence` and read the
+   verdicts.
+
+The remaining decision follows from what they say:
+
+* mostly `ran` or `no_ticks` → this is a logging bug. The answer is **D**, and
+  the throttle that landed in 33a0eaf is the whole fix.
+* genuine `stalled` verdicts → **C** for the grid-TP case (the one concrete
+  loss: grid anchors carry a broker stop but TP `0.0`, so a stall spanning the
+  take-profit misses it) and **A** for the rest.
+
+Nothing on an order path changed. This is a diagnostic, and it exists so the
+next decision is made on evidence rather than on the silence that started it.
