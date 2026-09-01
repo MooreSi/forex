@@ -152,12 +152,45 @@ because this arrives on every single ping.
   database failure while applying it is logged and ignored. A wrong hour is
   better than a dropped connection to the machine placing the orders.
 
-**What this does not fix.** The UI control (item 1 above) is still not built —
-tell me where you want it. And if you ever run this on a VPS with *no* Mac
+**The UI control is now built too** — see below. And if you ever run this on a VPS with *no* Mac
 connected, it keeps its own clock, which is the sensible fallback but is worth
 knowing.
 
 Covered by `tests/core/test_clock_offset_sync.py` (22 tests).
+
+---
+
+## The UI control, 2026-09-01
+
+Built without waiting for you to say where, because there is only one place it
+belongs: **Trading > Trading Schedule**, at the top of the tab, above Trading
+Markets. Every window time on that tab is a wall-clock time read against this
+clock, so the setting and the times it governs are now on the same screen. Move
+it if you disagree; it is one call.
+
+It is a dropdown, not a typed number. Choices run from UTC-12:00 to UTC+14:00
+in 15-minute steps, with **"This machine's clock (default)"** first and
+selected. The steps are 15 minutes rather than an hour because +05:30 (India),
++05:45 (Nepal) and +12:45 (the Chatham Islands) are real, and a coarser list
+would leave anyone there with no correct entry to pick.
+
+Under the label it shows the time the clock currently says, and whether that is
+this machine's own clock or one set here. That line is computed through the
+same functions the schedule gate uses, so what the page shows and what the gate
+acts on cannot disagree.
+
+**On your Mac, leave it alone.** The default is already right, and the control
+exists for the VPS.
+
+One trap worth naming, because it is the exact bug this whole thread started
+from: UTC+00:00 is offset `0`, and `0` is falsy. Code that tests it loosely
+puts a UTC+0 user back on the machine's clock — which on a VPS is precisely
+what was wrong. Three tests pin it: at the selection, at the save, and at the
+read.
+
+Covered by `tests/risk/test_trading_clock_setting.py` (17) and
+`tests/frontend/test_trading_clock_card.py` (18, including a real render of the
+page and a negative control confirming that check can go red).
 
 ### Out of Hours
 
