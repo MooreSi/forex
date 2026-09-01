@@ -79,3 +79,52 @@ Tell me which and I will implement it with a migration and tests. It is maybe
 an hour's work; the reason it is not done already is that guessing here could
 block a legitimate second partial, which is a worse failure than the one it
 fixes.
+
+
+---
+
+## ANSWERED and IMPLEMENTED, 2026-09-01
+
+> **"A"** — one partial per take-profit level per trade.
+
+Done, with one deliberate narrowing you should know about, and one thing the
+answer would have broken.
+
+### What A would have broken
+
+`position_sync` records broker-side partial closes as `MT5_close`,
+`MT5_sync_TP` or `MT5_SL`. **A position really can be part-closed at the
+terminal more than once** — you close half by hand, then half again — and both
+arrive under the same reason. A blanket "one per reason" would have silently
+dropped the second: money under-recorded, and `remaining_lots` describing a
+position bigger than the one you actually hold. That is a worse bug than the
+one being fixed.
+
+So A is implemented as **one partial per TP level per trade, for the strategy
+ladder's own `TP1`–`TP10` markers only**. Broker-sourced and manual reasons are
+deliberately not constrained. If you meant those to be constrained too, say so
+— but I do not think you did, and the tests state the reasoning either way.
+
+### What nearly stopped the app booting
+
+The first version of the migration just created the unique index. **On a
+database where this bug has already fired, that raises an integrity error, and
+the migration runner treats a real error as fatal — so the app would have
+refused to start.** Found by running the migration against a legacy database
+rather than a fresh one; a fresh-schema test would never have shown it.
+
+The migration now marks the duplicates first. They are **renamed, not
+deleted**: a `TP1_dup37` row. Deleting them would make the partial-close table
+agree with an account balance that was already credited twice, which is
+quietly rewriting history to look consistent. Renaming keeps every row, frees
+the index, and leaves the evidence in place.
+
+**Which means: if you see any `_dup` rows after the next start, this bug did
+fire on your account, and those rows are where.** Worth a look — the money was
+credited twice for each one.
+
+### Verification
+
+23 tests. Four mutants killed, including the two directions that matter:
+removing the guard restores the double credit, and widening the index breaks
+the legitimate broker-side repeat.
