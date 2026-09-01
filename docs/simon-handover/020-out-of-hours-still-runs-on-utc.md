@@ -116,6 +116,49 @@ daily report all read this one clock, so they cannot disagree with each other.
 
    **Shall I build that?**
 
+---
+
+## ANSWERED, 2026-09-01 — "yes build the offset sync". Built.
+
+The Mac now reports the offset it is actually keeping time by, and the VPS
+adopts it.
+
+**What the Mac sends.** One extra field, `clock_offset_min`, on two messages
+it already sends: the HELLO handshake, and every liveness ping. The value is
+whatever the Mac's own trading clock resolves to — its configured offset if
+you have set one, otherwise its machine clock, which on your Mac is the real
+answer including the daylight-saving change.
+
+The handshake alone would not have been enough. It only fires on a connect,
+and the link can stay up for months; clocks change twice a year. The ping
+carries it too, so a link that never drops still follows the change within a
+heartbeat of your Mac doing so.
+
+**What the VPS does with it.** Writes it to its own `trading_clock_offset_min`
+— the same setting the UI control will write — so every reader picks it up
+with no further wiring. It only writes when the value has actually changed,
+because this arrives on every single ping.
+
+**Three things it deliberately will not do:**
+
+- **It never goes the other way.** The machine where you are is the authority
+  on what time it is where you are. The VPS adopts from the Mac and never the
+  reverse.
+- **The setting stays out of the ordinary settings sync.** Had it been added
+  there, the VPS's broadcast would push its copy straight back to the Mac and
+  the Mac would start keeping its server's time. A test asserts it is absent
+  and a second one asserts a settings proposal cannot reach it either.
+- **It cannot break the link.** A garbled value is logged and ignored; a
+  database failure while applying it is logged and ignored. A wrong hour is
+  better than a dropped connection to the machine placing the orders.
+
+**What this does not fix.** The UI control (item 1 above) is still not built —
+tell me where you want it. And if you ever run this on a VPS with *no* Mac
+connected, it keeps its own clock, which is the sensible fallback but is worth
+knowing.
+
+Covered by `tests/core/test_clock_offset_sync.py` (22 tests).
+
 ### Out of Hours
 
 Still UTC, and now the odd one out. Once the trading clock has a UI control the
