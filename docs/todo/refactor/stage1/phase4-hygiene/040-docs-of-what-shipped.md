@@ -1,6 +1,6 @@
 # 040 — Docs phase: write down what shipped
 
-**Status:** not started
+**Status:** **done (2026-08-31)** — CHANGELOG entry for 2026-08-28→31, money-path items marked IMPLEMENTED, NOT SIGNED OFF. Header was stale; audited 2026-09-02.
 **Depends on:** everything user-visible in phases 1–4 that actually shipped
 **Touches money:** no
 **Layer:** docs

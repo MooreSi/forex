@@ -1,6 +1,6 @@
 # 030 — Licence: rotate the shipped secret, sign asymmetrically
 
-**Status:** not started
+**Status:** **done** — `config/licence/verify.py` is Ed25519 public-key-only and the `CHANGEME-BEFORE-PRODUCTION` secret is gone from the tree. Header was stale; audited 2026-08-29, re-checked 2026-09-02.
 **Depends on:** none
 **Touches money:** no
 **Layer:** service

@@ -1,6 +1,6 @@
 # 010 — One CI job: tools.checks all, every push
 
-**Status:** not started
+**Status:** **done (2026-08-10)** — `.github/workflows/checks.yml` runs `tools.checks all` on Windows on every push/PR. Header was stale; audited 2026-09-02.
 **Depends on:** phase2/010 (an honest gate suite)
 **Touches money:** no
 **Layer:** tools/tests

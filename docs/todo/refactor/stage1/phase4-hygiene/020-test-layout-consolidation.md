@@ -1,6 +1,6 @@
 # 020 — Test layout: retire the legacy limbo, fix the fixtures
 
-**Status:** not started
+**Status:** **done (2026-08-11)** via stage2 3/030 — packages everywhere, ghost testpath gone, gates in `tests/refactor/test_layout.py`. Header was stale; audited 2026-09-02.
 **Depends on:** none (but sequence after phase3/010 deletions to avoid moving dead tests)
 **Touches money:** no
 **Layer:** tools/tests

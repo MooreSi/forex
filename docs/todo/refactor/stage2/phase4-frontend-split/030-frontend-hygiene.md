@@ -1,6 +1,6 @@
 # 030 — Frontend hygiene: silent excepts, blocking timers, upgrade canary
 
-**Status:** not started · **Touches money:** no · **Layer:** frontend
+**Status:** **done (2026-09-02)** · **Touches money:** no · **Layer:** frontend
 **References:** [../../stage1/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md](../../stage1/phase3-expansion-tax/050-frontend-exception-timer-hygiene.md).
 
 ## Problem
@@ -75,3 +75,39 @@ awaits still blocks.
 case for it is no longer performance — it is that 36 timers each re-implement
 their own error handling. That is a tidiness argument, and it should be made on
 its own terms rather than inherited from this task's number.
+
+
+## Outcome (2026-09-02)
+
+Silent excepts: **44 → 0** broad swallows under `frontend/`, gate at a hard zero
+with a planted-violation control. The three `except`/`pass` blocks that remain
+are narrow (`RuntimeError` on a deleted NiceGUI slot, `CalledProcessError` from
+`pgrep`), each with the reason written beside it.
+
+NiceGUI canary: landed, verified against the installed 3.15.
+
+Timers: the premise in the Problem section above was wrong, and so was the
+first correction of it. Measured 2026-09-02 — of 38 `ui.timer` sites, 28 already
+took `async def` callbacks. **Four** sync callbacks reached a controller:
+
+| Site | Reached | Fixed |
+|---|---|---|
+| `reversal_panel` `_refresh_learn_status` | `pro_model_status()`, `get_risk_settings()` | split into read/render halves, polled |
+| `news` `_refresh` | `get_events()` — fetches ForexFactory when the cache is stale | cache warmed in a worker thread |
+| `trading/_schedule` `_refresh_sess_badge` | `is_weekly_market_closed()`, one call down | split into read/render halves, polled |
+| `history/_heatmap` `_daily_8am_check` | `get_app_config()`, `load_config()` | **exempted**, with the reason recorded in the gate |
+
+`frontend/components/poll.py` now exists and is used: `produce()` runs in a
+worker thread, `apply(data)` on the event loop, a failed read does not render
+over good data, and ticks do not overlap.
+
+**The gate was the real finding.** `tests/frontend/test_timers_do_not_block.py`
+had been reporting zero offenders since 2026-08-31 while all four were live. It
+matched controller calls by looking for `_ctl` / `_controller` in the owner
+name, so `news_controller as nc` and `engines_controller as pro_model` were
+invisible, and a controller reached through a local helper was invisible too.
+It now resolves controller names from the import statements and follows local
+helpers to a bounded depth. Both blind spots have negative controls, and one
+test plants an offender to prove the gate can still fail — without it, a bug in
+the exemption list would disable the whole gate silently, which is precisely
+the failure this repo's rules exist to prevent.
