@@ -1,8 +1,8 @@
 # 014 — Both TLS channels are encrypted but not authenticated
 
 **Status:** found 2026-08-28 while writing tests for `sync/tls_util.py`.
-**SYNC CHANNEL FIXED the same evening — see the bottom. The licence/admin
-channel (`remote/tls.py`, `remote/client.py`) is still unauthenticated.**
+**BOTH CHANNELS NOW FIXED.** The sync channel the same evening; the
+licence/admin channel on 2026-09-02, on the owner's instruction to finish it.
 **Touches money:** indirectly — the sync channel carries trade state between
 nodes, and the remote channel carries licence issuance.
 **Severity:** needs an attacker on the network path. Not remotely triggerable
@@ -150,11 +150,81 @@ raise the baseline, the pending-proposal persistence was moved verbatim into
 covered by the 24 tests in `test_sync_pending_proposals.py`), bringing the file
 to 823. No baseline was raised.
 
-## Still open: the licence/admin channel
+## Closed: the licence/admin channel, 2026-09-02
 
-`remote/tls.py` and `remote/client.py` have the identical hole and are **not**
-fixed. The same primitives apply, but that channel carries licence issuance and
-admin authority, and its client is the one an admin uses to recover a stranded
-install — a pin that refuses wrongly there locks someone out of the recovery
-path itself. That trade-off wants your decision before I wire it, so
-`tests/remote/test_remote_tls.py` still records the gap as it stands.
+The owner's decision, 2026-09-01: **a private CA for the internet path, and
+trust-on-first-use for the LAN.** Both are now live.
+
+### What it does now
+
+`client_ssl_context(host)` returns one of two contexts:
+
+| Path | Context | Who establishes the peer |
+|---|---|---|
+| `217.155.25.160` (the public address) | `CERT_REQUIRED`, `check_hostname=True`, verified against the bundled `ca_cert.pem` | the TLS handshake itself |
+| anything else — LAN, localhost | `CERT_NONE` | `peer_is_acceptable` -> `verify_or_pin`, pinned on first sight |
+
+`peer_is_acceptable` short-circuits to True on a CA-verified connection.
+Demanding a fingerprint on top would refuse a connection TLS has already
+authenticated.
+
+The hello sent immediately after connecting carries the licence token, the
+machine UUID and the hostname, so the peer had to be established *before* it
+goes out — which is what stage 2 rearranged and what this stage now makes
+meaningful.
+
+### Why no trust-on-first-use on the internet path
+
+Deliberate. Pinning the self-signed certificate there would mean that the day
+the CA-signed one is deployed, every already-updated client sees a mismatch and
+refuses — a lockout created by the upgrade itself. That path goes straight from
+unauthenticated to CA-verified in one build.
+
+### The rollout, in the order it had to happen
+
+Bundling the authority before the server presented a CA-signed certificate
+would have refused every internet client at once, so:
+
+1. `make_remote_ca init --dir ~/forex-admin-ca` — outside the repo.
+2. `make_remote_ca issue --address 217.155.25.160` — the server certificate.
+3. Verified the chain against the CA **before installing anything**.
+4. Installed the pair into `USER_DATA_DIR/remote/`, keeping the self-signed
+   one in `selfsigned-backup-<timestamp>/` as the way back.
+5. Re-verified end to end through the app's own `server_ssl_context()` and
+   `client_ssl_context()`: `verify_mode=CERT_REQUIRED`, `check_hostname=True`.
+6. Only then copied `ca_cert.pem` into the source tree.
+
+### The private key
+
+`ca_key.pem` never enters the repository. Anyone holding it can mint a
+certificate this app trusts without question — a strictly worse position than
+the unauthenticated channel this replaced, which at least required being on the
+network path. It is gitignored, and three tests in
+`tests/remote/test_bundled_ca.py` check it is absent from the tree, untracked,
+and that `git check-ignore` would stop it being added.
+
+### One thing only mutation testing found
+
+`is_ca_verified` is `host == SERVER_HOST and bundled_ca_path() is not None`.
+Dropping the second half changes nothing today, because a CA *is* bundled — so
+the mutant survived. It matters for every build made **before** the cutover:
+without the guard such a build would announce that TLS had established the
+peer, skip `verify_or_pin` entirely, and send the licence token to anything
+that answered. Now covered by
+`test_a_build_with_no_authority_does_NOT_claim_verification`.
+
+### Note on the existing test
+
+`test_the_client_context_does_not_verify_and_NOTHING_PINS_THE_CERT` asserted
+the gap on purpose, and said in its own docstring that it should change when
+014 did. It has been replaced, not bent to fit — the assertions are now the
+opposite, plus a new one that stands a self-signed impostor for the right
+address in front of the client and requires the handshake to fail.
+
+### Still owner-side
+
+The server certificate expires in 825 days (2028-12); the authority in ten
+years. Reissue with `make_remote_ca issue` and restart the admin server.
+**The app must be restarted to serve the new certificate** — until then it
+presents the old self-signed one, which only affects clients built after this
+change.
