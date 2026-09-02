@@ -1,6 +1,6 @@
 # 060 — Flip the contract to enforced-at-zero
 
-**Status:** not started
+**Status:** **done (2026-09-02)** — owner chose: give _email.py a controller and enforce at zero.
 **Depends on:** 050 (the count must actually be 0 first)
 **Touches money:** no — tooling only, no runtime code changes.
 **Layer:** tools/tests
@@ -86,3 +86,37 @@ this repo's signature failure — the deleted-directory scanner that printed "al
   until it no longer sees it.
 - This is the task that makes the phase permanent. Everything before it is reversible drift; after
   it, the boundary holds itself.
+
+
+## Outcome (2026-09-02)
+
+`frontend-reaches-the-backend-through-controllers` is **enforced at zero**, with
+one named file exemption.
+
+The two remaining sites were not the two this task recorded. `_email.py:203` was
+one; the other was `frontend/app/_header.py`, not `frontend/app/__init__.py`.
+
+| Site | Reached for | Fixed by |
+|---|---|---|
+| `pages/settings/_email.py` | `get_engine()` → `build_orb_report()` | `notifications_controller.build_orb_report()` — the rest of that email's path (`build_orb_chart_image`, `build_orb_html`, `send_email`) was already behind this controller; only the report reached around it |
+| `app/_header.py` | `get_engine()`, `ADMIN_AVAILABLE`, `admin_open_fn` | injected from `app/__init__.py` as keyword-only arguments |
+| `app/__init__.py` | lifecycle handles | **exempted by name** — the composition root, already sanctioned in CLAUDE.md |
+
+The header could not simply call a controller: the repo's convention is that a
+controller read takes the engine as an argument
+(`trading_controller.get_open_trades(engine)`), so a caller still has to hold a
+handle. Changing that convention is a larger job than this task. Injecting from
+the composition root is the pattern CLAUDE.md already prescribes for exactly
+this situation.
+
+### Why a named exemption rather than a baseline of 1
+
+A baseline cannot tell a sanctioned site apart from the next one somebody adds.
+`Contract` gained an `exempt_files` field, and
+`tests/refactor/test_import_contracts.py::TestFileExemptions` requires every
+entry to **exist** and to **still violate the contract** — so an exemption that
+outlives its reason fails the build instead of quietly pre-authorising a
+violation in a file nobody watches any more. A further test plants a violation
+to prove the rule can still fail.
+
+Contract history: 59 (2026-08-06) → 50 → 3 → 2 → **0 + 1 named exemption**.
