@@ -6,15 +6,13 @@ finished.** Measured 2026-09-01:
 
 | File | Lines | Coverage |
 |---|---|---|
-| `cluster/sync/server.py` | 721 | 75% |
-| `cluster/sync/client.py` | 744 | 66% |
-| `cluster/remote/server.py` | 1,204 | **78%** |
-| `cluster/remote/client.py` | 732 | **69%** |
+| `cluster/sync/server.py` | 721 | **88%** |
+| `cluster/sync/client.py` | 744 | **84%** |
+| `cluster/remote/server.py` | 1,204 | **83%** |
+| `cluster/remote/client.py` | 732 | **79%** |
 
-_remote/* updated 2026-09-01 evening: the licence and revocation message
-loop, the IP gate that stops the licence-issuing server binding on the wrong
-machine, and the three fleet-wide maintenance paths (startup re-signing, the
-ping reaper, the update push)._
+**84% across all four** (1,852 statements, 304 uncovered), from the "zero
+tests" this file was opened with. Updated 2026-09-02.
 
 **Blocks:** nothing any more. Three of the four came under the 800 ceiling on
 2026-08-29/30 and came off the LOC baseline entirely on 2026-09-01.
@@ -137,8 +135,16 @@ of them defended**, which is the pattern this codebase keeps producing:
 
 ## Where to go next
 
-`remote/client.py` (57%) is the weakest, with its largest untested block at
-lines 584-691. Then the rest of `remote/server.py`.
+**The campaign is substantially done.** What remains uncovered is mostly
+lifecycle wiring (`start`/`stop`), the subnet TCP scan, and per-branch error
+handlers that need a live socket to reach. None of it is a decision path.
+
+Covered on 2026-09-02, in addition to the list above: the licence and
+revocation message loop, the admin server's IP gate, its three fleet-wide
+maintenance paths, registration approval and the admin pushes, LAN beacon
+discovery on real UDP sockets, the four settings mirrors and four
+propose/flush pairs, the stand-down/resume handshake, model transfer, the
+three background loops, both dispatch chains, and the diagnostics package.
 
 **One rule learned the hard way here:** make a fake refuse what the real table
 refuses. A permissive `record_consolidated_trade` fake hid bugs/019 — two tests
