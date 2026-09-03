@@ -1,6 +1,11 @@
 # 023 — IME's template path ignores the template's own SL, and says "awaiting follow-up" for a follow-up that never comes
 
-**Status:** spec drafted, not yet built — needs owner sign-off + demo session before merge (order-placement path).
+**Status:** built 2026-09-03, test-first, per the spec below — NOT VERIFIED
+AGAINST A BROKER. Needs a demo session before this is trusted: a
+template-managed channel's instant entry should place its SL at the
+template's configured distance (or the ATR-clamped placeholder, for a
+template that leaves `sl_pips` at 0), and the Telegram message should name
+the template instead of promising a follow-up that will never arrive.
 **Found:** live, 2026-09-03 — Gold Diggers VIP (template-managed channel) BUY at $4481.21, SL $4469.18 flagged "provisional 12.0 pts / -$120 max — awaiting follow-up".
 **Touches money:** yes — the stop-loss distance placed with a real order, on the Immediate Signal Entry (IME) path.
 **Severity:** every template-managed channel's instant entries get a stop that ignores the template's configured `sl_pips`/`atr_sl_mult`, silently, every time.
