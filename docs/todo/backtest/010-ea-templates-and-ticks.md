@@ -164,19 +164,50 @@ whichever option above is chosen.
 
 ## Status
 
-Phase 2 (option A, refuse rather than approximate) and phase 3 (templates
-listed automatically) shipped 2026-09-03. Phase 1's volume/depth probe is
-done, above.
+All three phases shipped 2026-09-03. Phase 2 (option A) and phase 3
+(templates listed automatically) landed first; phase 1 (ticks) landed after
+the owner confirmed the measured cost was worth it.
 
-## What I need from you
+Phase 1, what actually shipped:
 
-1. **Whether ticks are still worth building, now that the cost is measured.**
-   Tens of MB/day over the Wine HTTP bridge, and only ~93–95 days of history
-   available at all — so "Ticks" could only ever backtest a signal from the
-   last quarter, never the months candles currently reach. If the answer is
-   yes, the remaining work is the bounded history endpoint and a tick-walking
-   simulator (item 2 above) — a new build, not a small add given the existing
-   simulators are bar-based throughout.
+* `mt5_bridge.py`: `/ticks`, backed by `copy_ticks_range`, bounded to one
+  calendar day per request (the bridge itself refuses a wider range).
+* `template_simulator.simulate_ticks()`: the same rules as the bar walk,
+  resolved against real bid/ask instead of a bar's high/low — the same-bar
+  "stop or target first" ambiguity does not exist here, because a real tick
+  is only ever on one side of a level at a time. Refuses `trail_mode=candle`
+  in addition to the bar walk's existing refusals: `CandleTrailLevel()`
+  trails to the last 3 closed M15 candles, data this walk has no access to.
+* `engine.run_backtest_ticks()` / `_simulate_ticks()`: template strategies
+  only, same backstop as the bar dispatch (None rather than a guess).
+* `TradingRuntime.get_ticks_range()`: the frontend's only path to the live
+  bridge connection is through this facade, so this needed the owner's
+  sign-off to raise `facade_baseline.json`'s method_count 88→89 — recorded
+  there and in `structure_baseline.json`'s `_raised` (`runtime.py` 1507→1513,
+  `mt5_bridge.py` 1344→1401).
+* `frontend/pages/backtest.py`: "Ticks" as a fourth timeframe option, capped
+  to 1 day per fetch and advising the ~90-day retention window.
+
+Two real bugs were found and fixed while building this, both pre-existing in
+the bar-based `simulate()` (shipped as part of phase 2, so live for less than
+a day before the fix):
+
+* **`trail_step` was never read.** `ApplyTemplateStepTrail` (mql5:2159-2171)
+  only moves the stop once the improvement is >= `trail_step` pips — every
+  template created by `ea_templates.py`'s `DEFAULTS` carries `trail_step:
+  10.0`, so every step-trail simulation was trailing on any improvement at
+  all, tighter and more often than the EA actually does.
+* **A ladder whose levels sum to exactly 100% (the ordinary case) never
+  recorded `close_price`.** That total is reached through the routine
+  partial-close branch, not the dedicated "close everything" branch that is
+  the only other place `close_price`/`close_bar` get set — so a fully-closed
+  trade reported `outcome="tp"` with `close_price` stuck at 0.0.
+
+One known gap, not fixed here — scope creep past what "build ticks" asked
+for: the bar walk's own `trail_mode=candle` trails to the *previous bar*,
+which only matches the EA's real 3-M15-candle lookback when the backtest
+happens to run at M15 with a 1-candle lookback. Diverges from the EA at any
+other timeframe. Tracked, not shipped as a silent approximation.
 
 ## What I would not do without asking again
 
