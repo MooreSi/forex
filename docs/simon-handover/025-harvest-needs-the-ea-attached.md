@@ -1,20 +1,12 @@
-# 025 — Global harvest does nothing without the EA, and only covers one symbol
+# 025 — Global harvest: armed and correct. My first report was wrong.
 
-**Decision needed:** yes, for the second half.
+**Status:** investigated 2026-09-02, **corrected 2026-09-03** after the owner
+said the EA was attached. He was right; I was wrong.
 **Money:** yes — it closes live positions.
-**Found:** 2026-09-02, investigating item 3 of your list.
 
-## What you reported
+## The correction first
 
-> "trading > strategy > global parameters - harvest figure is set and the
-> toggle is on but it doesn't appear to monitor the ea or mt5 for all trades
-> that are live and action based on the figure set"
-
-Correct on both counts, for two separate reasons.
-
-## Why nothing is harvesting right now
-
-**The EA is not attached.** Checked live:
+I reported "the EA is not attached", from this:
 
 ```
 EA effective status : False
@@ -22,48 +14,74 @@ EA healthy          : False
 secs since last seen: None
 ```
 
-Global harvest is implemented **entirely in the EA** —
-`CheckGlobalHarvest()` in `ForexTraderBridge.mq5`, called from `OnTick`. The
-Python side is correct and I found no fault in it: saving the setting writes
-`global_harvest_enabled` / `global_harvest_threshold_usd`, and
-`push_global_config()` sends them to the EA both when you press Save and on
-every EA hello. With no EA on a chart there is nothing to receive that push
-and nothing to check the threshold.
+**That check was invalid.** `ea_is_healthy()` reads `_bridge.get_instance()` —
+an in-process singleton. I ran it in a separate Python process, where no
+bridge exists, so it returns False whatever the running app is doing. It said
+nothing about your install.
 
-You removed the EA from the chart during the demo session on 2026-09-01 and it
-has not been re-attached. **Re-attaching it should restore harvesting** — no
-code change needed for this half.
+The correct external check is the socket:
 
-## The part re-attaching will NOT fix
+```
+Python     13895  127.0.0.1:9111 (LISTEN)
+terminal64 38762  127.0.0.1:54657->127.0.0.1:9111 (ESTABLISHED)
+```
+
+And the app's own log:
+
+```
+10:04:15 [EABridge] EA connected from ('127.0.0.1', 54657) on port 9111
+10:04:15 [EABridge] EA hello: account=25470480 symbol=XAUUSD
+10:04:15 [EABridge] EA v1.05 (compiled 2026.09.03 10:04:05, build 6140)
+10:04:15 [EABridge] pushed 1 open position(s) back to the EA after reconnect
+```
+
+The EA is attached, current, and talking.
+
+## Why nothing has been harvested
+
+Nothing is wrong. The threshold has not been reached.
+
+| | |
+|---|---|
+| `global_harvest_enabled` | `1` |
+| `global_harvest_threshold_usd` | **$75.00** |
+| open position | ticket 1924896615, XAUUSD, 0.10 lots |
+| its profit right now | **$4.30** |
+
+$4.30 against a $75 threshold. `CheckGlobalHarvest()` runs on every tick and
+correctly does nothing. The EA's handler parses both fields and prints a
+confirmation to the Experts tab:
+
+```mql5
+g_globalHarvestEnabled      = JsonGetLong(json, "harvest_enabled", 0) != 0;
+g_globalHarvestThresholdUsd = JsonGetDouble(json, "harvest_threshold", 50.0);
+Print("[EABridge] global config updated: harvest_enabled=", ...);
+```
+
+**If you want to confirm it armed on your side**, look in MT5's Experts tab for
+that "global config updated" line at the time the EA connected. It should read
+`harvest_enabled=true harvest_threshold=75.0`. I could not read that log from
+here — the running terminal is the CrossOver prefix and its log directory is
+not where the standalone MetaQuotes install keeps one.
+
+## The one real limitation, unchanged
 
 ```mql5
 if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
 ```
 
-The EA only harvests positions **on its own chart symbol**. An EA attached to
-XAUUSD cannot see a EURUSD position, so "all trades that are live" is not what
-it does today — it is "all trades on this chart's symbol".
+Harvest only sees positions on the EA's **own chart symbol**. With the EA on
+XAUUSD, a EURUSD position is invisible to it. If you only trade XAUUSD this
+never matters. If you do not, covering every symbol needs a Python-side
+monitor that closes positions — money path, sign-off and a demo.
 
-There is also no Python-side fallback. Basket harvest has one
-(`core_equity_protect.check_basket_harvest`, wired into the monitor cycle);
-global harvest has none, which is why it fails completely rather than
-degrading when the EA is absent.
+There is also still no Python-side fallback: basket harvest has one, global
+harvest does not, so it fails completely rather than degrading if the EA ever
+does drop.
 
-## What I did not do
+## What to take from this
 
-I have not changed any of it. Making harvest genuinely cover every live trade
-means a Python-side monitor that closes positions when their profit crosses
-the threshold — which is the money path, and under your own rules that needs
-your sign-off and a demo session. It also overlaps the frozen close path.
-
-## What I would suggest, when you want it
-
-1. **Re-attach the EA first** and confirm harvesting works on XAUUSD. That
-   costs nothing and tells us the existing path is sound.
-2. Then decide whether you want the Python-side monitor for other symbols. If
-   you only ever trade XAUUSD, you may not need it at all — in which case the
-   honest fix is to relabel the setting so it stops promising "every open
-   position".
-
-That relabelling is the one part I could do without a demo, and I have left it
-alone only because it is your wording to choose.
+Nothing to fix for the case you reported. Lower the threshold, or wait for a
+position to clear $75, and it will fire. The lesson on my side is that an
+in-process singleton cannot be inspected from another process, and I should
+have checked the socket first.
