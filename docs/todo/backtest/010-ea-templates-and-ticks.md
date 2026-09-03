@@ -69,18 +69,40 @@ trade real money. Divergence is silent: nothing compares the two.
 `_get_spread_at` calls `mt5.copy_ticks_from` today to find the real bid/ask
 behind a historical fill.
 
-What is missing:
+### Measured, 2026-09-03
+
+Probed with a standalone, read-only script run against the live Wine bottle
+as a **separate process** — `mt5.initialize()` with no path argument attaches
+to the terminal that is already running rather than launching a second one
+(the same reasoning `mt5_bridge.py:142-147` documents), and the script never
+called `mt5.login()`, so the live bridge's own session was never touched.
+Deleted after the numbers were captured; nothing was left running or added to
+the app.
+
+| | |
+|---|---|
+| One closed hour, XAUUSD | **29,580–34,584 ticks, 1.7–2.0 MB** (`copy_ticks_range` numpy struct array, `.nbytes`) |
+| Retention | **~93–95 days**, a hard cutoff — confirmed against five separate weekdays (25–29 May, all zero) so it is not a weekend gap; 2 Jun 2026 still returns data, 31 May does not |
+
+A day is **not** "a few MB" — at this hourly rate a full trading day is
+several hundred thousand ticks, tens of MB, over an HTTP bridge running under
+Wine that already shows contention under concurrent calls (see the
+`_mt5_call_lock` comment in `mt5_bridge.py:130-141`). A single day is
+plausible; a multi-day or multi-week backtest window, pulled tick-by-tick
+over HTTP, is not — that pull would dwarf the candle endpoints by two to
+three orders of magnitude per day requested.
+
+The 93–95 day retention window also bounds what "Ticks" could ever cover:
+about a quarter's worth of history, not the months candles currently offer.
+
+What is still missing:
 
 1. **A history endpoint.** The bridge serves `/candles`, `/candles_range` and
    `/candles_symbol`. Tick history needs its own, backed by
-   `copy_ticks_range`.
-2. **Volume, which must be measured before anything is built.** M1 is ~985
-   bars/day. XAUUSD ticks are orders of magnitude more, over an HTTP bridge
-   running under Wine. **I have not measured it and will not guess.** The first
-   task is a one-off probe: fetch one hour of ticks, report count and bytes,
-   and decide from that whether a day is workable and how far back Vantage
-   actually keeps them.
-3. **Simulators that walk ticks.** Each currently iterates bars. Either they
+   `copy_ticks_range`, and — given the volume above — should accept a bounded
+   window (an hour or a day, not an open-ended range) rather than mirroring
+   `/candles_range`'s shape.
+2. **Simulators that walk ticks.** Each currently iterates bars. Either they
    take an abstracted price stream, or a tick feed is aggregated into
    pseudo-bars — which throws away the accuracy that motivates the change.
 
@@ -140,15 +162,21 @@ whichever option above is chosen.
 
 ---
 
+## Status
+
+Phase 2 (option A, refuse rather than approximate) and phase 3 (templates
+listed automatically) shipped 2026-09-03. Phase 1's volume/depth probe is
+done, above.
+
 ## What I need from you
 
-1. **Option A, B or C for phase 2.**
-2. **Whether ticks alone would be useful.** If the honest answer is that you
-   want templates and ticks together, phase 1 still goes first — it is
-   independent and it de-risks phase 2's data path.
-3. **Which templates matter.** If the five or six actually in use avoid grid
-   mode, option A covers everything real and the exclusion list is empty in
-   practice.
+1. **Whether ticks are still worth building, now that the cost is measured.**
+   Tens of MB/day over the Wine HTTP bridge, and only ~93–95 days of history
+   available at all — so "Ticks" could only ever backtest a signal from the
+   last quarter, never the months candles currently reach. If the answer is
+   yes, the remaining work is the bounded history endpoint and a tick-walking
+   simulator (item 2 above) — a new build, not a small add given the existing
+   simulators are bar-based throughout.
 
 ## What I would not do without asking again
 
