@@ -1,6 +1,11 @@
 # 024 — No UI to see or toggle a channel's own Immediate Market Entry flag
 
-**Status:** confirmed live, 2026-09-03. Root cause of a related report (023's
+**Status:** **FIXED 2026-09-05**, test-first. The switch is on the Channels
+Active card. **No demo session needed for the change itself** — no order,
+close or sizing code is touched — but see *What shipped* at the bottom for the
+one thing that is still the owner's, and for the immediate action below, which
+this fix deliberately does not take.
+**Originally:** confirmed live, 2026-09-03. Root cause of a related report (023's
 sibling investigation): GOLD DIGGERS INSTITUTIONAL matched the "PREPARE FOR A
 BUY" lexicon trigger correctly but never executed, because its own
 `instant_entry_enabled` flag is off in the database — and there is currently
@@ -144,3 +149,57 @@ stays at whatever value it currently holds. Confirm with the owner whether
 that channel is *supposed* to have Instant Market Entry on before flipping it
 by hand — this doc only explains why nothing fired, it does not decide
 whether it should.
+
+---
+
+## What shipped, 2026-09-05
+
+Built as written above, with three departures worth naming.
+
+**The save goes through a helper, not a second copy of the call.**
+`save_channel_parser_config` takes six POSITIONAL arguments, and the two this
+card owns — `instant_entry_enabled` and `enabled` — are adjacent booleans. A
+second hand-written call site is an invitation to pass them the wrong way
+round, which would disable a channel while reporting that instant entry had
+changed: it type-checks, it runs, and it does the opposite of what was asked.
+So both handlers call `_feed._save_channel_flags(channel, existing, *,
+instant_entry, enabled)`, which is **keyword-only** for exactly that reason and
+carries the rest of the row through unchanged.
+
+**The notify colours are inverted relative to the enable switch.** Turning
+instant entry ON is `warning`, not `positive`. Switching it on arms real market
+entry from bare directions for that channel, so the confirmation should read as
+a caution. Turning it off is the safe direction.
+
+**Tests are a detached render of the real section, not a source grep.**
+`tests/frontend/conftest.py`'s harness stubs a reader that reports no slots, so
+this card draws its "No channels loaded yet" empty state there and no switch
+exists to find. The tests render `_render_channels_active_section` directly
+into a `ui.card()`, walk the element tree, and fire the switch's real handler —
+the same code path, with the slots the card is about. They assert the **exact**
+six-argument call rather than that a save happened.
+
+Eight tests in `tests/frontend/test_channel_instant_entry_toggle.py`, all
+watched failing first (seven of them; the eighth guards the existing enable
+switch and was green from the start, which is the point of it). Six mutants,
+all killed:
+
+| Mutant | Killed by |
+|---|---|
+| the two adjacent booleans swapped in the helper | 3 tests |
+| the switch always renders off | 2 |
+| the handler writes the stored value, not the new one | 3 |
+| the closure loses its per-channel binding | 1 |
+| the enable switch stops preserving the flag | 1 |
+| the switch is never wired to its handler | 4 |
+
+`python -m tools.checks all`: 11/11.
+
+### Still not done, deliberately
+
+The *Immediate action* above stands and this change does not perform it. GOLD
+DIGGERS INSTITUTIONAL's `instant_entry_enabled` is untouched, and no migration
+defaults any channel on or off — exactly as *What not to change* requires. The
+switch now makes that value visible and correctable; whether that channel
+*should* have instant entry on is the owner's call, and flipping it starts real
+market entries.
