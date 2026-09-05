@@ -145,6 +145,18 @@ default** (turning it on prints a loud warning).
 > 4. Raise **certificate pinning** as a tracked follow-up — it is now the last
 >    unauthenticated link in this channel.
 >
+> **All four are done. (Added 2026-09-05.)** Item 4's follow-up became
+> `docs/todo/security/010`, and was closed on 2026-09-02 by the wider TLS work
+> in [../todo/bugs/014](../todo/bugs/014-sync-and-licence-tls-are-unauthenticated.md):
+> a private CA for the internet path and trust-on-first-use for the LAN, both
+> checked before the licence token is sent. **Item 2's warning had to be
+> rewritten a second time** — the version written here correctly described
+> "unverified TLS, no cert pinning", and that description expired the day the
+> pinning landed. It now names TOFU's first LAN connection, which is the only
+> exposure left. The paragraph above it is the reason: a warning describing a
+> risk which no longer exists trains people to ignore warnings, and this one had
+> three days to do exactly that.
+>
 > **Stale document to fix:** `docs/todo/refactor/stage1/phase2-safety-net/
 > 070-update-channel-disable.md` still reads `Status: not started` although the
 > work shipped (the flag, the warning and its tests all exist). Its premise line,

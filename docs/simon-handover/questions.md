@@ -98,6 +98,13 @@ Each is a separate commit, none of it part of the upstream merge itself.
 tracked task ([docs/todo/security/010](../todo/security/010-remote-channel-cert-pinning.md)).
 7 belongs to the Part B sitting.**
 
+**Updated 2026-09-05: 5 is DONE too.** It was closed 2026-09-02 under
+[bugs/014](../todo/bugs/014-sync-and-licence-tls-are-unauthenticated.md) —
+a private CA for the internet path, trust-on-first-use for the LAN, on the
+owner's 2026-09-01 decision. The security/010 file said "not started" for three
+days after the fact; it now carries the reconciliation. Nothing on this list is
+outstanding except 7, which is Simon's sitting.
+
 1. Delete `backend/src/services/channels/rule_generator.py`, its
    `orphan_module_allowlist.json` entry, and three stale references (Q002 #1).
 2. Redact the MT5 login number at `mt5_bridge.py:179` and recipient addresses in
