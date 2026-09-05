@@ -1,7 +1,10 @@
 # 015 — A bare-direction message is re-parsed on every scan cycle, forever
 
 **Status:** found 2026-08-28 from live demo-session logs. **Log half fixed
-2026-08-28; the rescan itself is still open and needs the owner.**
+2026-08-28. Rescan half fixed 2026-09-05 — but NOT the way this file
+proposed, because that fix would have cost a trade; see *The rescan, fixed*
+at the bottom.** What is left is a behaviour question, now in
+[docs/simon-handover/027](../../simon-handover/027-what-should-a-direction-only-message-do.md).
 **Touches money:** no. Nothing is executed. This is wasted work and log bloat.
 **Severity:** low in effect, high in noise — 3,954 identical log lines from one
 Telegram message in 70 minutes.
@@ -100,3 +103,98 @@ not a cleanup.
 
 So the log is readable again, and the wasted work is still there, waiting on
 that decision.
+
+---
+
+## The rescan, fixed — 2026-09-05
+
+The message is no longer re-parsed. `classify_and_parse` remembers, in
+process, the messages it has already classified as a bare direction and
+returns early on the next sighting, so none of the six parsers this file
+complains about runs a second time.
+
+### Why the suggested fix above was NOT built
+
+Both of its premises turned out to be false when checked against the code,
+and the second is a money-path regression.
+
+**"The follow-up path already keys off `tg_message_id`, so a parked row also
+gives the later full-levels message something to complete."** It does not.
+`second_message_repo.attach_followup_levels()` selects from
+`vantage_second_message_holds WHERE status='waiting' AND levels_json IS NULL`.
+It never reads `vantage_tg_signals`. A row parked there is invisible to the
+follow-up matcher, so the parking would buy nothing on that side.
+
+**A parked row would lose a trade.** `scan_messages.py`'s dedup probe sends
+*any* message that already has a row into `_handle_signal_edit_impl`. In there,
+an edit that adds full levels to a row is only executed when the row's status
+is `pending_followup`: that is the single branch that sets `_promote_execute`.
+A row parked as `bare_direction_parked` takes the other branch — fields
+updated, `return None`, caller moves on — and the signal is never traded.
+Today, with no row at all, that same edit is parsed fresh and taken. So the
+tidy-up would silently convert a taken trade into a missed one.
+
+Parking it as `pending_followup` instead is not a way out: that status means
+"direction and entry known, levels awaited", and a bare direction has no entry.
+It would also make the message eligible for the promotion path on any edit,
+which is a real behaviour change to signal parsing.
+
+### What was built instead
+
+A read-only guard, placed **after** the learned-rules parser and the
+second-message block and before everything else:
+
+```python
+if _is_known_bare_direction(tg_id, text):
+    return None
+```
+
+- **Keyed on the id AND the message body**, stored as a short digest. A
+  Telegram edit keeps the id and changes the text, and that is the usual way
+  one of these becomes a real signal. Keying on the id alone would skip the
+  edited body forever — the exact trade loss described above, arrived at from
+  the other direction.
+- **Below the learned-rules parser**, because the operator can add a rule at
+  any moment and it must apply to a message already parked.
+- **Below the second-message block**, because a levels-only follow-up is a
+  different message that still has to be consumed.
+- **Read-only.** It must not record, or the first sighting would suppress its
+  own log line. The recording still happens where it always did, at the
+  bare-direction branch.
+- Same bounded, insertion-ordered memory as the log suppression, evicting
+  oldest-first.
+
+Nothing is written to the database, no status is invented, and the money path
+is untouched.
+
+### Proof
+
+Ten tests in `tests/core/test_bare_direction_rescan_work.py`, the two that
+matter watched failing first, plus the seven existing ones in
+`test_bare_direction_log_spam.py` still green.
+
+Six mutants, all killed — but **one survived the first attempt and the test
+was strengthened rather than the result accepted**: moving the guard above the
+second-message block changed nothing, because the follow-up test used a
+message that had never been parked, so the guard never fired for it. The test
+now parks the message first. Worth recording, because a test that passes in
+both positions is not testing the position.
+
+| Mutant | Killed by |
+|---|---|
+| the guard removed (the bug itself) | 2 tests |
+| memory keyed on the id alone | 2 |
+| the read-only probe records, so the first sighting self-suppresses | 4 |
+| guard moved above the learned-rules parser | 1 |
+| guard moved above the second-message block | 1 (after strengthening) |
+| eviction drops the newest instead of the oldest | 1 |
+
+### Still open
+
+The message is still not RECORDED, so nothing on screen shows that a
+direction-only message arrived and nothing tells you if the follow-up never
+comes. That is a behaviour decision, and it is now
+[docs/simon-handover/027](../../simon-handover/027-what-should-a-direction-only-message-do.md)
+with three options and a recommendation. The in-process memory is also
+forgotten on restart, which costs exactly one re-read per parked message —
+noted rather than fixed, since persisting it is the same decision.

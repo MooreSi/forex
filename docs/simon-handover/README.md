@@ -137,3 +137,7 @@ in the room.
 - [018-the-partial-close-can-pay-twice.md](018-the-partial-close-can-pay-twice.md) — **answered and done**: one partial per TP level per trade. Check for any `_dup` rows after your next start — those are places this bug already fired
 - **[019-editing-a-pending-signal-used-the-wrong-rows-numbers.md](019-editing-a-pending-signal-used-the-wrong-rows-numbers.md) — no decision needed, but worth reading.** Save on any pending-signal row used the LAST row's numbers; if you ever saw "Saved" appear on the wrong row, that was this
 - [020-out-of-hours-still-runs-on-utc.md](020-out-of-hours-still-runs-on-utc.md) — a small consistency question: your Trading Schedule now follows UK time, Out of Hours still follows UTC. May well be right as it is
+- [027-what-should-a-direction-only-message-do.md](027-what-should-a-direction-only-message-do.md) — a "BUY" with no numbers: ignore it, show it, or hold it open? A/B/C with a recommendation. The noise and the wasted work are already fixed; this is only what you want to SEE
+
+> This list is behind: 021 to 026 exist in the folder and are not on it. Open
+> the folder itself for the full set until it is caught up.
