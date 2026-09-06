@@ -27,9 +27,9 @@ doc, not a work log._
   *Caveat: the wording is provisional — Darren reviews
   `docs/todo/refactor/darren-decisions/006-onboarding-strings.md`.*
 - [x] **Migrations (stage2 phase 2).** Schema changes are an ordered,
-  numbered registry (`db/migrations.py`) with per-step version stamps;
+  numbered registry (`backend/migrations/registry.py`) with per-step version stamps;
   legacy DB shapes are fixture-tested to head losslessly; data backfills are
-  named and fail loud (`db/backfills.py`); zero `except: pass` in the schema
+  named and fail loud (`backend/migrations/backfills.py`); zero `except: pass` in the schema
   path.
 - [x] **Test suite trustworthy (stage2 phase 3).** Zero assert-nothing test
   files (gated); broker + runtime carry absolute coverage floors; layout
@@ -37,27 +37,37 @@ doc, not a work log._
   duplication under a shrinking baseline.
 - [x] **Frontend maintainable (stage2 phase 4).** Target: no pages file over
   800 lines, controller-boundary contract at 0, silent excepts at 0.
-  *Green as of 2026-09-01, measured not remembered.*
+  *Green as of 2026-09-01, measured not remembered. **Re-measured 2026-09-06**
+  — still green, but two of the numbers below had drifted; corrected in place.*
 
   **No file under `frontend/` exceeds 800 lines** — largest is
-  `pages/ai_trade_analysis/__init__.py` at 715. The two pages this row named as
+  `frontend/app/__init__.py` at **789**, then `pages/backtest.py` at 771 and
+  `pages/ai_trade_analysis/__init__.py` at 729. *(This row read "largest is
+  ai_trade_analysis at 715" until 2026-09-06; that file has grown to 729 and is
+  no longer the largest.)* **The ceiling is a hard 800** (`LOC_CEILING` in
+  `tools/refactor_audit/structure_gates.py`, and only three files are baselined
+  as exempt), so the largest frontend file now has **11 lines of headroom**.
+  Worth watching rather than acting on, but the next feature added to
+  `frontend/app/__init__.py` is likely to be the one that fails the gate. The
+  two pages this row named as
   blocked, `ai_trade_analysis.py` and `test_panel.py`, are packages: both
   bugs ([010](../todo/bugs/010-test-panel-reset-params-nameerror.md),
   [011](../todo/bugs/011-signal-generator-analysis-nameerror.md)) were resolved
   2026-08-27 and the splits followed.
 
-  **The controller-boundary contract is at 2, not the 50 this row recorded** —
-  and no frontend file imports `backend.src.services` at all. The two remaining
-  sites are `backend.src.app` for the engine handle, one of them the
-  composition root. Getting to a literal 0 needs a decision about whether the
-  composition root is a named exception; see
+  **The controller-boundary contract is at 1, not the 50 this row recorded**
+  (it said 2 until 2026-09-06; one of the two has since gone) — and no frontend
+  file imports `backend.src.services` or `backend.src.db` at all. The single
+  remaining site is `frontend/app/__init__.py:71` importing `backend.src.app`
+  for the engine handle, which is the composition root. Getting to a literal 0
+  needs a decision about whether the composition root is a named exception; see
   `docs/todo/refactor/frontend/restructure/PROGRESS.md` task 1/060.
 
   Silent excepts in the frontend: 0.
 
   Done since: `settings.py` 3,487 → 11 modules (largest 685), `app.py` 1,746 →
   4, `history.py` 1,592 → 7, plus `chart`, `telegram`, `reversal_panel` and
-  `breakout_panel`. On the backend, `ea_bridge.py` 1,947 → 715 across 6
+  `breakout_panel`. On the backend, `ea_bridge.py` 1,947 → 719 across 6
   modules and `core_bot_panel.py` 1,689 → 604 across 6.
 
   **Two frontend pages remain over 800 and both are blocked on a bug, not on
