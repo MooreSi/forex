@@ -52,7 +52,8 @@ Then open **http://localhost:8890** and log in with **`debug`** / **`debug`**.
   not a bypass — `guard.enforce()` is untouched). Run it once if boot complains about a licence.
 - Debug mode isolates the DB to `forex_trader_debug.db` and shows a login. The chart is empty and
   says "MT5 Disconnected" because the **fake price bridge is not wired yet** (a planned task).
-- Expect `LoopMonitor` stall warnings — the engines are heavy at idle; not an error (a known issue).
+- Expect `LoopMonitor` stall warnings. They are not a boot problem, but the cause has never been
+  attributed — tracked as [bugs/030](../bugs/030-the-apps-own-event-loop-stalls-are-unexplained.md).
 - `python run.py` (no debug) is the real app and requires real credentials + a real licence.
 
 ## 4. Current state (2026-08-27)

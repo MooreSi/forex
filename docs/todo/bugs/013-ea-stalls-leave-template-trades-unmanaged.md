@@ -163,6 +163,9 @@ pull". It is not the thread.
 any of the four bursts.** The app's own loop stalling and the EA going quiet
 are unrelated. Whatever is happening is on the MT5 or socket side.
 
+The app-side stalls are real but are a separate fault, now tracked as
+[bugs/030](030-the-apps-own-event-loop-stalls-are-unexplained.md).
+
 ### What "EA unhealthy" actually means, which changes the risk
 
 ```python
