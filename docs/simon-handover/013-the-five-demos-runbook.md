@@ -1,8 +1,18 @@
-# The five demos — a runbook for one sitting
+# The demos — a runbook for one sitting
+
+> **Grew from five to nine on 2026-09-07.** Demos 1-5 are the original stage3
+> set. Demos 6-9 cover four money-path fixes made on 2026-09-04 that this file
+> predated, all of them found live on your own account: a close booked at $0,
+> the trade cap being bypassed, Global Harvest never firing, and one close
+> being announced and counted twice. Every one is written, tested and
+> mutation-tested, and none is finished until you have watched it.
+>
+> Budget about 70 minutes for all nine, not 40. **Demo 8 needs the EA
+> recompiled before the sitting starts** — see its own note.
 
 **For:** Simon, at an MT5 terminal on the **demo** account
-**Time:** about 40 minutes for all five
-**Status of the code:** all five fixes are written, tested and mutation-tested.
+**Time:** about 70 minutes for all nine
+**Status of the code:** all nine fixes are written, tested and mutation-tested.
 None of them is `done`, and none becomes `done` because a test is green. Each
 needs the run below, on a terminal, with your eyes on it.
 **Last checked against the code: 2026-09-01.** Every log line quoted below was
@@ -281,6 +291,180 @@ halt reason, and the reason names the number that tripped it.
 
 ---
 
+## Demo 6 — a close with no price must not become a $44,783 loss (bugs/025)
+
+**The failure it prevents:** on 2026-09-04, ticket 1935433548 was reported
+closed with no closing price. The app read the absence as $0.00, and with a
+0.1-lot entry at $4478.35 it computed **-$44,783.50**, wrote it to `net_pnl`,
+`realised_pnl` and your simulated balance, and fed it to the daily-loss and
+give-back guards — which halt trading. The broker had no closing deal at all,
+which is why the trade never appeared in Closed Trades.
+
+**What produces it:** only the EA's restore path sends a close with no price
+(`HandleRestoreTrade`'s `closed_while_disconnected`). Every real close comes
+through `ReportTradeClosed`, which always carries one. So this is what a
+bridge restart looks like when the EA has lost sight of a ticket.
+
+1. Open one trade and let the EA take it (any strategy).
+2. Restart the bridge, so the EA reconnects and re-sends its view of what it
+   is managing. That is the same sequence that produced the incident.
+
+**Expect — the app asks the broker before it believes the EA.** The guard
+queries the broker for a closing deal, and only records an exit if one exists.
+With no deal, the log reads:
+
+```
+[EABridge] trade_closed(...) for trade=... ticket=... carried no close price
+and the broker has no closing deal for it — leaving the row open rather than
+recording an exit at $0
+```
+
+and you get a Telegram message saying the trade **stays OPEN and unmanaged**,
+with no P&L recorded, telling you to check MT5.
+
+**Pass:** the trade stays open, your balance does not move, and nothing halts.
+**Fail:** any exit recorded at $0.00, or any large negative P&L appearing for a
+trade with no closing deal. Stop if you see that.
+
+**Two things this demo does NOT cover, and you should know both:**
+
+1. **The second guard was not built.** A `close_price == 0` check inside
+   `record_close` itself is defence in depth, and `record_close` is the frozen
+   close path, so it needs your sign-off separately. What you are testing here
+   is the bridge-side guard, which stops the reported incident before
+   `record_close` ever sees it.
+2. **The row from 2026-09-04 is still wrong.** Ticket 1935433548 is still
+   marked closed with `close_price` 0 and roughly -$44,783 debited. Repairing
+   it — and checking whether `trade_pause_until` or `risk_halt_reason` were set
+   off the back of it — is a separate decision, and nobody has touched your
+   data. Worth doing before the sitting, so a stale halt does not make demo 9
+   look like a pass for the wrong reason.
+
+---
+
+## Demo 7 — the trade cap now counts resting orders (bugs/026)
+
+**The failure it prevents:** you asked on 2026-09-04 *"the max open trades in
+the risk settings is set to 3, why has it opened more trades?"* A resting
+pending order consumed no slot at either end — not when placed, not when it
+filled — so N resting orders became N open positions over any cap, with the cap
+never consulted.
+
+**This reverses your own earlier answer, deliberately.** On 2026-08-31 you
+answered [012](012-should-a-resting-order-use-a-trade-slot.md) with **A**,
+resting orders stay free. Your 2026-09-04 instruction — *"whether it is a
+resting order or a market order the EA should manage the max number of
+allowable trades as set within the gui"* — is **B**, and B is what now ships.
+If you still want A, say so before this demo rather than after.
+
+1. Set **Max Open Trades to 2** for the sitting, so you are not waiting on five.
+2. Get one resting order onto the broker's book. The quickest way is the
+   Trading page's **Market Order** tab, which also places limit orders
+   (`open_manual_limit_order`) — set a price the market cannot reach in the next few
+   minutes so it rests unfilled. The Limit Runner strategy produces one on its
+   own if you would rather wait for a signal.
+3. Open one ordinary position. You now hold **one position and one resting
+   order: two slots**.
+4. Send a third signal.
+
+**Expect:** it is refused, and the refusal names where the slots went:
+
+```
+Max open trades reached (2) — <a breakdown of which slots are in use>
+```
+
+**Pass:** refused, and the breakdown accounts for the resting order.
+**Fail, and this is the one to watch for — OVER-refusal.** If the app refuses
+while you can see fewer than two things on the account, a slot has leaked: a
+stranded `activating` claim or a stale `working` row nothing freed.
+`release_stranded_activations` covers the first case. If that happens, note
+what was on the account and stop — an app that refuses every trade is worse
+than the bug this fixes.
+
+5. **Put Max Open Trades back to 3** (or whatever you run) before you finish.
+
+---
+
+## Demo 8 — Global Harvest is a basket total, not per trade (bugs/027)
+
+**Do this one FIRST if you are short of time, because it needs preparation the
+others do not.**
+
+**The failure it prevents:** Trading > Global Parameters had Harvest ON at $75,
+the chart panel read `GLOBAL HARVEST: ON at $75.00 profit per trade`, and
+nothing was ever harvested. It was never a delivery failure — the setting
+reached the EA every time. The semantics were wrong: it closed each position
+whose **own** floating profit reached the threshold, so six trades at $15 each
+is $90 of open profit a $75 harvest never touched.
+
+**Before the sitting — this will not work otherwise.** The fix is in the EA
+(v1.06) and **has not been compiled**. Run `tools/deploy_ea.sh`, then open
+MetaEditor and press **F7**. Confirm the EA on the chart reports **1.06**
+before you start; if it still says 1.05 the compile did not take and this demo
+will simply reproduce the old behaviour.
+
+1. **Trading > Global Parameters** (the same card as Risk per trade, not the
+   per-template Harvest field on the EA Templates tab — they are two different
+   settings with the same name). Switch **Harvest** on and set **Profit
+   threshold ($)** to something small trades can reach — **$10**, not $75.
+2. Open **three** small positions on XAUUSD, none of which individually reaches
+   $10 of profit, but which together exceed it.
+
+**Expect** in the EA log:
+
+```
+[EABridge] global harvest threshold reached (combined $<total> >= $10
+across 3 position(s)) -- closing all
+```
+
+followed by one `global harvest closing ticket=...` line per position.
+
+**Pass:** all three close when the *combined* total crosses $10, not before.
+
+**Know what you are agreeing to.** Closing the basket closes **every** position
+on the symbol, including any that are individually losing. That is what banking
+a combined total means — closing only the winners would leave the losers
+running and bank less than the threshold that just fired. If that is not what
+you want, stop here and say so; it is a one-line change of intent, not a bug.
+
+**This one closes real positions.** Demo account only, minimum size.
+
+---
+
+## Demo 9 — one close is one alert and one outcome (bugs/028)
+
+**The failure it prevents:** on 2026-09-04, ticket 1940612275 sent you the same
+"Trade Closed" message twice. The balance was never double-paid — a
+compare-and-set already prevented that — but the single loss was counted as
+**two consecutive losses** toward the circuit breaker, which halts live
+execution. So one stop-out could halt you for the cooldown, and the ledger
+outcome was overwritten on every affected trade.
+
+**What produces it:** the monitor loop's SL check runs on EA-managed rows too,
+so it and the EA's own close event race on every stopped-out template trade.
+Both used to announce and book.
+
+1. Open a trade on an **EA template** strategy (this race only exists on
+   EA-managed rows).
+2. Set its stop loss close enough to be hit, and let it stop out. Do not close
+   it by hand — a manual close does not produce the race.
+
+**Expect:** exactly **one** Telegram "Trade Closed" message, and exactly one
+loss counted. Whoever loses the compare-and-set says nothing at all.
+
+**Pass:** one alert, one outcome, and the circuit breaker's loss count goes up
+by one — not two.
+**Fail:** two alerts for one ticket, or the loss counter moving by two. Check
+the breaker's count directly rather than trusting the absence of a second
+message; the alert and the counting are separate halves and only the alert is
+visible.
+
+**Not covered:** ledger rows already corrupted by this before 2026-09-04 are
+not repaired. Any trade this hit had its consolidated outcome overwritten to
+"be", and those stay as they are unless you decide otherwise.
+
+---
+
 ## When you are done
 
 For each demo, write **pass** or **what actually happened** in
@@ -293,7 +477,26 @@ decide, not anyone else's:
 
 - [011](011-your-halt-settings-do-not-match-what-you-confirmed.md) — your halt
   settings do not match what you confirmed
-- [012](012-should-a-resting-order-use-a-trade-slot.md) — should a resting
-  order consume a trade slot
 - 030's repairers — report-only today; making them act is a decision about
   money moving without you watching
+
+*(This list used to name [012](012-should-a-resting-order-use-a-trade-slot.md),
+"should a resting order consume a trade slot", as still open. You answered it
+on 2026-08-31 and then reversed it on 2026-09-04; the behaviour shipped and is
+now demo 7. Removed 2026-09-07.)*
+
+And these are decisions waiting on you that are not demos at all:
+
+- [026](026-template-anchor-lot-is-being-scaled.md) — **a template Anchor Lot
+  of 0.10 is being traded at 0.13.** Five trades in seven days at 30% more risk
+  than you set. Two possible fixes that mean different things, and both change
+  lot size on live trades, so neither has been applied. There is also something
+  you can do immediately with no code change: set that channel's multiplier
+  back to 1.0.
+- [027](027-what-should-a-direction-only-message-do.md) — what a "BUY" with no
+  numbers should do: ignore, show, or hold open
+- [014](014-a-wildcard-fingerprint-nothing-uses.md),
+  [020](020-out-of-hours-still-runs-on-utc.md),
+  [023](023-strategies-are-not-ea-templates.md),
+  [024](024-per-account-databases.md) — smaller, but 023 and 024 each block
+  work you asked for
