@@ -1,6 +1,12 @@
 # 024 — No UI to see or toggle a channel's own Immediate Market Entry flag
 
-**Status:** **FIXED 2026-09-05**, test-first. The switch is on the Channels
+**Status:** **REVERTED 2026-09-07 on the owner's instruction. This bug was
+not real by the time it was fixed.** The premise below — that
+`instant_entry_enabled` gates whether a channel's instant entries execute —
+stopped being true on 2026-09-03, the same day this file was written, when the
+owner directed that IME be a single GLOBAL feature. The switch shipped on
+2026-09-05 wrote a column nothing reads. See *Reverted* at the bottom.
+**Superseded status (2026-09-05):** FIXED, test-first. The switch is on the Channels
 Active card. **No demo session needed for the change itself** — no order,
 close or sizing code is touched — but see *What shipped* at the bottom for the
 one thing that is still the owner's, and for the immediate action below, which
@@ -203,3 +209,50 @@ defaults any channel on or off — exactly as *What not to change* requires. The
 switch now makes that value visible and correctable; whether that channel
 *should* have instant entry on is the owner's call, and flipping it starts real
 market entries.
+
+
+---
+
+## Reverted, 2026-09-07
+
+**What was actually true.** On 2026-09-03, by owner directive, Immediate Market
+Entry became a single global feature rather than a per-channel opt-in.
+`scan_auto_execute.ime_enabled_for_channel` states it plainly: *"The
+`instant_entry_enabled` column itself is no longer read here; it stays in the
+schema as a historical field, still bootstrapped, no longer consulted."* The
+per-channel check was removed from all three of the sites that used to copy it,
+which was the point of the directive — that triplication is what let GOLD
+DIGGERS INSTITUTIONAL be opted in on one path and declined on the others,
+confirmed live 2026-08-06.
+
+So the switch added on 2026-09-05 was a control over nothing. Grepping every
+reader of the column at the time of the revert found the schema, the backfill,
+the save path, and the new switch — and no decision path at all.
+
+**Owner's call, 2026-09-07, asked directly because his answer that day ("the
+per-channel switch should override, off means off") conflicted with his own
+2026-09-03 directive:** *global only — remove the switch.* The directive
+stands.
+
+**What was removed:** the Instant Entry switch, its handler, its tooltip and
+`_save_channel_flags` from `frontend/pages/telegram/_feed.py` (a clean reverse
+of commit `173cd46`'s change to that file), and
+`tests/frontend/test_channel_instant_entry_toggle.py`. The two pre-existing
+sites that echo the column unchanged are untouched, as they were before.
+
+**What was NOT removed:** the column itself, which stays in the schema as a
+historical field and is still bootstrapped. Removing it is a migration for no
+benefit.
+
+### How this got built, and the check that would have caught it
+
+The premise was taken from this file and not re-checked. The file's other
+claims were verified before building — `save_channel_parser_config`'s
+signature, both echo sites, the `_feed.py` line numbers — and all were correct,
+which made the central claim feel checked when it had not been.
+
+**The check that was missing is one grep:** does anything still READ this
+column on a decision path? Two files named the answer already — this one and
+`ime_enabled_for_channel`'s docstring — and they were written the same day and
+disagreed. A bug report's root cause is the one claim most worth re-deriving,
+because it is the claim the rest of the document is built to support.

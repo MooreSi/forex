@@ -518,19 +518,17 @@ retro-corrected, and nothing will be without you asking.
 button could switch IME on and never off. A setting you cannot turn off is
 worse than one that does not exist, because you believe you have turned it off.
 
-**Note the shape has changed since this bug.** There is now a per-channel
-Instant Entry switch on the Channels Active card (added 2026-09-05,
-bugs/024), which is a different control from the global one this bug is
-about. Both must be on for a bare direction to execute.
+**There is only ONE control, and that is deliberate.** A per-channel Instant
+Entry switch was briefly added on 2026-09-05 and removed on 2026-09-07: it
+wrote a column nothing reads, because your 2026-09-03 directive made IME a
+single global feature. So this toggle is the whole of it — there is no second
+switch to check.
 
 1. Parsing tab: turn **Immediate Market Buy/Sell** on. Confirm it reads on.
 2. Turn it **off**. Reload the page.
 
 **Pass:** it is still off after the reload.
 **Fail:** it comes back on, or the toggle refuses.
-
-3. Repeat on the **per-channel** switch (Telegram tab > Channels Active), which
-   has never been demoed at all because it did not exist until 2026-09-05.
 
 **Zero money risk in this demo** — no order is placed either way. It is here
 because a stuck IME switch is what decides whether later demos mean anything.
@@ -551,9 +549,9 @@ levels should default to the EA template's settings; for the instant-entry path
 that is built. Precedence is `use_dynamic_atr` first, then `sl_pips`, then the
 ATR-clamped fallback — the same order `resolution.py` uses everywhere else.
 
-1. Pick a template-managed channel with **Instant Entry on** at both levels
-   (global and per-channel — demo 11 is how you confirm that), and a template
-   with a non-zero **SL pips**.
+1. Pick a template-managed channel, with **Immediate Market Buy/Sell on**
+   (demo 11 is how you confirm that toggle works), and a template with a
+   non-zero **SL pips**.
 2. Let a bare direction arrive, or send one to a test channel you control.
 
 **Pass:** the order's stop sits at the template's configured distance, and the
