@@ -1,7 +1,9 @@
 # 026 — a fixed template lot of 0.10 is being traded at 0.13
 
-**Decision needed:** yes. **Money:** yes — it is 30% more risk per trade than
-you set.
+**Status:** **ANSWERED 2026-09-07 — option 1**, and option 1 was already
+built on 2026-09-03. Nothing left to write; it needs the demo in
+[013](013-the-five-demos-runbook.md), demo 10.
+**Money:** yes — it was 30% more risk per trade than you set.
 **Found:** 2026-09-03, from ticket 1925815819.
 
 ## What happens
@@ -85,3 +87,33 @@ to 1.0 stops the scaling immediately.
 Note the bare `Gold Diggers VIP` channel is also at 1.3 but with
 `manual_override = 1` — that one you set deliberately, and it is working as
 intended on its own signals.
+
+
+---
+
+## Answered and already built — 2026-09-07
+
+**Your answer: option 1** — set the exemption whenever the resolved template is
+fixed-anchor, regardless of where the lot came from. A fixed lot means fixed.
+
+**That is what shipped on 2026-09-03**, in commit `6f353d5`, which is on `main`.
+`_template_lot_is_fixed(is_template, template)` decides the exemption from the
+TEMPLATE rather than as a by-product of which sizing branch ran, so a
+signal-carried lot no longer skips it. `risk_pct > 0` templates are
+deliberately NOT exempt: that path derives the lot from account risk like
+generic sizing, so the multiplier is meant to apply there. 141 lines of tests
+in `tests/trading/test_template_anchor_lot_not_scaled.py`.
+
+**Why this file said otherwise.** The same commit that applied the fix also
+added this file, and the file's text was written before the fix and never
+updated — so it has read "I have not applied either" since the day the fix
+landed. Nobody was wrong; the two halves of one commit disagreed with each
+other. This is the third document in this folder found saying something the
+code stopped doing (see also `docs/todo/security/010` and
+[012](012-should-a-resting-order-use-a-trade-slot.md)).
+
+**Still not verified against a broker.** It changes position sizing on live
+trades. Demo 10.
+
+**The five trades already opened at 0.13 are unaffected** — they are closed or
+running at the size they got. Nothing has been retro-corrected.

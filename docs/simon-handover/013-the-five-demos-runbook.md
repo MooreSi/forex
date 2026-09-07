@@ -7,12 +7,19 @@
 > being announced and counted twice. Every one is written, tested and
 > mutation-tested, and none is finished until you have watched it.
 >
-> Budget about 70 minutes for all nine, not 40. **Demo 8 needs the EA
-> recompiled before the sitting starts** — see its own note.
+> **Corrected 2026-09-07: it was six, not four.** bugs/012 and bugs/023 were
+> also finished and also had no demo, and adding 6-9 without them was an
+> undercount on my part. They are demos 11 and 12. Demo 10 covers the template
+> Anchor Lot, which you answered on 2026-09-07.
+>
+> Budget about 90 minutes for all twelve, not 40. **Demo 8 needs the EA
+> recompiled before the sitting starts** — see its own note. **Demo 10 cannot
+> be forced** — it waits for a real signal on one channel; read it early so you
+> know not to change that channel's multiplier in the meantime.
 
 **For:** Simon, at an MT5 terminal on the **demo** account
-**Time:** about 70 minutes for all nine
-**Status of the code:** all nine fixes are written, tested and mutation-tested.
+**Time:** about 90 minutes for all twelve
+**Status of the code:** all twelve fixes are written, tested and mutation-tested.
 None of them is `done`, and none becomes `done` because a test is green. Each
 needs the run below, on a terminal, with your eyes on it.
 **Last checked against the code: 2026-09-01.** Every log line quoted below was
@@ -462,6 +469,99 @@ visible.
 **Not covered:** ledger rows already corrupted by this before 2026-09-04 are
 not repaired. Any trade this hit had its consolidated outcome overwritten to
 "be", and those stay as they are unless you decide otherwise.
+
+---
+
+## Demo 10 — a fixed Anchor Lot stays fixed (handover/026)
+
+**Answered by you 2026-09-07 (option 1); built 2026-09-03 in `6f353d5`.**
+
+**The failure it prevents:** a template whose Anchor Lot is 0.10 opened at
+0.13, because the channel's 1.3x multiplier was applied on top of a lot the
+template had deliberately fixed. Five trades in seven days at 30% more risk
+than you set (ticket 1925815819 and four others).
+
+**This one is an OBSERVATION, not a five-minute test, and you should know that
+before you plan around it.** The bug only appears on the Telegram Auto route,
+because that route stores a lot on the signal itself. A Market Order from the
+Trading page does not go through it, so there is no way to force this demo —
+you have to let a real signal arrive on the affected channel.
+
+**What you can check right now, before any signal:**
+
+1. Trading > EA Templates: confirm the template bound to Gold Diggers VIP has
+   **Anchor Lot 0.10** and **Risk % 0** (a template with Risk % above 0 is
+   deliberately NOT exempt — that path is risk-derived and the multiplier is
+   meant to apply).
+2. Trading > Strategy > Channel Strategy: confirm
+   `Telegram Auto (Gold Diggers VIP)` still shows a multiplier of **1.3**. If
+   it does not, the demo proves nothing — a multiplier of 1.0 gives 0.10
+   whether the fix works or not, so you need the 1.3 in place to see it.
+
+**Then, on the next signal from that channel:** the trade opens at **0.10**.
+
+**Pass:** 0.10 with the multiplier still at 1.3.
+**Fail:** 0.13 — the exemption did not engage. Stop and say so.
+
+**Do not "fix" this by setting the multiplier to 1.0 before the demo.** That
+was the workaround while the question was open; doing it now removes the only
+condition that makes the demo meaningful.
+
+**The five trades already opened at 0.13 are unaffected.** Nothing has been
+retro-corrected, and nothing will be without you asking.
+
+---
+
+## Demo 11 — the Instant Entry switch turns OFF as well as on (bugs/012)
+
+**The failure it prevents:** the Telegram panel's Immediate Market Entry
+button could switch IME on and never off. A setting you cannot turn off is
+worse than one that does not exist, because you believe you have turned it off.
+
+**Note the shape has changed since this bug.** There is now a per-channel
+Instant Entry switch on the Channels Active card (added 2026-09-05,
+bugs/024), which is a different control from the global one this bug is
+about. Both must be on for a bare direction to execute.
+
+1. Parsing tab: turn **Immediate Market Buy/Sell** on. Confirm it reads on.
+2. Turn it **off**. Reload the page.
+
+**Pass:** it is still off after the reload.
+**Fail:** it comes back on, or the toggle refuses.
+
+3. Repeat on the **per-channel** switch (Telegram tab > Channels Active), which
+   has never been demoed at all because it did not exist until 2026-09-05.
+
+**Zero money risk in this demo** — no order is placed either way. It is here
+because a stuck IME switch is what decides whether later demos mean anything.
+
+---
+
+## Demo 12 — an instant entry uses the template's own stop (bugs/023)
+
+**The failure it prevents:** on a template-managed channel, an instant entry
+placed a generic ATR-clamped provisional stop and told you it was "awaiting
+follow-up" for a follow-up that would never arrive — silently ignoring the
+`sl_pips` / `use_dynamic_atr` the template was configured with. Live on Gold
+Diggers VIP, 2026-09-03: BUY at $4481.21, SL $4469.18 flagged "provisional 12.0
+pts".
+
+**This is the half of your 2026-09-07 answer that already exists.** You said
+levels should default to the EA template's settings; for the instant-entry path
+that is built. Precedence is `use_dynamic_atr` first, then `sl_pips`, then the
+ATR-clamped fallback — the same order `resolution.py` uses everywhere else.
+
+1. Pick a template-managed channel with **Instant Entry on** at both levels
+   (global and per-channel — demo 11 is how you confirm that), and a template
+   with a non-zero **SL pips**.
+2. Let a bare direction arrive, or send one to a test channel you control.
+
+**Pass:** the order's stop sits at the template's configured distance, and the
+Telegram alert names the template instead of promising a follow-up.
+**Fail:** a stop at the generic provisional distance, or the words "awaiting
+follow-up" on a template-managed channel.
+
+**This places a real order.** Demo account, minimum size.
 
 ---
 

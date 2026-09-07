@@ -1,6 +1,9 @@
 # 024 — a database per login would take your EA templates and settings with it
 
-**Decision needed:** yes, before I build it.
+**Status:** **ANSWERED 2026-09-07** — the two arguable tables
+(`channel_performance`, `dpm_trade_performance`) are **SHARED**. The rest of
+the split is as proposed below. NOT STARTED.
+**Decision was needed** before this could be built.
 **Money:** indirectly, and badly. A fresh database means no risk settings, no
 EA templates and no credentials on the new account.
 **Found:** 2026-09-02, investigating item 11 of your list.
@@ -91,3 +94,32 @@ platform. The migration also has to move 22 templates and 1,309 trades out of
 a file the running app holds open.
 
 I would rather show you the plan than reshape your database while you sleep.
+
+
+---
+
+## Answered 2026-09-07 — both arguable tables are SHARED
+
+`channel_performance` and `dpm_trade_performance` both stay **shared across
+accounts**, so your channel judgement survives an account switch rather than
+restarting from zero every time.
+
+**The risk you accepted, stated plainly:** one channel's history will mix
+results from accounts that may trade differently — different risk settings,
+different templates, possibly a different broker. A channel that performs well
+on one account and badly on another will show a blended figure, and the
+scorecard multiplier derived from it applies to both. If you ever run two
+accounts with genuinely different strategies on the same channels, this is the
+decision to revisit first.
+
+`dpm_calibration` was already on the shared list and stays there, which is
+consistent — calibration and the performance it learns from should not be split
+across the boundary from each other.
+
+**Everything else** is as proposed above: per-account for what describes that
+account's trading, shared for configuration and learning.
+
+**Still not built.** The work is the migration, not the decision: moving 22
+templates and 1,309 trades out of a file the running app holds open, without a
+new account ever starting with default risk settings and none of your
+templates. That wants its own spec.

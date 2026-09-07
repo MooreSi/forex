@@ -1,6 +1,10 @@
 # 027 — What should a "BUY" with no numbers actually do?
 
-**Status:** open. One decision needed from you.
+**Status:** **ANSWERED 2026-09-07 — a fourth option, not one of the three
+below.** A bare direction should ENTER where an EA template is bound, using
+the template's levels immediately and correcting them when a second message
+arrives. NOT BUILT — this makes the app trade more often and needs a spec and
+a demo. See *Answered* at the bottom.
 **Money:** potentially yes, depending on which option you pick — one of the
 three below would place trades the app does not place today.
 **Related:** `docs/todo/bugs/015`. The waste and the log noise are fixed; this
@@ -87,3 +91,55 @@ and not a technical one.
 
 Just A, B or C. If C, we also need to know how long a direction should wait for
 its numbers before it is dropped.
+
+
+---
+
+## Answered 2026-09-07 — enter where a template is bound
+
+**Your answer, in your words:** *"on parsing in parsing settings if 'TP/SL in
+Second Message' is selected it uses these otherwise it defaults to the ea
+template settings"* — plus, on the two follow-ups: a bare direction should
+place an order **even when that channel's Instant Entry switch is off**, but
+**only where an EA template is bound**; and when "TP/SL in Second Message" is
+on it should **enter immediately on the template's levels and correct them when
+the second message arrives**, rather than waiting.
+
+That is none of A, B or C above. It is closest to C, but scoped to
+template-bound channels and with the entry-now-correct-later rule attached.
+
+### What is already built
+
+**The levels half exists.** `docs/todo/bugs/023` made the instant-entry path
+use the template's own stop — `use_dynamic_atr`, then `sl_pips`, then the
+ATR-clamped fallback. It is tested and is demo 12 in
+[013](013-the-five-demos-runbook.md). Your "defaults to the ea template
+settings" is that behaviour.
+
+### What is NOT built, and why it needs a spec
+
+**The gate half changes how often the app trades.** Today a bare direction
+executes only when the global Immediate Market Buy/Sell AND the channel's own
+Instant Entry switch are both on. Your answer removes the second of those for
+template-bound channels, so messages that are currently parked and ignored
+would become live market orders. That is a real increase in trading frequency
+and it is a money-path change: spec first, then test-first, then a demo.
+
+Three things the spec has to settle, none of which your answer decides:
+
+1. **What "a template is bound" means when the binding is indirect.** A channel
+   can resolve a strategy through `channel_strategy_rec` rather than a direct
+   selection. Does an AI-recommended template count as bound?
+2. **What happens when the second message never arrives.** The position is
+   already open on template levels. It just runs on them — which is the
+   template's normal behaviour, and probably right, but it should be stated
+   rather than assumed.
+3. **Whether the per-channel Instant Entry switch still means anything.** If a
+   bare direction enters regardless of it on template-bound channels, that
+   switch now only governs non-template channels. The switch was added on
+   2026-09-05 (bugs/024) precisely so you could see and control this per
+   channel, and this answer narrows what it controls. That may be fine, but it
+   should be deliberate.
+
+**Nothing has been changed.** The app still ignores bare directions on channels
+whose Instant Entry is off.

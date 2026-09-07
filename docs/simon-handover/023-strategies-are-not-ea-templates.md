@@ -1,6 +1,10 @@
 # 023 — "convert the strategies into EA templates" is not a like-for-like swap
 
-**Decision needed:** yes, before I can finish item 4 of your 2026-09-02 list.
+**Status:** **ANSWERED 2026-09-07 — option 1.** Every channel you care about
+is already on a `Template: ...` selection, so the built-in strategies can be
+retired and both cards can go. NOT STARTED; see *What option 1 actually
+means* at the bottom before this is built.
+**Decision was needed** before item 4 of your 2026-09-02 list could finish.
 **Money:** yes. It changes where stops and targets are placed, and whether a
 signal enters at market or waits.
 **Found:** 2026-09-02, investigating the request.
@@ -69,3 +73,42 @@ Any of these is a decision I can act on:
 I would not guess between these while you are asleep. Option 1 is very likely
 right, but "very likely" is not the standard for something that moves where a
 stop sits on a live trade.
+
+
+---
+
+## Answered 2026-09-07 — option 1, retire the built-ins
+
+**Your answer:** all channels are on EA templates; retire the built-in Python
+strategies and remove both the selection UI and the Strategy Parameters card.
+
+### What option 1 actually means, before anyone builds it
+
+This is the largest of the three options, not the smallest, and it is worth
+being explicit about that now rather than halfway through.
+
+**It is not a UI deletion.** The built-in strategies are what
+`services/backtest/simulators.py` simulates — eleven hand-written simulators,
+one per strategy. Retiring the strategies without answering what the backtest
+then simulates leaves the Backtest tab measuring things nothing trades. That
+is the same question as `docs/todo/backtest/010` phase 2, which was already
+waiting on this decision, and this answer unblocks it: the backtest has to move
+to EA templates too, which needs `ManageTemplate()`'s 287 lines of per-tick
+management reproduced in Python. **That is the real cost of option 1** and it
+is measured in sessions, not hours.
+
+**Nothing should be deleted before the replacement exists.** Removing the
+strategy selection while the backtest still depends on it takes away a control
+without removing the thing it controls — the same functional-regression
+argument that kept the Strategy Parameters card in the first place.
+
+**A check worth doing before any of it.** "Every channel I care about" is the
+right test, but the code does not only read the channel's own selection:
+`channel_strategy_rec` holds AI recommendations and there are per-signal
+fallbacks. Any channel with no template bound would fall back to a built-in
+that no longer exists. That inventory is the first task, not an afterthought.
+
+**Suggested order:** inventory every channel's resolved strategy → build
+templates for any that still resolve to a built-in → move the backtest →
+retire the strategies and both cards last. No step before the last one changes
+what gets traded.
