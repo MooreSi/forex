@@ -143,3 +143,40 @@ Three things the spec has to settle, none of which your answer decides:
 
 **Nothing has been changed.** The app still ignores bare directions on channels
 whose Instant Entry is off.
+
+
+---
+
+## The two remaining gates, answered 2026-09-07
+
+Asked after the per-channel Instant Entry switch was removed (bugs/024
+reverted), which narrowed the question to the global toggle and the template
+binding.
+
+**When the global "Immediate Market Buy/Sell" is OFF** — your answer: *"if ime
+is off it will wait for the full signal and then execute the trade."* The
+global toggle stays the master off-switch. A bare direction opens nothing; the
+full signal, when it arrives, is parsed and traded through the ordinary path.
+**That is what the app does today, so this half needs no change.**
+
+**When the global toggle is ON and NO template is bound** — your answer: no
+bare-direction entry. **This is a change, and it restricts current behaviour.**
+Today any Telegram channel the app knows about enters on a bare direction when
+the global toggle is on. The justification is sound: a bare direction carries
+no levels, so without a template there is nothing authoritative to place the
+stop from and it falls back to the generic ATR-clamped placeholder — which is
+the thing bugs/023 was raised about.
+
+"Bound" means a template you chose: the Trading Schedule window's pick or the
+Channel Strategy selection. An AI recommendation or the global default does not
+count (your answer, same day).
+
+### What this leaves to build
+
+One change: gate bare-direction entry on a template being bound by one of those
+two routes. It makes the app place FEWER trades than today, never more, which
+is the safe direction — but it is still the order-placement path, so it is
+test-first and it wants a demo.
+
+The entry-now-correct-later rule you gave earlier applies to what happens after
+that gate opens, and the levels half of it already exists (bugs/023).

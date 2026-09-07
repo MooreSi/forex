@@ -1,6 +1,10 @@
 # 014 — a wildcard licence fingerprint that nothing uses
 
-**Decision needed:** keep it or delete it
+**Status:** **ANSWERED 2026-09-07 — delete. It was already deleted on
+2026-09-01**, on your instruction "there should be no master key". This file
+kept asking a question you had already answered and acted on; it is the fourth
+document in this folder found to be behind the code. Nothing to do.
+**Decision was:** keep it or delete it
 **Urgency:** low, but it is a security question, so it should not just sit
 **Money:** no
 
@@ -84,3 +88,30 @@ nothing *uses* the hook, it checks the hook does not exist — and that no
 equivalent has reappeared under another name (`MASTER_FINGERPRINT`,
 `WILDCARD_MACHINE`, or the old names). A different name for the same idea is
 the same problem.
+
+
+---
+
+## Answered 2026-09-07 — and already done six days earlier
+
+**Your answer: delete.** It was removed on 2026-09-01, on your instruction
+*"there should be no master key"*, and `fingerprint.py`'s module docstring now
+records the removal and why:
+
+> There is no wildcard or master fingerprint, by design. A constant named
+> `TEST_WILDCARD` and an `is_test_wildcard()` predicate lived here until
+> 2026-09-01, documented as bypassing all hardware checks. Nothing consulted
+> either of them, so no bypass ever existed -- but a ready-made hook for one,
+> described as supported, is an invitation to restore behaviour that was never
+> here.
+
+A grep of the whole tree on 2026-09-07 found no occurrence of either name
+outside that docstring. KeyGen stays in its own folder and needs no counterpart
+in the app.
+
+**Why this file was still asking.** The removal was recorded in the code and
+not here. Fourth instance of the same pattern in this folder, after
+`docs/todo/security/010`, [012](012-should-a-resting-order-use-a-trade-slot.md)
+and [026](026-template-anchor-lot-is-being-scaled.md). The common cause is that
+a change updates the code and the file nearest the change, and the decision
+file that prompted it is one hop further away.

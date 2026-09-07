@@ -1,6 +1,11 @@
 # 020 — Out of Hours still runs on UTC, unlike your schedule
 
-**Decision needed:** yes, but small — and it may well be "leave it".
+**Status:** **ANSWERED 2026-09-07 — neither option offered.** You said: *"move
+it to the local time of the computer so it remains consistent, there could be
+users of the app in other countries."* NOT BUILT — local machine time has a
+problem on a two-machine install, see *Answered* at the bottom. One follow-up
+needed.
+**Decision was needed:** yes, but small.
 **Money:** indirectly. It decides which strategy manages a trade, not whether
 one is taken.
 **Urgency:** low. Nothing is broken; this is a consistency question.
@@ -198,3 +203,41 @@ Still UTC, and now the odd one out. Once the trading clock has a UI control the
 sensible thing is to move OOH onto it as well — but that is a real change to
 when a different strategy takes over, so it waits for your word rather than
 riding along with this.
+
+
+---
+
+## Answered 2026-09-07 — local time, with one problem to settle first
+
+**Your answer:** move Out of Hours off UTC to the computer's own local time, so
+it stays consistent for you and works for users in other countries.
+
+**The reasoning is right and the mechanism has a catch.** Not hardcoding
+`Europe/London` is correct — this app is being prepared to hand over, and a UK
+constant is a UK assumption. But "the computer's local time" is not one answer
+on this install, because there are two computers.
+
+You run a Mac (or Windows box) and a VPS at `217.155.25.160`. A VPS is
+conventionally UTC. If Out of Hours reads each machine's own local clock, then
+for the four months a year when the UK is on BST:
+
+- your machine enters Out of Hours at 22:00 your time;
+- the VPS enters it at 22:00 UTC, which is 23:00 yours.
+
+For that hour the two nodes disagree about which strategy manages a trade. That
+is exactly the inconsistency you asked to remove, arriving by a different route
+— and it would be invisible, because each machine would look correct on its own.
+
+Note this is why the Trading Schedule was given an explicit `Europe/London`
+rather than local time on 2026-09-01 (see
+[017](017-which-clock-is-your-trading-schedule-in.md)): one named zone, the same
+answer on both machines.
+
+**What is proposed instead, and what needs your word:** a configurable
+timezone setting, defaulting to the machine's local zone on a fresh install.
+A user in another country sets theirs once; your two machines are set to the
+same value and agree all year. That satisfies both halves of your answer
+without the per-node split.
+
+**Not built.** Out of Hours decides which strategy manages a trade, so it wants
+a test first and a look at the result.
