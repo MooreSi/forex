@@ -300,7 +300,23 @@ outcome, and it is the same shape as the switch removed earlier today
 (`docs/todo/bugs/024`), inverted: that one was reachable and controlled
 nothing, this one controls something and is unreachable.
 
-**Recommended next: put the whole Out of Hours block on the Settings page** —
-enable, window, strategy, timezone, holiday range — as one card. Until then,
-tell me the zone you want and I will set it, but that is a workaround, not the
-fix.
+**Built the same day.** The whole Out of Hours block is now a card —
+`frontend/pages/settings/_out_of_hours.py`, rendered beside the other risk
+sub-cards on **Trading > Strategy**, where the rest of the risk settings
+already live.
+
+On it: the enable switch, the start/end window, the timezone, the strategy
+that takes over, and the holiday date range behind an expander. The timezone
+offers the common zones and accepts anything else typed in; blank means UTC.
+Its help text says the thing that matters — set the SAME value on every
+machine you run, because two machines on different zones will disagree about
+when the window opens.
+
+Seven tests, six mutants killed. The tests deliberately check both directions:
+that every field `get_effective_strategy` reads has a control, AND that every
+key the card writes is one the resolver actually reads. The second exists
+because of `docs/todo/bugs/024` earlier the same day — a control that wrote a
+key nothing consulted, which looked like it worked.
+
+**So there is nothing left to do by hand.** Open Trading > Strategy, set your
+zone, press Save.
