@@ -2,9 +2,10 @@
 
 **Status:** **ANSWERED 2026-09-07 — neither option offered.** You said: *"move
 it to the local time of the computer so it remains consistent, there could be
-users of the app in other countries."* NOT BUILT — local machine time has a
-problem on a two-machine install, see *Answered* at the bottom. One follow-up
-needed.
+users of the app in other countries."* **BUILT 2026-09-07** as a configurable named zone (your follow-up answer),
+defaulting to UTC so nothing changes until you set it. Not yet reachable from
+the UI — see *Built* at the bottom, which also flags something worse that
+turned up while building it.
 **Decision was needed:** yes, but small.
 **Money:** indirectly. It decides which strategy manages a trade, not whether
 one is taken.
@@ -241,3 +242,65 @@ without the per-node split.
 
 **Not built.** Out of Hours decides which strategy manages a trade, so it wants
 a test first and a look at the result.
+
+
+---
+
+## Built, 2026-09-07 — and something worse found next door
+
+**What ships.** `vantage_risk_settings.ooh_timezone`, an IANA zone name
+(`Europe/London`, `Asia/Tokyo`). Out of Hours reads its window — and its
+holiday date range — in that zone instead of UTC. Migration 34.
+
+**The default is UTC, which is not what you asked for, and here is why.** You
+asked for the machine's local time. Two reasons it is stored as a name and
+defaults to UTC instead:
+
+1. **An upgrade must not retune anyone.** `rules/60-adding-a-tunable` requires a
+   new setting's default to be byte-identical to the behaviour it replaces.
+   Defaulting to the machine's zone would move every existing install's Out of
+   Hours by an hour the moment it updated, with nobody having touched a dial.
+2. **A local-clock default would create the exact split you asked to remove.**
+   Your box and the VPS would each default to their OWN zone, so a fresh
+   install of the pair starts out disagreeing. A stored name is the only way
+   both machines can be made to agree.
+
+So: **set it once, to the same value on both machines, and Out of Hours will
+mean the same thing on both all year.** Until you do, it behaves exactly as it
+does today.
+
+Anything unusable — blank, misspelt, not a zone — falls back to UTC and logs a
+warning rather than raising. `get_effective_strategy` runs inside
+`monitor_cycle`, where an exception is not a wrong answer, it is trade
+management stopping.
+
+**Proof:** 17 tests in `tests/core/test_ooh_timezone.py`, the three that matter
+watched failing first. Five mutants, all killed — **two survived the first
+attempt** and the tests were strengthened rather than the result accepted. One
+of those is worth knowing about: `get_effective_strategy` wraps its whole body
+in try/except and returns the base strategy on any error, which is identical to
+what a correct UTC fallback returns — so a version that CRASHED on a bad zone
+passed the bad-input tests. The outer handler was answering for the code under
+test. Those assertions now go at the helper directly.
+
+### The thing worth more than this change
+
+**Out of Hours has no user interface at all.** `ooh_enabled`,
+`ooh_start_time`, `ooh_end_time`, `ooh_strategy` and the holiday date range are
+readable and writable only by editing the database directly. The only thing on
+screen is a status label on Active Trades telling you whether OOH is currently
+active.
+
+It is live — `monitor_cycle.py:206` uses it to choose which strategy manages a
+trade — so this is a feature that changes how your money is managed, configured
+by nothing you can reach.
+
+`ooh_timezone` joins that. Adding one more unreachable setting is not a good
+outcome, and it is the same shape as the switch removed earlier today
+(`docs/todo/bugs/024`), inverted: that one was reachable and controlled
+nothing, this one controls something and is unreachable.
+
+**Recommended next: put the whole Out of Hours block on the Settings page** —
+enable, window, strategy, timezone, holiday range — as one card. Until then,
+tell me the zone you want and I will set it, but that is a workaround, not the
+fix.
