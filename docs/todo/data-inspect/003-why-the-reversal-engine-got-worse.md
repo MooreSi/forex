@@ -396,3 +396,11 @@ rule.
 | 7 | revisit the ML | after 2-4 change what it learns from |
 
 **Steps 4 and 5 are the next two, and 5 touches nothing that trades.**
+
+
+---
+
+**Tracked from here:** the open items moved to
+[docs/todo/reversal-engine/](../reversal-engine/README.md) on 2026-09-08 so
+they live somewhere a person would look for work rather than at the end of an
+investigation. This file stays as the evidence they rest on.
