@@ -25,5 +25,36 @@ current win rate returns +0.12R a trade.
 | [060](060-revisit-the-ml.md) | revisit the ML gate | after 020-040 |
 | [070](070-share-training-data-with-the-fleet.md) | ship the fleet's learning to every client | **designed, needs one decision** |
 
-**040 is the next one to build.** 020 and 030 cannot honestly be decided until
-the excursion recording landed on 2026-09-08 has run for a fortnight.
+## Picking this up again
+
+**Start with [040](040-filter-the-instant-fills.md).** It is the only item
+whose evidence is already sufficient, it is worth about $1,850 on the measured
+sample, and it makes the app trade less rather than more.
+
+**020 and 030 unblock around 2026-09-22.** They need the excursion data, which
+started being collected when the app was restarted at **09:05 on 2026-09-08**
+— before that restart the live path had never recorded how far a trade
+travelled. Check the coverage before relying on it:
+
+```sql
+SELECT COUNT(*), SUM(mfe_pts IS NOT NULL)
+FROM re_signals WHERE close_time > strftime('%s','2026-09-08') AND live_exec_status='executed';
+```
+
+**[010](010-repair-the-fabricated-losses.md) and [070](070-share-training-data-with-the-fleet.md)
+are waiting on the owner**, not on work. 010 asks how to repair thirty trades
+the broker has no closing deal for; 070 asks how much a client should trust
+other clients' data, and both are in `docs/simon-handover/` too
+([028](../../simon-handover/028-sharing-the-engines-learning-with-every-client.md)).
+
+## What was done on 2026-09-08
+
+| commit | |
+|---|---|
+| `9b5fbd5` | live excursion recording — the live path had never measured itself |
+| `95e2639` | model handover on a version bump, and the ML gate no longer fails open |
+| `041c6a7` | these items |
+| `4e10467` | the fleet-sharing design |
+
+The app was restarted at 09:05 to pick up the first two. Nothing else about
+its trading behaviour changed.

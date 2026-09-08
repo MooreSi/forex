@@ -139,5 +139,7 @@ in the room.
 - [020-out-of-hours-still-runs-on-utc.md](020-out-of-hours-still-runs-on-utc.md) — a small consistency question: your Trading Schedule now follows UK time, Out of Hours still follows UTC. May well be right as it is
 - [027-what-should-a-direction-only-message-do.md](027-what-should-a-direction-only-message-do.md) — a "BUY" with no numbers: ignore it, show it, or hold it open? A/B/C with a recommendation. The noise and the wasted work are already fixed; this is only what you want to SEE
 
+- [028-sharing-the-engines-learning-with-every-client.md](028-sharing-the-engines-learning-with-every-client.md) — should every client learn from every other client? Two decisions, neither urgent, and a recommendation to wait until the engine is worth copying
+
 > This list is behind: 021 to 026 exist in the folder and are not on it. Open
 > the folder itself for the full set until it is caught up.
