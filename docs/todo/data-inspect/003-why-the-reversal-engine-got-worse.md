@@ -171,3 +171,150 @@ This matters beyond the ledger, because a negative balance is an input:
 
 **Nothing in this file has been changed or repaired.** It is a read-only
 investigation.
+
+---
+
+# Part 2 — How to fix it (2026-09-08)
+
+The owner's stated purpose: *enter at the right time; re-evaluate resting
+orders before they fill; win more than we lose; let the EA template take the
+profit.* Each is tested against his data below. **One of the four is already
+true, one is the opposite of what the data says, and the two that matter are
+not on the list.**
+
+## First, a correction: the ML was not lost with the account change
+
+It was lost on **Saturday 2026-09-05**, by the `re_ml_v9` version bump, which
+discards the fitted models by design. `re_ml_meta.pkl`'s history begins
+2026-09-07 09:27. The demo account had nothing to do with it: the engine's data
+lives in `reversal_engine.db`, which is not split per account, and the new
+account's database holds zero trades.
+
+**And the owner is right that this should not happen.** `ml_engine.py` discards
+on every bump v3->v9 because a changed feature width or label makes old fitted
+models invalid. That reasoning is sound and the consequence is not: it means
+every improvement to the model costs the fleet its entire learned state on a
+Saturday, with the first live trading day run by a model trained that morning.
+
+**Fix — model handover instead of model deletion.** On a version bump, keep
+serving the OLD model while the new one trains in shadow on the back-filled
+history, and cut over only when the new model has (a) at least as many labelled
+rows as the old had, and (b) a rolling out-of-sample score no worse. Version
+bumps stop being a cliff. This is the single most valuable engineering change
+on the list and it touches no trading logic.
+
+## "Win more trades than we lose" — already true, and the trap
+
+| | n | share | avg $ | avg pts | avg R |
+|---|---|---|---|---|---|
+| wins | 442 | **59.4%** | +$35.46 | +3.50 | **+0.642** |
+| losses | 302 | 40.6% | -$61.18 | -6.28 | **-1.161** |
+
+He already wins three trades in five. Expectancy is still **-$3.78 a trade**,
+because a win returns 0.64R and a loss costs 1.16R.
+
+**At this payoff the break-even win rate is 64.4%.** Chasing win rate is the
+trap: the usual way to raise it is a nearer take-profit, which lowers the
+payoff and moves break-even further away. **Do not optimise for win rate.**
+
+Two numbers say where the money actually goes:
+
+- **Losses average -1.161R when the stop is 1.0R by definition.** Mean loss is
+  6.28 pts against a mean `sl_dist` of 5.75. That extra 0.53 pts per loss, over
+  302 losses, is ~160 points of pure leakage — stops slipping or gapping.
+  `ml_engine.py` already recorded a worst case of -5.75R.
+- **Wins average +0.642R.** They are being closed at two-thirds of the risk
+  taken.
+
+**Hold losses to exactly 1.0R and nothing else changes: break-even win rate
+falls to 60.9%, against 59.4% actual — nearly there. Take wins to 1.0R as well
+and the same 59.4% returns +0.12R per trade, which is a profitable system.**
+This is the whole game, and neither half is an ML problem.
+
+## "Let the EA template take the profit" — it is not getting the chance
+
+| max TP hit | n | share | avg net |
+|---|---|---|---|
+| none | 618 | **83%** | -$7.54 |
+| TP1 | 72 | 10% | +$9.73 |
+| TP4 | 54 | 7% | +$31.34 |
+
+**83% of executed trades never reach TP1 at all**, yet 59% of them close
+positive — so most wins are being taken by something other than the ladder
+(trail, breakeven, or a close) at 0.64R. The template's profit-taking is being
+pre-empted. Worth establishing WHICH mechanism closes those 442 wins before
+changing anything: if it is a breakeven-or-trail rule firing too early, that is
+one setting, and it is the highest-value single number in the system.
+
+## "Enter at the right time" — the data names the culprit, and it is the opposite of the guess
+
+Time from signal creation to fill, executed and closed:
+
+| wait to fill | n | win % | total |
+|---|---|---|---|
+| **under 5 min** | **432** | 58.1 | **-$2,023** |
+| 5-15 min | 114 | **71.1** | **+$988** |
+| 15-30 min | 75 | 57.3 | -$1,009 |
+| 30-60 min | 59 | 62.7 | +$64 |
+| over 60 min | 54 | 55.6 | -$214 |
+
+**The trades that fill fastest lose the most.** A fill inside five minutes
+means price was already at or through the zone when the signal was made — the
+level never held, and the engine is buying into a level that is already
+failing. The 5-15 minute bucket, where price left and came back, wins 71% and
+is the only sizeable profitable group.
+
+**Counterfactual on his own rows: excluding only the sub-5-minute fills takes
+744 executed trades to 302, and the total from -$2,193 to -$170** — from a
+clear loss to roughly flat, before any other change.
+
+This is also the strongest evidence that the concern about stale resting orders
+is aimed the wrong way: the long waits are not the problem, the instant ones
+are.
+
+## "Re-evaluate resting orders before they fill" — worth doing, second in line
+
+The data does not show staleness costing much (>60 min is -$214 over 54
+trades), so this is a smaller prize than the entry-timing filter. It is still
+correct in principle and it is what `docs/simon-handover/009` already settled
+in spirit. Build it AFTER the two above, and make the re-check the same test
+the entry filter uses, so there is one definition of "is this level still
+valid" rather than two that can disagree.
+
+## One more thing the data says: level_score is not informative
+
+| level_score | n | win % | total |
+|---|---|---|---|
+| 0.6 | 232 | 56.9 | -$581 |
+| 0.7 | 42 | 66.7 | -$7 |
+| 0.9 | 400 | 60.5 | **-$1,378** |
+
+The highest-scored band is the biggest loser. Together with `ml_prob` having
+been anti-predictive pre-v9, **two of the engine's own confidence measures do
+not rank outcomes.** Any ranking work should be validated against realised R
+before it is trusted, not assumed from the score's name.
+
+## The order of work
+
+1. **Repair the corrupt balance** (Part 1, section 4). Thirty $0.00 closes,
+   -$1,374.65 fabricated, feeding an ML feature, the position sizer and the
+   halt guard. Nothing below can be measured honestly until this is done.
+2. **Stop losses exceeding 1.0R.** Find why mean loss is 6.28 pts against a
+   5.75 pt stop — slippage, gapping, or a stop not where it is believed to be.
+   Biggest single arithmetic gain available.
+3. **Find what closes the 442 wins at 0.64R** and let the template's ladder
+   have them. Combined with (2), this alone turns the current 59.4% win rate
+   profitable.
+4. **Filter the sub-5-minute fills** — require the level to be left and
+   re-approached rather than already breached. Worth ~$1,850 on the measured
+   sample.
+5. **Model handover instead of deletion** on version bumps, so this never again
+   costs the learned state.
+6. **Re-validate resting orders** using the same rule as (4).
+7. **Then** revisit the ML. It is currently the most honest component in the
+   system: it is blocking trades because it correctly learned they lose money.
+   Steps 2-4 change what it is learning from, and it should be re-judged after
+   them, not before.
+
+**None of steps 2, 3, 4 or 6 is an ML change.** Three are trade management and
+one is an entry filter. The ML is not what is broken.
