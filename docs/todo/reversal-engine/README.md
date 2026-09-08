@@ -23,6 +23,7 @@ current win rate returns +0.12R a trade.
 | [040](040-filter-the-instant-fills.md) | sub-5-minute fills lose $2,023 | **ready to build** |
 | [050](050-revalidate-resting-orders.md) | re-check a resting order before it fills | after 040 |
 | [060](060-revisit-the-ml.md) | revisit the ML gate | after 020-040 |
+| [070](070-share-training-data-with-the-fleet.md) | ship the fleet's learning to every client | **designed, needs one decision** |
 
 **040 is the next one to build.** 020 and 030 cannot honestly be decided until
 the excursion recording landed on 2026-09-08 has run for a fortnight.
