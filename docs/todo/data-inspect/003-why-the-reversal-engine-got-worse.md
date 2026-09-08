@@ -318,3 +318,81 @@ before it is trusted, not assumed from the score's name.
 
 **None of steps 2, 3, 4 or 6 is an ML change.** Three are trade management and
 one is an entry filter. The ML is not what is broken.
+
+---
+
+# Part 3 — Execution log (2026-09-08)
+
+Owner: *"fix it all"*. Steps 2, 3, 4 and 6 change order placement or exits, so
+each is built test-first and none is live until demoed. This section records
+what is done, what is blocked and why, in the order the work actually has to
+happen.
+
+## Step 0 (unplanned, and it gates 2 and 3) — the measurement was never taken
+
+**DONE 2026-09-08.**
+
+Before writing any exit change it was worth checking what evidence existed for
+it. There is almost none. `mfe_pts`/`mae_pts` — how far a signal ran each way —
+are recorded by `record_excursion`, which is called from exactly one place:
+`_manage_triggered_signal`. That function's own docstring says live-executed
+signals "are routed to `_reconcile_live_signal` instead, **never here**".
+
+Measured on the owner's rows:
+
+| | |
+|---|---|
+| executed signals | 745 |
+| carrying an MFE | **52** |
+| carrying an MFE, September | **0** |
+| usable for a breakeven decision | **35** |
+
+So the live path has never measured itself. `_manage_ref_ladder_signal`'s own
+comment states the consequence: *"without it, any change to stop width or
+target distance is a guess"*.
+
+**Changing an exit rule on 35 samples would have been that guess.** Fixed
+first: `_record_live_excursion` now widens both watermarks on every cycle a
+live signal is still open, measured from `trigger_price` (the realistic fill)
+exactly as the virtual path does. Seven tests, five mutants killed. It records
+only — no stop moves, nothing closes, and it is wrapped so a measurement can
+never cost a live trade its management.
+
+**Consequence for the plan: steps 2 and 3 need roughly two weeks of live
+running to gather the evidence they should be decided on.** That is not a
+delay that can be engineered away; it is the cost of the instrument having been
+absent.
+
+## What the existing evidence does and does not support
+
+The strongest signal available today is the breakeven split, on 441 wins:
+
+| | n | avg R | avg $ |
+|---|---|---|---|
+| won, stop never moved to BE | 315 | **+0.767** | +$42.15 |
+| won, stop moved to BE | 126 | **+0.333** | +$18.99 |
+
+Suggestive, and **not sufficient**. Trades that reach breakeven are a selected
+population — they went far enough into profit to trigger it — so some of that
+126 would have been losses without it. The naive reading ("BE costs $23 a
+trade, therefore $2,918") is wrong for exactly that reason, and the honest
+number needs the MFE data step 0 has only just started collecting.
+
+The 35 samples that do have MFE hint the same way (MFE 1.039R, realised
+0.464R, 0.575R left on the table) and 35 is not enough to move a live stop
+rule.
+
+## Status of each step
+
+| # | step | state |
+|---|---|---|
+| 0 | live excursion recording | **DONE**, tests + mutants |
+| 1 | repair the corrupt balance | **BLOCKED on the owner** — it is his ledger, 30 rows |
+| 2 | stop losses exceeding 1.0R | **BLOCKED on step 0's data** (~2 weeks) |
+| 3 | stop cutting wins at 0.64R | **BLOCKED on step 0's data** (~2 weeks) |
+| 4 | filter sub-5-minute fills | ready to build — the evidence is already sufficient (432 trades, -$2,023) |
+| 5 | model handover, not deletion | ready to build — no trading logic |
+| 6 | re-validate resting orders | after 4, sharing its rule |
+| 7 | revisit the ML | after 2-4 change what it learns from |
+
+**Steps 4 and 5 are the next two, and 5 touches nothing that trades.**
