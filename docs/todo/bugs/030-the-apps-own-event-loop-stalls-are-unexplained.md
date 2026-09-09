@@ -1,6 +1,7 @@
 # 030 — The app's own event loop stalls, and nobody has looked since July
 
-**Status:** open, not yet investigated. Recorded 2026-09-05 so it stops being
+**Status:** open. **Both causes now identified 2026-09-09** — one fixed, one
+needs an owner decision. See "What they actually are" at the end. Recorded 2026-09-05 so it stops being
 an aside in a handoff file.
 **Found:** measured as a side effect of
 [bugs/013](013-ea-stalls-leave-template-trades-unmanaged.md), which ruled it
@@ -127,3 +128,78 @@ Do not treat a quieter log as progress. The warning threshold and the
 slow-callback threshold are the same 400 ms by design; moving either one hides
 the fault rather than fixing it, and this bug exists precisely because the
 condition was labelled "known" and then left alone for two months.
+
+
+---
+
+# What they actually are (2026-09-09)
+
+Measured across three app runs on the same day, either side of the
+[035](035-a-declined-sl-adjustment-looped-forever.md) fix:
+
+| window | duration | stalls | rate | worst | median |
+|---|---|---|---|---|---|
+| 14:38 - 15:58 (before 035) | 80 min | 207 | **2.59/min** | 5,099 ms | 468 ms |
+| 16:33 - 18:24 (after 035) | 111 min | 53 | **0.48/min** | 4,971 ms | 480 ms |
+| 18:24 - 18:50 | 25 min | 8 | **0.32/min** | 4,959 ms | 698 ms |
+
+**There are two separate problems, and the numbers separate them cleanly.** The
+rate fell more than fivefold while the worst case did not move at all.
+
+## Cause 1 — the high-frequency stalls. FIXED.
+
+The declined-SL-adjustment loop in [035](035-a-declined-sl-adjustment-looped-forever.md):
+a message re-parsed and re-logged once a second, indefinitely, 4,099 times in
+71 minutes. Fixing it took the stall rate from 2.59/min to 0.48/min. That was
+not why 035 was fixed, and the size of the effect was a surprise.
+
+## Cause 2 — the ~5 second stalls. IDENTIFIED, NOT FIXED.
+
+**The ML model fit runs synchronously on the asyncio event loop.** Caught with
+the lines either side of it:
+
+```
+18:32:55,573 [ProModel] fitted n=7769 (pos=1533 neg=6236) AUC=0.820 -> ok
+18:32:55,593 [RE-Engine] SIGNAL RE-9CF74A BUY congestion level=4410.14
+18:32:55,594 WARNING asyncio — Executing <Task pending name='Task-687'
+                                coro=<ReversalEngine._cycle_loop() ...
+18:32:55,596 [LoopMonitor] event loop stalled 4959ms (expected 250ms)
+```
+
+Fitting 7,769 rows takes about five seconds, and for those five seconds
+**nothing else in the app runs** — not the UI, not the EA socket reader, not
+the monitor loop that manages open trades.
+
+Two synchronous entry points, both on hot paths, in `pro_model.py`:
+
+* `pro_likeness()` — calls `fit()` when the model is not ready, and is called
+  on the **scoring path** for each candidate;
+* `on_new_signal()` — calls `fit()` after every captured reference signal, by
+  design ("one incremental refit per signal is the whole point of the toggle").
+
+### Why this is not just a latency complaint
+
+The EA reconnects when Python goes quiet. From the 15:19 log:
+
+```
+15:19:52 [EA] trade=e44091e4 ticket=1970453033 EA unhealthy -- template
+         strategies have no Python fallback, leaving unmanaged until the EA
+         reconnects rather than reclaiming
+15:19:55 [EABridge] no data from Python in 10s — reconnecting on port 9111
+```
+
+A five-second blackout is half that budget, and it lands on a path where a
+template-managed trade is explicitly left **unmanaged** while the EA is
+considered unhealthy.
+
+### The fix, and why it is not applied here
+
+Move the fit off the loop — `asyncio.to_thread` for `on_new_signal`, and have
+`pro_likeness` return `NEUTRAL` while scheduling a background fit rather than
+blocking on one.
+
+**That second half changes trading behaviour** and is the owner's call:
+signals arriving before the first fit completes would score `NEUTRAL` instead
+of waiting for a model. It is arguably better than a five-second freeze, and it
+is what already happens whenever scoring raises — but it is a change to what
+the ML gate sees, so it is not being made unilaterally.
