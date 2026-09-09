@@ -203,3 +203,59 @@ signals arriving before the first fit completes would score `NEUTRAL` instead
 of waiting for a model. It is arguably better than a five-second freeze, and it
 is what already happens whenever scoring raises — but it is a change to what
 the ML gate sees, so it is not being made unilaterally.
+
+
+---
+
+# Two more measurements (2026-09-09, same session)
+
+## No other rescan loops remain
+
+The [035](035-a-declined-sl-adjustment-looped-forever.md) and
+[015](015-bare-direction-message-is-rescanned-forever.md) defects were the same
+shape: something not marked as handled, re-processed every cycle. The obvious
+question is whether there are others.
+
+Normalising every log line (timestamps and numbers stripped) over a 58-minute
+run: **no message repeats more than 20 times.** Those two were the only ones.
+Worth re-running after any change to the scan path; it takes seconds and it is
+how both were found.
+
+## Bridge polling volume — 327 calls a minute with nothing open
+
+Same 58-minute window, **zero open positions** for most of it:
+
+| endpoint | rate |
+|---|---|
+| `/positions` | 91.5/min |
+| `/candles/XAUUSD` (four series) | 59.3/min |
+| `/tick/XAUUSD` | 56.2/min |
+| `/account` | 47.6/min |
+| `/history` | 32.0/min |
+| `/health` | 31.9/min |
+
+That is **5.5 HTTP round trips per second**, every one of them crossing into
+the Wine-hosted MT5 bridge. The history calls are the striking ones:
+
+| query | rate |
+|---|---|
+| `/history?days=90` | 16.8/min — every 3.6 seconds |
+| `/history?days=365` | 4.3/min — a full year of deal history, four times a minute |
+| `/history?days=43`, `days=7` | 4.3/min each |
+
+## How the stalls break down against that
+
+Eleven stalls in the window: ten between 424 ms and 1,083 ms, and the single
+4,959 ms ML fit. The sub-second ones cluster at startup and are preceded by a
+mix of `/candles`, `/positions`, `/history` and `/account` — no single culprit,
+which is consistent with the loop simply being busy rather than one call
+blocking.
+
+**So the ranking is:** the 035 loop (fixed, five-sixths of the rate), the ML
+fit (identified, all of the worst case), and general polling volume
+(measured, not yet a proven cause of anything).
+
+**The polling is NOT being changed here.** Lowering a poll interval changes how
+quickly the app notices a fill or a close, which is money behaviour and the
+owner's call. It is recorded because 4 requests a minute for a year of deal
+history, with nothing open, is unlikely to be deliberate.
