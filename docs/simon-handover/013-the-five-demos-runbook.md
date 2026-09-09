@@ -601,6 +601,22 @@ follow-up" on a template-managed channel.
 
 ## Demo 13 — the trend gate refuses a trade against the bias (reversal-engine/010)
 
+> **PASSED 2026-09-09, driven by an agent on the demo account.** Six
+> counter-bias signals refused between 16:41 and 18:06, all SELLs against a
+> bullish H4:
+> ```
+> [RE-Engine] bias gate blocked live exec RE-2A2BA7 -- htf now bullish vs direction=SELL
+> ```
+> This is the 2026-09-08 failure inverted: that day the system bought a falling
+> market 46 times; here it refuses to sell a rising one.
+>
+> **Look for the RE-Engine wording, not the governor's.** Searching the log for
+> "Higher-timeframe bias" returns nothing — the Reversal Engine logs its own
+> line — and that nearly produced the conclusion that the gate was not running.
+> The line also used to print `level_score=0.95 < 0.75`, which is false, because
+> it credited the level-score bypass with a refusal the owner's gate had made.
+> Fixed in bugs/038; it now names the rule that refused.
+
 **The failure it prevents:** on 2026-09-08 gold fell from 4438 to 4391, the
 system bought it 46 times, and the day lost $1,270.89. Measured over every
 executed Reversal Engine signal on record, trades **with** the higher-timeframe
