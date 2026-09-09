@@ -20,7 +20,7 @@ current win rate returns +0.12R a trade.
 | [010](010-repair-the-fabricated-losses.md) | repair 30 fabricated $0.00 closes | **needs the owner** |
 | [020](020-losses-exceed-the-stop.md) | losses average -1.161R against a 1.0R stop | blocked ~2 weeks on data |
 | [030](030-wins-are-cut-at-two-thirds-of-a-r.md) | wins closed at 0.642R | blocked ~2 weeks on data |
-| [040](040-filter-the-instant-fills.md) | sub-5-minute fills lose $2,023 | **ready to build** |
+| [040](040-filter-the-instant-fills.md) | sub-5-minute fills lose $2,142 | **BUILT**, off by default, not demoed |
 | [050](050-revalidate-resting-orders.md) | re-check a resting order before it fills | after 040 |
 | [060](060-revisit-the-ml.md) | revisit the ML gate | after 020-040 |
 | [070](070-share-training-data-with-the-fleet.md) | ship the fleet's learning to every client | **designed, needs one decision** |
@@ -32,8 +32,8 @@ current win rate returns +0.12R a trade.
 **080 and 090 are built and live** (owner turned the gate on 2026-09-09), and
 all four order routes now consult one rule. Neither has been demoed.
 
-**Start with [040](040-filter-the-instant-fills.md)** — the sub-5-minute
-fills. It is the only item
+**Start with [050](050-revalidate-resting-orders.md)**, which should reuse
+040's `governor.fill_too_soon` rather than grow its own copy. It is the only item
 whose evidence is already sufficient, it is worth about $1,850 on the measured
 sample, and it makes the app trade less rather than more.
 
