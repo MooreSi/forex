@@ -1,9 +1,9 @@
 # 013 — The EA stalls, and template trades have no fallback while it does
 
-**Status:** observed on the demo account 2026-08-28. **Steps 1 and 2 answered
-2026-09-01 from 30 days of rotated logs — step 1's earlier conclusion is
-SUPERSEDED. Option B built the same day; awaiting an EA recompile and a
-week's data before the remaining decision.**
+**Status:** observed on the demo account 2026-08-28. Steps 1 and 2 answered
+2026-09-01. Option B built the same day. **2026-09-09: the EA recompile this
+was waiting on HAPPENED (v1.06, 14:43:48), and a CAUSE was found — see "A
+mechanism, caught on the clock" at the end. The week's data starts now.**
 **Found:** during the M1 harvest demo (docs/simon-handover/session-agenda.md, Part B2)
 **Touches money:** yes — an unmanaged live position
 **Severity:** intermittent, silent, and the app already knows it is happening
@@ -331,3 +331,50 @@ The remaining decision follows from what they say:
 
 Nothing on an order path changed. This is a diagnostic, and it exists so the
 next decision is made on evidence rather than on the silence that started it.
+
+
+---
+
+# A mechanism, caught on the clock (2026-09-09)
+
+This file has said since 2026-08-28 that the EA stalls and nobody knows why.
+Here is one, with both sides of the conversation timestamped:
+
+```
+15:19:45  (inferred) the ML refit begins
+15:19:50.923  [ProModel] fitted n=7736 (pos=1532 neg=6204) AUC=0.815 -> ok
+15:19:51.873  [LoopMonitor] event loop stalled 422ms
+15:19:52.142  [EA] trade=e44091e4 ticket=1970453033 EA unhealthy --
+              template strategies have no Python fallback, leaving unmanaged
+15:19:55.206  (EA log) no data from Python in 10s — reconnecting on port 9111
+15:19:55.389  [EABridge] pushed 2 open position(s) back to the EA after reconnect
+```
+
+**It was not the EA stalling. It was Python.** `fit()` trained five
+RandomForests of 300 trees on the event loop, so nothing answered the EA's
+socket for about five seconds. The EA's own ten-second silence timer expired
+and it reconnected; the app, seeing the same silence from its side, declared
+the EA unhealthy — and a template-managed position was left **unmanaged** for
+that window, which is exactly the money exposure this file was opened about.
+
+The same day's other multi-second stall lines up with a fit too: the 5,099 ms
+stall at 14:39:38 is the 14:39:38 fit.
+
+**Both sides blamed the other.** The app logged "EA unhealthy"; the EA logged
+"no data from Python". Neither was wrong, and neither named the cause.
+
+## What follows
+
+[030](030-the-apps-own-event-loop-stalls-are-unexplained.md) fixed this the
+same day: the fit now runs off the loop, and a real refit at 19:40:49 produced
+no stall at all. The worst stall fell from 4,959 ms to 1,033 ms.
+
+**So the expected effect on THIS file is that EA-unhealthy episodes become
+rarer or stop.** That is a prediction, not a result — it needs the week of data
+this file was already waiting for. Count `EA unhealthy` and
+`no data from Python` occurrences over the coming week and compare against the
+rotated logs from before 2026-09-09.
+
+**It does not make Option B unnecessary.** A five-second freeze was one cause
+of the silence; a genuinely stalled or detached EA is still possible, and a
+template trade still has no Python fallback while it happens.
