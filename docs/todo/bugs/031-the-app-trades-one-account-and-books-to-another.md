@@ -1,7 +1,8 @@
 # 031 — The app trades account 26004592 and writes to account 25470480's database
 
-**Status:** found 2026-09-09, live, **not fixed**. One definite defect
-identified; whether it is what fired today is NOT proven.
+**Status:** **ROOT CAUSE FOUND AND FIXED 2026-09-09; the 182 misfiled trades
+moved and the real balance restored, on the owner's instruction.** See *Fixed*
+at the bottom. The cause was NOT the line first suspected.
 **Money:** yes. Position sizing, the daily-loss halt and an ML feature are all
 computed from the wrong account's balance, and that balance is corrupt.
 **Found:** answering the owner's question about why the Reversal Engine seems
@@ -97,3 +98,81 @@ file fixes nothing.
    silently — `login_for_env` returns `""` for unreadable credentials and
    `resolve_db_path` then returns the environment default **without raising**,
    so the error branch never logs.
+
+
+---
+
+## Fixed, 2026-09-09
+
+### The cause was not the line this file first blamed
+
+`frontend/app/__init__.py:438` is guarded — `if new_env == get_config(...): return`
+— and does not fire at startup. The real cause is two initialisations:
+
+```
+run.py:407          _db_mod.init(_db_path)              # correct, per-account
+backend/src/app.py  db_module.init(config["db_path"])   # ENVIRONMENT default
+```
+
+`run.py` resolved the right file and `app.py`'s `startup()` immediately threw it
+away. Proved empirically before and after: a probe start opened
+`forex_trader_demo.db`; after the fix the same probe opened
+`forex_trader_demo_26004592.db`.
+
+`resolve_db_path` was never at fault. **Recording this because the first
+diagnosis in this file was wrong and was written up as certain-sounding —
+the mechanism was a candidate, and the candidate was not the culprit.**
+
+### The fix
+
+One entry point, `account_registry.db_path_for_env(data_dir, env, creds)`,
+called by both. Two call sites each doing their own resolution is what let them
+disagree. Nine tests, including one asserting `app.py` never initialises from
+`config["db_path"]` again.
+
+### The move
+
+Trades were identified by **broker ground truth, not by a date guess**: the
+live account's deal history was pulled (187 position ids back to 2026-08-27)
+and matched against recorded tickets. The cutover is unambiguous:
+
+| day | trades | on the live account |
+|---|---|---|
+| to 2026-09-02 | 309 | **0** |
+| 2026-09-03 | 100 | **12** |
+| 2026-09-04 onward | 170 | **170 (all)** |
+
+**182 trades moved**, 2026-09-03 to 2026-09-09, net -$3,528.99, 2 still open,
+with everything keyed to them: 152 partial closes, 180 consolidated rows, 182
+signals, 113 tg-signals, 124 commentary rows, 561 telegram-log rows.
+
+Copied first, verified (182/182 present, **zero** differences across ticket,
+direction, entry, lot, status, P&L, close price and strategy; totals equal),
+and only then deleted from the source. Old account's file: 1,580 -> 1,398
+trades, zero live-account tickets left behind. Both databases were backed up
+first as `*.pre-account-move-20260909-103010`.
+
+**Balance set to $970.57**, the broker's own figure, replacing the -$4,904.89
+inherited from the wrong account's ledger.
+
+### Verified after restart
+
+```
+database in use : forex_trader_demo_26004592.db
+trades          : 182        balance : 970.57
+bias gate       : 1          open    : 2
+broker says     : 26004592   balance : 970.57
+```
+
+### Still true, and not fixed by this
+
+The **old** account's file still contains the 30 fabricated $0.00 closes and
+the -$1,374.65 they invented (`reversal-engine/010`). They were left where they
+were: they belong to 25470480's history, not to the account now being traded.
+The new file starts from the broker's real balance, so that corruption no
+longer feeds position sizing, the daily-loss halt or `equity_drawdown_pct`.
+
+`run.py:440` still takes its daily backup from `cfg["db_path"]` — the
+environment default — so **automatic backups are still pointed at the wrong
+file** for a multi-account install. Not fixed here; it is the same class of
+bug and wants the same resolver.
