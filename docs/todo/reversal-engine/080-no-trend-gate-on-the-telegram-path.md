@@ -191,3 +191,40 @@ local `direction` that does not exist in that function, and crashed inside the
 scan's per-message try/except. The refusal tests went green — because nothing
 opened — while all three controls went red. Without them it would have looked
 like a working gate.
+
+
+---
+
+## A question for the owner, and the guard that stops a fourth miss
+
+### Three manual routes are exempt, and that has NOT been confirmed
+
+`manual_market_order.py` (the Market Order button), `manual_limit_order.py`
+(Create Limit Order) and `bot_trading.py` (Telegram bot commands) all reach the
+broker and none consults the bias gate.
+
+**The reading applied is that a manual order is the operator overriding the
+system on purpose**, and that a button refusing because the H1 trend disagrees
+would be surprising. `tests/core/test_manual_order_exemptions.py` already draws
+this line for the other gates: manual orders are exempt from the **scheduling**
+gates (trading schedule, news blackout) and NOT from the **protective** ones
+(the risk halt, `max_open_trades`).
+
+The bias gate is arguably protective, which would put it on the enforced side.
+**That is the owner's call and it has not been made.** Nothing was changed;
+the exemption is written down so the question is visible instead of being
+implied by absence — which is exactly how the three misses survived.
+
+### The guard
+
+`tests/trading/test_every_order_route_declares_its_bias_gate.py` enumerates
+every module that reaches the broker and requires each to be listed as either
+GATED (and to actually consult the gate) or EXEMPT (with a written reason). A
+new order route fails the suite until someone decides which it is.
+
+Two mutants confirm it bites: a new module that calls `open_trade` and is in
+neither list fails, and stripping the gate out of `scan_auto_execute` fails.
+
+**This, not another gate, is the thing that would have caught all three
+misses.** The gate was believed complete twice, and both times the audit was a
+person reading code and listing what they remembered.
