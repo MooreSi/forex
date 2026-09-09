@@ -77,3 +77,33 @@ rather than acceptance**:
   Re-run against the real source, it fails immediately. That is the
   `mutation-testing-wrong-target` trap, and a survivor is worth re-checking
   before it is believed.
+
+
+---
+
+## Moved out of the Reversal Engine, 2026-09-09 (night)
+
+The sweep was invoked from `ReversalEngine._check_outcomes`. It sweeps
+`fetch_working_pending_orders()` — **every** working order, including Limit
+Runner orders placed from a Telegram signal, which have nothing to do with this
+engine.
+
+`_cycle_loop` runs `while self.is_running`, and the owner can stop the engine
+from its panel. **Stopping it also stopped revalidating Telegram resting
+orders**, with nothing on screen to say so. `_check_outcomes` also returns
+early when there is no tick, skipping the sweep again.
+
+Same shape as the trend gate missing `scan_auto_execute`
+([080](080-no-trend-gate-on-the-telegram-path.md)): a protection that covers
+every route, reachable only through one of them.
+
+It now runs from the monitor cycle, alongside the other cross-cutting sweeps
+(equity protect, basket harvest, orphan reconcile), with the same once-a-minute
+throttle the orphan sweep uses. Placed **outside** the `if open_trades` block
+deliberately: the case this feature exists for is a resting order with nothing
+open yet, which is exactly when that block does not run.
+
+The swept function is unchanged. Pinned by
+`tests/trading/test_resting_sweep_is_not_tied_to_the_reversal_engine.py`; two
+mutants — the sweep made unreachable, and the sweep nested back inside the
+open-trades block — both die.
