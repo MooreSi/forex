@@ -374,6 +374,21 @@ trade with no closing deal. Stop if you see that.
 
 ## Demo 7 — the trade cap now counts resting orders (bugs/026)
 
+> **PASSED 2026-09-09, driven by an agent on the demo account.** Max Open
+> Trades set to 2, a BUY LIMIT rested at 4300 (ticket 1973407311, market was
+> 4400), one 0.01-lot market order opened, and the third attempt was refused:
+> ```
+> Max open trades reached (2) — 1 open, 1 resting at the broker, 0 being opened right now
+> ```
+> The breakdown accounts for the resting order, and the count is right — no
+> over-refusal. Cap restored to 5 afterwards.
+>
+> **It also found [bugs/039](../todo/bugs/039-cancelling-a-signal-left-its-order-resting.md).**
+> Cancelling the signal from Pending Signals said "Signal cancelled" and left
+> the order live at the broker, holding a trade slot for its four-hour expiry
+> and still able to fill. Fixed and re-verified on the same order:
+> `cancel_pending_order: cancelled ticket=1973407311`.
+
 **The failure it prevents:** you asked on 2026-09-04 *"the max open trades in
 the risk settings is set to 3, why has it opened more trades?"* A resting
 pending order consumed no slot at either end — not when placed, not when it
