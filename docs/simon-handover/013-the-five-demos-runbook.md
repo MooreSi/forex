@@ -417,6 +417,19 @@ than the bug this fixes.
 
 ## Demo 8 — Global Harvest is a basket total, not per trade (bugs/027)
 
+> **PASSED 2026-09-09, 14:49:59, driven by an agent on the demo account.**
+> It happened unforced, on the live system, minutes after the v1.06 recompile:
+> ```
+> global harvest threshold reached (combined $55.6 >= $50.0 across 2 position(s)) -- closing all
+> global harvest closing ticket=1970354612 ($19.6)
+> global harvest closing ticket=1970299959 ($36.5)
+> ```
+> Neither position individually reached $50; together they did, and both
+> closed. Under v1.05 neither would have been touched. The config push was
+> confirmed separately in the EA's own log
+> (`global config updated: harvest_enabled=true harvest_threshold=50.0`),
+> which also closes handover/025.
+
 **Do this one FIRST if you are short of time, because it needs preparation the
 others do not.**
 
@@ -624,6 +637,17 @@ refuses everything looks identical to a quiet market.
 
 ## Demo 14 — a signal that fills instantly is ignored (reversal-engine/040)
 
+> **PASSED 2026-09-09, driven by an agent on the demo account**, on both
+> routes that carry the gate:
+> ```
+> 14:55:57 [PendingWatcher] Signal fa588c7c skipped — Filled too soon — 297s after the signal, under the 300s minimum.
+> 15:09:10 [RE-Engine] Filled too soon — 170s after the signal, under the 300s minimum.
+> 15:39:26 [RE-Engine] Filled too soon — 2s after the signal, under the 300s minimum.
+> ```
+> Wording matches this runbook verbatim. Note the PendingWatcher line repeats
+> once a second until the window passes — noisy, self-limiting, and the same
+> shape as the defect demo 17 turned up.
+
 **The failure it prevents:** fills inside five minutes of the signal are 443
 trades at **-$2,142**; fills at 5-15 minutes are 115 trades at 71.3% for
 **+$1,041**. The split holds in July, August and September separately rather
@@ -713,6 +737,18 @@ opened, naming the schedule.
 
 ## Demo 17 — Enable SL Parsing off means a follow-up cannot move your stop (bugs/032)
 
+> **PASSED 2026-09-09, driven by an agent on the demo account** — on GOLD
+> DIGGERS INSTITUTIONAL, the same channel as the original report:
+> ```
+> SL adjustment (tg_id=29402, via=learned_rule) to 4391.00 DECLINED —
+> Enable SL Parsing is off, so stops are not taken from Telegram.
+> ```
+> **And it found a defect the offline tests could not.** The decline was
+> correct and then repeated **4,099 times in 71 minutes**, once a second,
+> because it returned before the claim that marks a message handled. Raised
+> and fixed as [bugs/035](../todo/bugs/035-a-declined-sl-adjustment-looped-forever.md).
+> This is the case for running these against a real terminal.
+
 **The failure it prevents:** with the toggle off, this happened on your account
 on 2026-09-09:
 
@@ -751,6 +787,13 @@ next update through.
 ---
 
 ## Demo 18 — a template is refused on a stale EA build (bugs/033)
+
+> **PASSED 2026-09-09, driven by an agent on the demo account.** After
+> `tools/deploy_ea.sh` and F7 the EA reported
+> `v1.06 (compiled 2026.09.09 14:43:48, MQL build 6182)` with no mismatch
+> warning, and the header badge rendered `bg-green` reading "EA" rather than
+> "EA STALE BUILD". The negative control arrived on its own: a template trade
+> opened normally at 15:43:02 on the current build.
 
 **The failure it prevents:** demo 8's own note. On 2026-09-09 you recompiled and
 re-attached the EA, and the chart still ran v1.05 — Global Harvest reading "per

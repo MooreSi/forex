@@ -1,5 +1,20 @@
 # Your protective limits are not set to the numbers you confirmed
 
+> **ANSWERED by the owner, 2026-09-09: 20% is correct and deliberate.**
+> *"correct at 20% for development and testing purposes so it continues to
+> trade."*
+>
+> The 3% figure confirmed earlier was for a live account. On the demo account
+> a 3% cap halts trading almost immediately, which stops the very testing the
+> demo account exists for. **This is a demo-only setting.** Before this app
+> runs on a live account, the cap goes back to 3% and the risk governor goes
+> back on — that is not a decision this file closes.
+>
+> `risk_governor_enabled = 0` is likewise left off for now. The daily-loss
+> halt still runs without it (pinned by
+> `test_the_daily_loss_halt_still_runs_without_the_governor`), so the account
+> is not unprotected; it is protected at 20% rather than 3%.
+
 **Status:** needs you. This is a settings question on your own account, so I
 have not touched it.
 **Found:** 2026-08-29, doing stage3/050.
