@@ -172,7 +172,11 @@ were: they belong to 25470480's history, not to the account now being traded.
 The new file starts from the broker's real balance, so that corruption no
 longer feeds position sizing, the daily-loss halt or `equity_drawdown_pct`.
 
-`run.py:440` still takes its daily backup from `cfg["db_path"]` — the
-environment default — so **automatic backups are still pointed at the wrong
-file** for a multi-account install. Not fixed here; it is the same class of
-bug and wants the same resolver.
+`run.py`'s daily backup took its source from `cfg["db_path"]` — the
+environment default — so **every automatic backup was of a file the app no
+longer writes to**. Confirmed from the backups folder: four ~22 MB copies of
+`forex_trader_demo.db` while the account in use recorded into a different file.
+A backup of the wrong database is worse than none, because it looks like
+protection. **Fixed 2026-09-09**: it now backs up `_db_path`, the value handed
+to `_db_mod.init()`, so the backup and the open database cannot diverge. Two
+tests in `tests/db/test_account_db_wiring.py` pin it.
