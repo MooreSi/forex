@@ -742,6 +742,22 @@ is the boundary the code draws; if it is crossed, stop and raise it.
 
 ## Demo 16 — a parked Telegram signal is re-checked when price arrives (bugs/034)
 
+> **PARTLY VERIFIED 2026-09-09 — the mechanism, not the schedule branch.**
+> The re-evaluation block runs on the parked-signal path, proved live by the
+> fill-delay guard that sits three lines below the schedule check in the same
+> block:
+> ```
+> 14:55:57 [PendingWatcher] Signal fa588c7c skipped — Filled too soon — 297s after the signal, under the 300s minimum
+> ```
+> **The schedule branch itself was NOT exercised.** It needs a closed trading
+> window, and the window was open all session. Forcing it means editing the
+> schedule's window configuration, which is a bigger change to a live install
+> than a demo warrants — a setting was already mis-restored once that day.
+>
+> **When you run it:** the log line is `Signal <id> **held** — <reason>` for
+> the schedule and news guards, and `skipped` only for the fill-delay one.
+> Grepping for "skipped" alone misses the very branch this demo is about.
+
 **The failure it prevents:** a Telegram signal waiting for its zone could sit
 for an hour and then open inside a news blackout, or outside the trading
 schedule. The Reversal Engine re-asked both at the moment of the fill; this
