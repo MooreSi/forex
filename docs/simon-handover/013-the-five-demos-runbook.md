@@ -43,9 +43,16 @@ be quoted here.
 
 ## Why you are doing this rather than an agent
 
-Golden rule 1 says no real or demo order is ever placed by the app's own
-sessions, to test or otherwise. That rule is why this file exists instead of a
-transcript of someone having already done it.
+**Changed 2026-09-09.** Rule 1 used to forbid demo orders as well as live
+ones, and that is why this file was written as instructions for you rather than
+a transcript of someone having already done it. The owner relaxed it that day:
+demo-account trading is now allowed for development and testing.
+
+So parts of this runbook can now be driven by an agent. What still needs YOU is
+anything the app cannot observe for itself — what MetaTrader actually shows on
+the chart, whether the EA's own log says what we think, and whether the timings
+hold on a real socket. Where a demo below has been driven by an agent, it says
+so and gives the date; treat an undriven one as still outstanding.
 
 What has been done instead: **demos 1-5** are driven end-to-end offline
 against the fake broker, in
