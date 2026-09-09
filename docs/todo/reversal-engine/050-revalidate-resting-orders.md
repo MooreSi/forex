@@ -1,7 +1,7 @@
 # 050 — Re-check a resting order before it fills
 
-**Status:** open, **after [040](040-filter-the-instant-fills.md)**, whose rule
-it shares.
+**Status:** **BUILT 2026-09-09, NOT DEMOED.** Runs whenever the bias gate is
+on — it shares that toggle, because it is that gate asked a second time.
 **Money:** yes — it cancels orders that would otherwise fill.
 **Raised by the owner, 2026-09-08:** *"if there are pending/resting trades
 before they execute re-evaluate whether they are still valid to ensure they
@@ -24,3 +24,56 @@ warning. What does not exist is a re-check of whether the LEVEL is still valid.
 
 Use the same rule as 040. One definition of "is this level still valid",
 called from both places.
+
+
+---
+
+## Built 2026-09-09 — it reuses the bias gate, not 040's rule
+
+This file said it should share 040's rule. On reflection that was the wrong
+pairing: 040 is about a fill arriving too FAST, and staleness is the opposite
+direction. **The rule it actually shares is the bias gate's.**
+
+**The argument, which needs no new evidence.** `governor.htf_bias_blocks` is
+evaluated once, when the order is PLACED. A limit order can then rest for the
+better part of an hour and fill into a bias that has since reversed — at which
+point it is a counter-bias trade the gate would have refused had it been asked.
+Re-checking is that same gate asked at the moment it matters.
+
+**The direct evidence is thin, and is deliberately not what justifies it.**
+Signals whose `htf_bias_at_fill` differs from `htf_bias` are **20 trades at
+-$12.08 each**, against -$2.84 for the 737 where it held — the right direction,
+four times worse, and far too small a sample to carry a money-path rule alone.
+What carries it is the gate's own record: 201 counter-bias trades at
+-$1,210.98.
+
+## What it does
+
+`trading/resting_revalidation.revalidate_resting_orders()` reads the working
+pending orders and withdraws each one the current bias now refuses. Swept from
+the Reversal Engine's outcome loop on its **own 60-second interval** — that
+loop runs every 5s and a cancel sweep does not need to, the bias being an H1
+read cached for a minute.
+
+**It cancels; it never closes.** A resting order has no position, so the worst
+it can do is withdraw an order that never filled. A test asserts by name that
+`close_trade`, `record_close` and `position_close` appear nowhere in the module.
+
+Fails open throughout: gate off, neutral or unreadable bias, unreadable rows,
+a missing ticket, or one order the EA refuses — none of them stops the sweep or
+withdraws anything it should not.
+
+## Proof
+
+16 tests, red first. Five mutants killed, and **two of the five needed work
+rather than acceptance**:
+
+* Deleting the module's own toggle check *looked* survivable, because
+  `htf_bias_blocks` carries its own — the sweep cancels nothing either way. But
+  without it the sweep still reads the pending orders every minute on every
+  install with the feature off. The added test asserts the fetch never happens.
+* The missing-ticket mutation reported as survived and had **not actually been
+  applied** — the pattern missed a comment between the `if` and its `continue`.
+  Re-run against the real source, it fails immediately. That is the
+  `mutation-testing-wrong-target` trap, and a survivor is worth re-checking
+  before it is believed.
