@@ -12,20 +12,34 @@
 > undercount on my part. They are demos 11 and 12. Demo 10 covers the template
 > Anchor Lot, which you answered on 2026-09-07.
 >
-> Budget about 90 minutes for all twelve, not 40. **Demo 8 needs the EA
-> recompiled before the sitting starts** — see its own note. **Demo 10 cannot
-> be forced** — it waits for a real signal on one channel; read it early so you
-> know not to change that channel's multiplier in the meantime.
+> **Grew to eighteen on 2026-09-09.** Demos 13-18 cover the six filters added
+> since: the trend gate and the instant-fill filter (both of which you turned
+> ON that day, so this is the first sitting where they are live), the
+> resting-order sweep, the parked-signal re-check, Enable SL Parsing off
+> declining a follow-up, and a template being refused on a stale EA build.
+>
+> Budget about 2.5 hours for all eighteen, not 90 minutes. **Do demo 18 FIRST**
+> — it is how you find out the EA build is stale before demos 8, 10, 12 and 15
+> quietly run against the wrong one. **Demo 10 cannot be forced** — it waits
+> for a real signal on one channel; read it early so you know not to change
+> that channel's multiplier in the meantime.
 
 **For:** Simon, at an MT5 terminal on the **demo** account
-**Time:** about 90 minutes for all twelve
-**Status of the code:** all twelve fixes are written, tested and mutation-tested.
+**Time:** about 2.5 hours for all eighteen
+**Status of the code:** all eighteen fixes are written, tested and mutation-tested.
 None of them is `done`, and none becomes `done` because a test is green. Each
 needs the run below, on a terminal, with your eyes on it.
-**Last checked against the code: 2026-09-01.** Every log line quoted below was
+**Last checked against the code: 2026-09-09.** Every log line quoted below was
 confirmed to still exist and to still be spelled that way, and the offline
 demos were re-run (`tests/e2e/test_killer_demos.py`, 15 passed). Five things
 had drifted since this was written; each correction is marked **[2026-09-01]**.
+
+**The 2026-09-09 check found the guard itself had a hole.** The pinning list in
+`test_runbook_matches_the_code.py` still covered demos 1-5 only, so seven
+demos' worth of quoted output had been unguarded since 2026-09-07 — the drift
+this file exists to catch, in the thing that catches it. All eighteen demos are
+now pinned in both directions: the fragment must exist in the source *and* still
+be quoted here.
 
 ## Why you are doing this rather than an agent
 
@@ -33,12 +47,14 @@ Golden rule 1 says no real or demo order is ever placed by the app's own
 sessions, to test or otherwise. That rule is why this file exists instead of a
 transcript of someone having already done it.
 
-What has been done instead: every one of these five scenarios is driven
-end-to-end offline against the fake broker, in
+What has been done instead: **demos 1-5** are driven end-to-end offline
+against the fake broker, in
 [`tests/e2e/test_killer_demos.py`](../../tests/e2e/test_killer_demos.py). Each
 has a negative control, and each was verified by re-introducing the original
-bug and watching the test go red — eleven mutations, all caught. That proves
-the code paths join up. It does not prove the EA behaves as expected, that MT5
+bug and watching the test go red — eleven mutations, all caught. Demos 6-18
+are covered by unit tests and mutation testing rather than an offline
+end-to-end drive; their quoted output is pinned by
+`test_runbook_matches_the_code.py`. That proves the code paths join up. It does not prove the EA behaves as expected, that MT5
 returns the retcodes we assume, or that the timings hold on a real socket.
 **Those three things are what your sitting is for.**
 
@@ -560,6 +576,211 @@ Telegram alert names the template instead of promising a follow-up.
 follow-up" on a template-managed channel.
 
 **This places a real order.** Demo account, minimum size.
+
+---
+
+## Demo 13 — the trend gate refuses a trade against the bias (reversal-engine/010)
+
+**The failure it prevents:** on 2026-09-08 gold fell from 4438 to 4391, the
+system bought it 46 times, and the day lost $1,270.89. Measured over every
+executed Reversal Engine signal on record, trades **with** the higher-timeframe
+bias are 369 at 61.8% for +$101.41 — the only profitable group in the whole
+history — while trades **against** it are 201 for **-$1,210.98**.
+
+**You turned this on 2026-09-09.** It ships off, so this is the first sitting
+where it is live. It now governs six paths, not one: the Reversal Engine,
+instant entry, limit-order signals, the resting-order sweep, and the shared
+open path — one function, because two implementations of "is the trend against
+us" that can disagree is how this class of bug starts.
+
+1. Trading > Strategy > Risk Settings: confirm **Only trade with the trend** is
+   on.
+2. Note the current H4 direction, then let a signal arrive on the opposite side
+   (or send one to a test channel you control).
+
+**Expect:** the trade is refused and the reason names the bias and the setting:
+
+```
+Higher-timeframe bias is bearish — a BUY runs against it.
+(Trading > Strategy > Risk Settings: 'Only trade with the trend')
+```
+
+**Pass:** refused, with that reason, and a same-direction signal still trades.
+**Fail, and this is the one to watch for — OVER-refusal.** If it refuses trades
+*with* the trend, or refuses everything, the bias read is wrong rather than the
+gate. Turn the setting off and raise it before the next session; a gate that
+refuses everything looks identical to a quiet market.
+
+**No order is placed on the refusal.** The control half places one.
+
+---
+
+## Demo 14 — a signal that fills instantly is ignored (reversal-engine/040)
+
+**The failure it prevents:** fills inside five minutes of the signal are 443
+trades at **-$2,142**; fills at 5-15 minutes are 115 trades at 71.3% for
+**+$1,041**. The split holds in July, August and September separately rather
+than coming from one month or a handful of outliers.
+
+**Empirical, with no established mechanism, and you should know that going in.**
+The obvious explanation — "a fast fill means price was already through the zone,
+so the level never held" — was tested and rejected: it separates the same
+population into -$3.55 and -$2.91 a trade, which is nothing. The filter is kept
+because the numbers are strong and consistent, not because the reason is
+understood.
+
+1. Confirm **Ignore signals that fill immediately** is on, with the window at
+   **300s**.
+2. Watch for a signal whose entry zone is at or next to current price.
+
+**Expect:**
+
+```
+Filled too soon — 12s after the signal, under the 300s minimum.
+(Trading > Strategy > Risk Settings: 'Ignore signals that fill immediately')
+```
+
+**Pass:** refused, and a signal that waits out the window still fills normally.
+**Fail:** it refuses a signal that took several minutes — check the clock on the
+machine against the broker's, since the window is measured from `created_at`.
+
+**No order is placed.**
+
+---
+
+## Demo 15 — a resting order is withdrawn when the trend turns (reversal-engine/050)
+
+**The failure it prevents:** a pending order sitting on the EA was placed
+against one market and executed into another. It answers your 2026-09-09
+question directly — *"if there is a pending/resting order ... does it
+re-evaluate the order before executing?"* For EA-side resting orders it now
+does.
+
+**It cancels; it never closes.** The sweep only withdraws orders that have not
+filled. An order that filled in the meantime is left alone — closing a live
+position on a bias flip is a different decision, and not one that was asked for.
+
+1. With the trend gate on, place a pending order in the direction of the
+   current bias, on the demo account at minimum size.
+2. Wait for, or wait out, an H4 bias flip.
+
+**Expect** the order to disappear from the terminal, with:
+
+```
+[Resting] withdrew <trade_id> ticket=<n> — Higher-timeframe bias is ...
+```
+
+**Pass:** the unfilled order is gone and no position was opened or closed.
+**Fail, and this is the serious one:** an already-filled position closes. That
+is the boundary the code draws; if it is crossed, stop and raise it.
+
+**This places a real pending order.** Demo account, minimum size.
+
+---
+
+## Demo 16 — a parked Telegram signal is re-checked when price arrives (bugs/034)
+
+**The failure it prevents:** a Telegram signal waiting for its zone could sit
+for an hour and then open inside a news blackout, or outside the trading
+schedule. The Reversal Engine re-asked both at the moment of the fill; this
+route asked neither.
+
+**Three waiting states, and they were not treated alike.** The Reversal Engine
+re-checked schedule, news, a fresh ML probability, bias and fill delay. The EA
+resting order got the bias sweep in demo 15. The parked Telegram signal got
+pre-trade filters only — and those are bypassed for templates.
+
+1. Let a Telegram signal park awaiting its zone (a limit-style signal away from
+   price).
+2. Before it fills, close the trading schedule window — Trading > Strategy.
+
+**Expect:** when price reaches the zone, the signal is skipped rather than
+opened, naming the schedule.
+
+**Pass:** skipped, and re-opening the window lets the next arrival trade.
+**Fail:** it opens anyway, or it skips a signal with the window open.
+
+**No order is placed on the refusal.**
+
+---
+
+## Demo 17 — Enable SL Parsing off means a follow-up cannot move your stop (bugs/032)
+
+**The failure it prevents:** with the toggle off, this happened on your account
+on 2026-09-09:
+
+```
+SL adjusted — GOLD DIGGERS INSTITUTIONAL
+Trade 062f91ad (ticket 1969210518): 4391.65 → 4395.0
+Source: learned rule
+```
+
+The toggle governed the stop parsed out of a **new** signal. A later message
+saying "adjust SL to X" reached a different route entirely, which never asked.
+
+**Off means declined, not substituted.** At entry the toggle substitutes a
+template or fallback distance, because a trade must have a stop. Here the trade
+already has one, so the instruction is simply refused — and the message is not
+claimed, so turning the toggle back on while it is still buffered lets it be
+honoured.
+
+1. Parsing settings: turn **Enable SL Parsing** off.
+2. With a trade open on a channel that posts SL updates, wait for one (or send
+   one to a test channel).
+
+**Expect:**
+
+```
+SL adjustment (tg_id=..., via=learned_rule) to 4395.00 DECLINED —
+Enable SL Parsing is off, so stops are not taken from Telegram.
+```
+
+**Pass:** the stop in MT5 is unchanged, and turning the toggle back on lets the
+next update through.
+**Fail:** the stop moves, or an update is declined with the toggle on.
+
+**Uses a trade you already have open.** Nothing is placed.
+
+---
+
+## Demo 18 — a template is refused on a stale EA build (bugs/033)
+
+**The failure it prevents:** demo 8's own note. On 2026-09-09 you recompiled and
+re-attached the EA, and the chart still ran v1.05 — Global Harvest reading "per
+trade" and not summing the basket, so a $50 target never fired on three trades
+holding $60 between them. `tools/deploy_ea.sh` had not been run first, so
+MetaEditor rebuilt the copy already in its own Experts folder.
+
+**Templates only, and that is the whole design.** An EA Template *is* an
+EA-native management definition — there is no Python-managed equivalent to fall
+back to — so the entire management of a template trade is whatever build sits on
+the chart. The EA-portable strategies do have a fallback, and blocking them here
+would silently reroute rather than refuse, hiding the problem instead of showing
+it.
+
+**Do this demo FIRST if you do it at all** — it is how you find out the build is
+stale before demos 8, 10, 12 and 15 quietly run against the wrong one.
+
+1. Look at the top-bar EA badge before anything else. Amber **EA STALE BUILD**
+   means stop and run `tools/deploy_ea.sh`, then F7, then re-attach.
+2. To see the refusal deliberately: with a stale build attached, let a
+   template-managed channel signal arrive.
+
+**Expect:**
+
+```
+EA Template refused: the chart is running EA v1.05 but this app ships v1.06.
+A template is managed entirely by the EA, so a stale build would run it under
+replaced logic. Fix: run tools/deploy_ea.sh, compile (F7) and re-attach the EA.
+```
+
+**Pass:** refused with that message, and after deploying and recompiling the
+same signal trades normally.
+**Fail:** it opens on the stale build, or it refuses after a correct deploy —
+check the badge is green before blaming the gate.
+
+**Unknown is not stale.** On a packaged install with no EA source to compare
+against, nothing is blocked. That is deliberate.
 
 ---
 
