@@ -323,6 +323,17 @@ halt reason, and the reason names the number that tripped it.
 
 ## Demo 6 — a close with no price must not become a $44,783 loss (bugs/025)
 
+> **Offline coverage added 2026-09-09 (night).** The guard had no test at all
+> until then. `tests/trading/test_a_priceless_close_is_not_booked_at_zero.py`
+> drives the real `_on_trade_closed` handler with the broker and engine faked
+> at their own boundaries, since the point is what happens when the two
+> disagree. Three mutants die, including re-introducing the original bug
+> (the guard removed entirely), which fails four of the five tests.
+>
+> **This does not close the demo.** It proves the code path; it does not prove
+> what MT5 actually sends when a position vanishes during a disconnect, which
+> is the part your sitting is for.
+
 **The failure it prevents:** on 2026-09-04, ticket 1935433548 was reported
 closed with no closing price. The app read the absence as $0.00, and with a
 0.1-lot entry at $4478.35 it computed **-$44,783.50**, wrote it to `net_pnl`,
