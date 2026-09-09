@@ -26,6 +26,7 @@ current win rate returns +0.12R a trade.
 | [070](070-share-training-data-with-the-fleet.md) | ship the fleet's learning to every client | **designed, needs one decision** |
 | [080](080-no-trend-gate-on-the-telegram-path.md) | no trend filter on the Telegram path | **BUILT + all four order routes covered**, off by default, not demoed |
 | [090](090-level-score-bypasses-the-bias-filter.md) | `level_score` switches off the bias filter | **BUILT**, off by default, not demoed |
+| [100](100-revalidating-every-waiting-order.md) | re-evaluate a waiting order before it becomes a trade | **BUILT** — the Telegram path re-checks schedule, news and fill delay |
 
 ## Picking this up again
 
