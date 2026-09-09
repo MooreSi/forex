@@ -1,7 +1,9 @@
 # 030 — The app's own event loop stalls, and nobody has looked since July
 
-**Status:** open. **Both causes now identified 2026-09-09** — one fixed, one
-needs an owner decision. See "What they actually are" at the end. Recorded 2026-09-05 so it stops being
+**Status:** **Both causes fixed 2026-09-09.** The high-frequency stalls were
+bugs/035; the ~5s stalls were the ML fit running on the event loop, fixed on
+the owner's explicit permission to touch the money path. Polling volume is
+measured and left alone. See the sections at the end. Recorded 2026-09-05 so it stops being
 an aside in a handoff file.
 **Found:** measured as a side effect of
 [bugs/013](013-ea-stalls-leave-template-trades-unmanaged.md), which ruled it
@@ -153,7 +155,7 @@ a message re-parsed and re-logged once a second, indefinitely, 4,099 times in
 71 minutes. Fixing it took the stall rate from 2.59/min to 0.48/min. That was
 not why 035 was fixed, and the size of the effect was a surprise.
 
-## Cause 2 — the ~5 second stalls. IDENTIFIED, NOT FIXED.
+## Cause 2 — the ~5 second stalls. FIXED 2026-09-09.
 
 **The ML model fit runs synchronously on the asyncio event loop.** Caught with
 the lines either side of it:
@@ -192,17 +194,30 @@ A five-second blackout is half that budget, and it lands on a path where a
 template-managed trade is explicitly left **unmanaged** while the EA is
 considered unhealthy.
 
-### The fix, and why it is not applied here
+### The fix
 
-Move the fit off the loop — `asyncio.to_thread` for `on_new_signal`, and have
-`pro_likeness` return `NEUTRAL` while scheduling a background fit rather than
-blocking on one.
+The owner gave explicit permission to touch the money path
+(*"you can also fix money path issues"*), so both halves were done.
 
-**That second half changes trading behaviour** and is the owner's call:
-signals arriving before the first fit completes would score `NEUTRAL` instead
-of waiting for a model. It is arguably better than a five-second freeze, and it
-is what already happens whenever scoring raises — but it is a change to what
-the ML gate sees, so it is not being made unilaterally.
+`fit_in_background()` submits to a single-worker pool and returns at once.
+`on_new_signal` uses it, and `pro_likeness` uses it **instead of** blocking,
+returning `NEUTRAL` — already its documented answer for "not trustworthy yet",
+and already what it returns whenever scoring raises.
+
+**The behaviour change, stated plainly:** signals arriving before the first
+successful fit now score `NEUTRAL` rather than waiting for a model to train.
+On the first signals after a restart, the ML gate sees a neutral pro-likeness
+where it used to see a real one five seconds later.
+
+**One worker, and an in-flight guard.** Signals arrive faster than a fit
+finishes. Without the guard, eight signals enqueue eight full trains back to
+back on unchanged data — and that is not the same failure as concurrency,
+which is what the first version of the test wrongly asserted against. Pinned by
+`tests/reversal_engine/test_pro_model_fit_does_not_block_the_loop.py`.
+
+**Not changed:** the explicit "fit now" button in the Reversal panel still runs
+inline. It is a rare, user-initiated action where a wait is expected — but it
+does freeze the loop for the same five seconds, and is worth revisiting.
 
 
 ---
