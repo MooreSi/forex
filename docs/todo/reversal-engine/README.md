@@ -24,18 +24,16 @@ current win rate returns +0.12R a trade.
 | [050](050-revalidate-resting-orders.md) | re-check a resting order before it fills | after 040 |
 | [060](060-revisit-the-ml.md) | revisit the ML gate | after 020-040 |
 | [070](070-share-training-data-with-the-fleet.md) | ship the fleet's learning to every client | **designed, needs one decision** |
-| [080](080-no-trend-gate-on-the-telegram-path.md) | no trend filter on the Telegram path | **ready to build** — biggest single loss of 2026-09-08 |
-| [090](090-level-score-bypasses-the-bias-filter.md) | `level_score` switches off the bias filter | **ready to build**, with 080 |
+| [080](080-no-trend-gate-on-the-telegram-path.md) | no trend filter on the Telegram path | **BUILT + all four order routes covered**, off by default, not demoed |
+| [090](090-level-score-bypasses-the-bias-filter.md) | `level_score` switches off the bias filter | **BUILT**, off by default, not demoed |
 
 ## Picking this up again
 
-**Start with [080](080-no-trend-gate-on-the-telegram-path.md) and
-[090](090-level-score-bypasses-the-bias-filter.md), together.** They are one
-bias rule applied on the shared path, they cost -$938 on 2026-09-08 between
-them, and [data-inspect/004](../data-inspect/004-why-2026-09-08-lost-1270.md)
-explains why that day happened. Then [040](040-filter-the-instant-fills.md).
+**080 and 090 are built and live** (owner turned the gate on 2026-09-09), and
+all four order routes now consult one rule. Neither has been demoed.
 
-**Also worth knowing: [040](040-filter-the-instant-fills.md).** It is the only item
+**Start with [040](040-filter-the-instant-fills.md)** — the sub-5-minute
+fills. It is the only item
 whose evidence is already sufficient, it is worth about $1,850 on the measured
 sample, and it makes the app trade less rather than more.
 
