@@ -142,3 +142,52 @@ explanation and passes is precisely the failure
 `structural-tests-match-comments` warns about.
 
 Still off by default and still not demoed.
+
+
+---
+
+## A THIRD route was uncovered — the main one — closed 2026-09-09 (night)
+
+The audit above listed IME and limit orders. It missed
+**`scan_auto_execute`: a fresh Telegram signal whose price is already inside
+its entry zone, opened at market on arrival.** That is the ordinary case, and
+it is the 2026-09-08 case.
+
+**Found by writing the end-to-end test, not by reading.**
+`tests/e2e/test_trend_gate_end_to_end.py` drives a real signal through the real
+pipeline against `FakeMT5Bridge`. On its first run the two refusal tests failed
+and all three controls passed: a BUY opened at market against a bearish bias
+with the gate **on**. A probe confirmed `htf_bias_blocks` was never called —
+zero invocations, one position.
+
+**The module says it about itself**, of the *schedule* gate:
+
+> This path opens via core_open_trade.open_trade directly and never calls
+> resolve_open_trade_params, which is where the schedule gate lives for every
+> other route -- so a fresh Telegram signal executed regardless of the
+> schedule, while queued zone-fills, pending-order fills, IME trades and the
+> internal engines were all correctly blocked.
+
+That gap was patched there for the schedule on 2026-08-06, and for IME on
+2026-07-23. The bias gate arrived on 2026-09-09 and repeated it a third time.
+
+**So between the gate being switched on and this fix, it did not cover the
+route the file was written about.** GOLD DIGGERS INSTITUTIONAL posting BUYs
+into a falling market is exactly a signal arriving with price in its zone.
+
+### Fixed
+
+`htf_bias_blocks` now runs alongside the schedule and news gates in
+`execute_auto_signal`, in the same position and below the IME follow-up block
+for the same stated reason. It makes no bridge call while the toggle is off.
+
+Four mutants: the branch deleted, the branch made unreachable, and the bias
+hardcoded were killed at once. **Hardcoding the direction to "BUY" survived**,
+because every test in the file used a BUY signal — a gate that ignores
+direction entirely was invisible. Two SELL cases were added and it dies.
+
+One more thing the controls earned: the first version of the fix referenced a
+local `direction` that does not exist in that function, and crashed inside the
+scan's per-message try/except. The refusal tests went green — because nothing
+opened — while all three controls went red. Without them it would have looked
+like a working gate.
