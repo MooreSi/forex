@@ -14,6 +14,17 @@
 > halt still runs without it (pinned by
 > `test_the_daily_loss_halt_still_runs_without_the_governor`), so the account
 > is not unprotected; it is protected at 20% rather than 3%.
+>
+> **Two things the governor being off DOES switch off, found 2026-09-09:**
+> the **total-drawdown halt** (Max Total Drawdown 40%) is inside
+> `rg_apply_halts_on_close`, which `close_trade` calls only when the governor
+> is on — so that limit is currently enforcing nothing.
+>
+> And turning the governor back on, as this file plans for live, **would halt
+> trading on the very first close**: `peak_balance` is a monotonic watermark
+> still holding $2,403.25 from before the per-account split, against a live
+> balance of $888.21, which is a 63% drawdown against a 40% limit. See
+> [bugs/042](../todo/bugs/042-turning-the-risk-governor-on-would-halt-trading-immediately.md).
 
 **Status:** needs you. This is a settings question on your own account, so I
 have not touched it.
