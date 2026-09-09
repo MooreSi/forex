@@ -455,6 +455,19 @@ than the bug this fixes.
 > confirmed separately in the EA's own log
 > (`global config updated: harvest_enabled=true harvest_threshold=50.0`),
 > which also closes handover/025.
+>
+> **Confirmed again at 20:19:15 on the owner's own $75 threshold**, this time
+> across four positions and including a losing leg, which is the case the demo
+> warns about:
+> ```
+> global harvest threshold reached (combined $78.1 >= $75.0 across 4 position(s)) -- closing all
+>   ticket=1973249365 ($39.3)   ticket=1973242032 ($38.4)
+>   ticket=1973240300 ($32.2)   ticket=1973182186 ($-31.1)
+> ```
+> That run also exposed
+> [bugs/041](../todo/bugs/041-a-profitable-harvest-arms-the-circuit-breaker.md):
+> the losing leg counted as a consecutive loss against the circuit breaker, so
+> a basket that banked +$78.10 left the account one loss closer to a halt.
 
 **Do this one FIRST if you are short of time, because it needs preparation the
 others do not.**
