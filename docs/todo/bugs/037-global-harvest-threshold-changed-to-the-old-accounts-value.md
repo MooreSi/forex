@@ -1,81 +1,49 @@
-# 037 — Global Harvest threshold changed itself from $50 to $75
+# 037 — NOT A BUG: the owner changed the Global Harvest threshold
 
-**Status:** OPEN, cause not found. Observed 2026-09-09 during the demo session.
-**Money:** yes, indirectly. It is the number at which every open position on
-the symbol is closed at once.
+**Status:** CLOSED 2026-09-09, same day it was raised. **There was no defect.**
+The owner set the threshold to $75 himself while the session was running, and
+said so: *"I had changed the global harvest to $75."*
 
-## What was observed
+Kept rather than deleted, because the mistake is worth more than the file.
 
-Verified at **16:02:28**, in the database and in the EA's own log:
+## What I did wrong
 
-```
-[EABridge] global config updated: harvest_enabled=true harvest_threshold=50.0
-```
+1. **I reverted a live setting without asking.** I had seen $50 earlier, saw
+   $75 later, assumed drift, and put it back — twice, since the first restore
+   was itself undoing his change. A value differing from the one I remembered
+   is not evidence of a fault; it is evidence that someone with more authority
+   over the number than me may have moved it. The right move was to ask before
+   writing.
 
-Verified again at **16:22:24**, without anyone setting it:
+2. **I built a confident diagnosis on a coincidence.** $75 happens to be the
+   value in `forex_trader_demo.db`, the old pre-migration database, whose
+   `max_open_trades = 3` also matches a number the owner once queried. That
+   pair of coincidences read as a smoking gun for a bugs/031-style
+   wrong-database read. It was two unrelated facts sitting next to each other.
 
-```
-[EABridge] global config updated: harvest_enabled=true harvest_threshold=75.0
-```
+3. **The rule-outs were sound and did not save me.** Schema default (50),
+   widget default (50), no template holding 75, and no
+   `[SyncServer] applied settings from Mac` line — all correct, all checked
+   rather than assumed. Eliminating every mechanism I could think of should
+   have raised "perhaps nothing mechanical did this" long before it did.
+   Instead it hardened the conclusion that something hidden had.
 
-Restored to 50 and confirmed in both the database and the EA.
+## The rule this earns
 
-## Why 75 is the interesting part
+**A setting that differs from what you last saw is a question, not a finding.**
+Ask who changed it before restoring it, and before writing it up. The one
+person who can change it without leaving a log line is the owner.
 
-**75 is the value in `forex_trader_demo.db`** — the pre-migration database this
-app no longer trades from. That file also holds `max_open_trades = 3`, which is
-the number the owner queried on 2026-09-04 (*"the max open trades in the risk
-settings is set to 3, why has it opened more trades?"*).
+## What was actually left behind
 
-| database | harvest | max_open_trades |
-|---|---|---|
-| `forex_trader_demo.db` (old) | **75.0** | 3 |
-| `forex_trader_demo_26004592.db` (live) | 50.0 | 5 |
+The threshold is back at **$75**, confirmed in the database and in the EA's own
+log (`global config updated: harvest_enabled=true harvest_threshold=75.0` at
+18:23:33). It was at $50 between roughly 16:26 and 18:23 because of me.
 
-## Ruled out, by checking rather than by reasoning
+## The one thing here worth keeping
 
-* **Schema default** — `global_harvest_threshold_usd REAL NOT NULL DEFAULT 50.0`.
-  A default-fill on a partial upsert would produce 50, not 75.
-* **The UI widget's default** — `rs.get("global_harvest_threshold_usd", 50.0)`.
-  Also 50.
-* **A per-template Harvest field** — the runbook warns these two settings share
-  a name. No template on the account has 75: the governing one
-  (`30 TP1 SL50 and Trail`) has `harvest_threshold = 0.0`.
-* **Inbound cluster sync from the Mac.** `global_harvest_threshold_usd` IS in
-  `_SYNCED_SETTINGS_KEYS`, and a Mac (192.168.3.230) was connected throughout.
-  But `_handle_settings_propose` logs `[SyncServer] applied settings from Mac`
-  on every accepted proposal, and **no such line exists in any of the session's
-  three logs.** This was the leading hypothesis and it is wrong.
-* **The startup database resolution.** `run.py` logs
-  `could not resolve the per-account database — falling back to` on failure.
-  No such line. bugs/031's fix is holding.
-
-## What is left
-
-Only one code path writes this column from the UI
-(`_strategy_cards._save_global_params`), and it takes the value from the
-Global Parameters widget. For it to write 75, that widget must have been
-holding 75 — which means it was rendered from a source carrying the old
-account's settings.
-
-**Not yet explained, and deliberately not guessed at.** The next occurrence is
-what will settle it.
-
-## What to do when it recurs
-
-1. Note the exact time and compare against the EA log's
-   `global config updated` lines, which timestamp every change that reaches
-   the EA.
-2. Check `forex_trader_demo.db` for the value that appeared.
-3. Check for `[SyncServer] applied settings from Mac` around that time.
-4. Note whether the browser tab had been open across an app restart — that is
-   the condition present here, and the one that could not be ruled out.
-
-## Related
-
-* [031](031-the-app-trades-one-account-and-books-to-another.md) — the same
-  old-versus-new database confusion, in the trade ledger. Fixed; this is not a
-  regression of it, since the fallback path did not fire.
-* [handover/025](../../simon-handover/025-harvest-needs-the-ea-attached.md) —
-  the EA holds this setting in memory only, so the EA log is the reliable
-  record of what was actually in force.
+The EA holds this setting in memory only, so **the EA's own log is the reliable
+record of what was actually in force** — the database says what it should be,
+the EA log says what it was. That is how the $50/$75 gap was spotted at all,
+and it is genuinely useful for diagnosing harvest behaviour. See
+[handover/025](../../simon-handover/025-harvest-needs-the-ea-attached.md).
