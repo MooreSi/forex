@@ -736,6 +736,28 @@ machine against the broker's, since the window is measured from `created_at`.
 
 ## Demo 15 — a resting order is withdrawn when the trend turns (reversal-engine/050)
 
+> **PASSED 2026-09-10 02:18, driven by an agent on the demo account**, 21
+> seconds from placement to withdrawal:
+> ```
+> 02:18:06 [EABridge] pending order placed BUY ticket=1974929567 price=4300.0
+> 02:18:27 [Resting] withdrew 022832c3 ticket=1974929567 — Higher-timeframe bias is bearish — a BUY runs against it
+> 02:18:28 [EABridge] cancel_pending_order: cancelled ticket=1974929567 reason=bias turned
+> ```
+> and `vantage_pending_orders.status` went to `cancelled`.
+>
+> **Driven the other way round from the steps below, deliberately.** Rather
+> than placing with the bias and waiting for a flip, the bias was read first
+> (bearish) and a BUY was rested against it. Same sweep, same code path, and
+> deterministic instead of waiting hours for the market. If you want the
+> literal scenario, the steps below still stand.
+>
+> **The half NOT demonstrated:** "cancels only, never touches an open
+> position". There were no open positions at the time. That boundary is
+> covered by tests, not by this run.
+>
+> It also confirmed the sweep's move out of the Reversal Engine's loop
+> (reversal-engine/050, 2026-09-09 night) — it ran from the monitor cycle.
+
 **The failure it prevents:** a pending order sitting on the EA was placed
 against one market and executed into another. It answers your 2026-09-09
 question directly — *"if there is a pending/resting order ... does it
