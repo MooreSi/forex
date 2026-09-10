@@ -379,3 +379,59 @@ it is written down rather than done unattended.
 A cheaper first step with none of that risk: find out why nine separate callers
 each want a year of deal history on every page load. That looks unintended
 rather than merely uncoalesced.
+
+---
+
+# Cause 3: one caller attributed (2026-09-10, night)
+
+The "cheaper first step" above — *find out why several callers each want a year
+of deal history on every page load* — is now partly answered, by reading the
+code rather than by instrumenting the bridge.
+
+**The three History panels are already coalesced.** `_equity_curve` (365 days),
+`_trade_table` and `_calendar` (whatever the user selected) all go through
+`frontend/pages/history/_deal_cache.cached_deal_history`, 60-second TTL, keyed
+by `days`. That was the fix landed earlier the same day, and it holds: there is
+no remaining direct `get_deal_history` call anywhere under `frontend/pages/`.
+
+**The one left is the header, and it is a duplicate implementation, not merely
+an uncoalesced read.** `frontend/app/_header.py:554` asks the bridge for
+**3,650 days** of deal history — the whole account life, the largest payload
+the app ever pulls — to work out net deposits for the header's lifetime-P&L
+figure. Its cache (`_net_deposited`, `_deposit_fetch_at`) is built **inside
+`build_header`**, so it is per client and per page build: every browser that
+opens the page pays for that fetch, and pays again every 5 minutes it stays
+open.
+
+The same number already exists, computed once and shared:
+
+| | header, inline | `services/broker/deposits.get_total_deposits` |
+|---|---|---|
+| Cache | in-memory, per client, 5 min | `app_config`, per install, 1 hour |
+| Survives a page reload | no | yes |
+| Counts | `type == 2` deals, credits minus debits | every deal with no `position_id` |
+| Gives up when | `credits == 0` (keeps the last value) | never; returns 0.0 on error |
+| Reached from | nowhere else | `runtime.get_total_deposits`, used by `frontend/pages/trading/__init__.py:69` |
+
+So the Trading page and the header can already disagree about the same
+account's net funding, and the header is the narrower of the two: MT5 balance
+operations that are not `DEAL_TYPE_BALANCE` (credit, correction, bonus) are
+counted by the service and missed by the header.
+
+## Why it was not changed tonight
+
+Routing the header through `engine.get_total_deposits()` is three lines, kills
+the 3,650-day fetch, and makes two panels agree. But the two filters are not
+equivalent, so it **changes a money figure the owner reads on every screen** —
+the header's lifetime P&L — by an amount that cannot be determined from here:
+it depends on deal types in the MT5 account, which is not in the database and
+cannot be read without the broker.
+
+It also cannot be pinned by a test as things stand. `_refresh_header` is nested
+inside `build_header` and is not callable from a test — `test_main_page_renders`
+says so in its own docstring — so the only available check would be a
+source-text grep, which passes just as happily with the code deleted.
+
+**What it needs:** the owner looking at the header before and after, or
+`_refresh_header` lifted to a callable function first so the change can be
+tested. Either is a session with someone watching, not an overnight edit.
