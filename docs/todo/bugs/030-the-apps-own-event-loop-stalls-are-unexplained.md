@@ -336,3 +336,46 @@ does not have to find it again.
 
 **Rate check for the record**: between 03:30 and 06:35, with the ML fit off the
 loop and nobody looking at the page, there were **no stalls at all**.
+
+
+---
+
+# Cause 3, measured properly (2026-09-10 07:43)
+
+"About twenty-five renders in one tick" was inferred from a task list. Measured
+instead, by loading the page and counting every bridge call in the 25 seconds
+that followed:
+
+| endpoint | calls | |
+|---|---|---|
+| `/positions` | **89** | **with zero positions open** |
+| `/account` | 80 | |
+| `/tick/XAUUSD` | 61 | |
+| `/health` | 52 | |
+| `/history?days=90` | 30 | |
+| `/history?days=365` | **9** | a full year of deal history, nine times |
+| `/history?days=44`, `days=7` | 9 each | |
+| **total** | **388** | **15.5 a second** |
+
+Steady state with nobody on the page is 327 a MINUTE. A page load is roughly
+**three times that rate**, sustained for half a minute, and every one of those
+crosses into the Wine-hosted MT5 bridge.
+
+**89 reads of `/positions` when nothing is open** is the clearest sign that
+panels are not sharing: each asks the bridge for itself, repeatedly, rather
+than one read being fanned out.
+
+## The fix, and why it is not applied here
+
+Coalescing: a short TTL in front of the bridge's read methods, so N panels
+asking for `/positions` within the same tick get one round trip.
+
+**It must not be applied to the trading path.** `monitor_cycle` reads positions
+to manage open trades, and serving that from even a one-second cache would mean
+acting on a stale book. So the cache has to be scoped to UI reads only, and
+drawing that line wrong is a money bug rather than a latency one — which is why
+it is written down rather than done unattended.
+
+A cheaper first step with none of that risk: find out why nine separate callers
+each want a year of deal history on every page load. That looks unintended
+rather than merely uncoalesced.
