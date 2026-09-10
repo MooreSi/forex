@@ -262,11 +262,14 @@ than on the historical measurement it was designed from.
 ### What this does NOT establish
 
 * **n is small.** 43 blocked and 12 executed, over roughly one day.
-* **The blocked P&L is paper.** It assumes a blocked signal would have been
-  managed identically — same template, same TP ladder, same partial closes. A
-  real fill can differ, and the biggest blocked loser (-$88) is larger than any
-  real loss on the account that day (~-$50), which is itself a hint that the
-  virtual path and the EA do not manage the same way.
+* **The blocked P&L is paper, and it is biased against the blocked set.** It
+  assumes a blocked signal would have been managed identically — same template,
+  same TP ladder, same partial closes. It would not have been: a virtual signal
+  runs to its stop while a real one is managed by the EA. Measured the same
+  day, paper losers average **-$88.22** against real losses of about **-$50**,
+  on the same dollars-per-point. So **-$453.88 overstates what these trades
+  would really have lost.** The direction of the conclusion survives; the size
+  does not. See [060](060-revisit-the-ml.md).
 * **One day, one regime.** The bias was bullish most of the session and flipped
   bearish overnight, so nearly all of these were SELLs refused into a rise.
 
