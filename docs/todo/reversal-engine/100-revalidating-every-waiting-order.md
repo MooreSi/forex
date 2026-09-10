@@ -60,5 +60,9 @@ search for `name(` so the call is distinguishable from the import.
 * **Only the bias is re-checked on a resting order.** Schedule and news are not:
   a resting order is not cancelled because a blackout began. Arguably right —
   it may still fill after the blackout — but it is a choice, not an oversight.
+
+  **Picked up 2026-09-10** by [limit-orders/040](../limit-orders/040-revalidate-before-the-fill.md),
+  which widens the sweep to full parity with this path and withdraws (then re-arms) rather than
+  holding.
 * **None of this is demoed.** Four filters and three re-check paths now refuse
   or hold trades that previously opened.

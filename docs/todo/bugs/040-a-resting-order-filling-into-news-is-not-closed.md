@@ -61,3 +61,10 @@ cost; a news spike is the case where it is highest.
 
 **Not built.** It closes real positions, it is a change of intent rather than a
 repair, and the cost/benefit above is genuinely two-sided.
+
+## Related
+
+The *cancel* half of this question — withdrawing a resting order before it fills into a blackout,
+rather than closing the position after — is
+[limit-orders/040](../limit-orders/040-revalidate-before-the-fill.md). This file remains the *close*
+question, which is still the owner's to answer.
