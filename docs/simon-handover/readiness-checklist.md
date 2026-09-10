@@ -41,15 +41,14 @@ doc, not a work log._
   — still green, but two of the numbers below had drifted; corrected in place.*
 
   **No file under `frontend/` exceeds 800 lines** — largest is
-  `frontend/app/__init__.py` at **789**, then `pages/backtest.py` at 771 and
-  `pages/ai_trade_analysis/__init__.py` at 729. *(This row read "largest is
-  ai_trade_analysis at 715" until 2026-09-06; that file has grown to 729 and is
-  no longer the largest.)* **The ceiling is a hard 800** (`LOC_CEILING` in
-  `tools/refactor_audit/structure_gates.py`, and only three files are baselined
-  as exempt), so the largest frontend file now has **11 lines of headroom**.
-  Worth watching rather than acting on, but the next feature added to
-  `frontend/app/__init__.py` is likely to be the one that fails the gate. The
-  two pages this row named as
+  `pages/backtest.py` at **771**, then `pages/ai_trade_analysis/__init__.py` at
+  729 and `frontend/app/__init__.py` at 635. *(`frontend/app/__init__.py` was
+  789 with 11 lines of headroom until 2026-09-10, when its three shell dialogs
+  moved to `frontend/app/_dialogs.py` — 165 lines out, pinned first by
+  `tests/frontend/test_shell_dialogs.py`.)* **The ceiling is a hard 800**
+  (`LOC_CEILING` in `tools/refactor_audit/structure_gates.py`, and only three
+  files are baselined as exempt), so the largest frontend file now has **29
+  lines of headroom**. The two pages this row once named as
   blocked, `ai_trade_analysis.py` and `test_panel.py`, are packages: both
   bugs ([010](../todo/bugs/010-test-panel-reset-params-nameerror.md),
   [011](../todo/bugs/011-signal-generator-analysis-nameerror.md)) were resolved
@@ -70,18 +69,11 @@ doc, not a work log._
   `breakout_panel`. On the backend, `ea_bridge.py` 1,947 → 719 across 6
   modules and `core_bot_panel.py` 1,689 → 604 across 6.
 
-  **Two frontend pages remain over 800 and both are blocked on a bug, not on
-  effort**: `ai_trade_analysis.py` (1,250) by
-  [bugs/011](../todo/bugs/011-signal-generator-analysis-nameerror.md) and
-  `test_panel.py` (1,245) by
-  [bugs/010](../todo/bugs/010-test-panel-reset-params-nameerror.md). Each page
-  carries a latent `NameError` that only fires when a button is clicked; a flat
-  module hides it from `test_page_packages_are_wired.py`, a package does not.
-  Splitting either one turns a silent dead button into a red gate. **Both fixes
-  need Simon's decision — see those two files.**
-
-  The controller-boundary ratchet still stands at 50. Not a money risk; a
-  maintainability debt.
+  *Two paragraphs stood here until 2026-09-10 claiming two pages were still
+  over 800 and blocked on bugs/010 and bugs/011, and that the
+  controller-boundary ratchet "still stands at 50". Both contradicted this same
+  row's text above them and were stale. Removed after re-measuring — 789 lines
+  is still the largest frontend file, and the boundary count is still 1.*
 - [x] **Debug mode complete except the seam (stage2 phase 5).** Fakes for
   MT5/Telegram/news/AI/email, all outbound guarded behind `is_debug()`; the
   offline e2e proves signal → open → manage → close on the fakes; the debug
