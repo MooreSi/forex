@@ -68,6 +68,9 @@ order is withdrawn on that basis.
 | Re-check breadth on a resting order | Full parity with the queued path: schedule, news blackout, fill delay, pre-trade filters, M5 momentum, plus the bias it already asks. | interview, 2026-09-10 |
 | Proximity trigger | Re-check the full gate set once price is within **10 points** of the resting price; the cheap bias check keeps running every sweep. | interview, 2026-09-10 |
 | A failed re-check | **Withdraw and re-arm.** The broker order is cancelled, but the setup stays alive until its original TTL expires and is re-placed if every gate passes again. | user, 2026-09-10 |
+| Template stop reference on a resting order | Measured from the **resting price**, not the tick at placement — that is where the trade actually opens. | user, 2026-09-10 (QUESTIONS 1) |
+| Toggle for the widened sweep | **Its own tunable**, default on. `htf_bias_gate_enabled` keeps governing only the bias half, so the trend gate and the news/schedule re-check switch independently. | user, 2026-09-10 (QUESTIONS 2) |
+| Alert noise on a flap | Announce the **first** withdrawal and the **first** re-placement per signal, then stay quiet; report the flap count once in the final message. | user, 2026-09-10 (QUESTIONS 3) |
 
 ## Building blocks we reuse (do not rebuild)
 
@@ -101,9 +104,8 @@ order is withdrawn on that basis.
 
 See [QUESTIONS.md](QUESTIONS.md). The short list:
 
-- Where is a resting order's template SL measured from — the resting price, or the tick at placement
-  time? (default: **the resting price**, since that is where it will fill)
-- Does the EA recompile go out with 030 alone, or is the whole pack demoed in one session?
-- Re-arm makes an order able to flap: withdrawn, re-placed, withdrawn again, each with a Telegram
-  message. How is that damped? (default: **announce the first withdrawal and the re-placement,
-  then go quiet for that signal** — see QUESTIONS.md)
+- ~~Where is a resting order's template SL measured from?~~ (answered 2026-09-10: the resting price)
+- ~~Which toggle turns the widened re-check on?~~ (answered 2026-09-10: its own tunable, default on)
+- ~~How is a withdraw/re-arm flap damped on Telegram?~~ (answered 2026-09-10: first withdrawal and
+  first re-placement, then quiet)
+- **Open:** does the EA recompile go out with 030 alone, or is the whole pack demoed in one session?

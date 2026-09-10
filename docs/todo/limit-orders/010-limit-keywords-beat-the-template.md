@@ -1,6 +1,6 @@
 # 010 — A LIMITS message rests, whatever strategy the channel is on
 
-**Status:** not started
+**Status:** **BUILT 2026-09-10**, owner-signed-off, tests-first. `python -m tools.checks all` green. **NOT DEMOED** — no broker has seen any of it.
 **Depends on:** none
 **Real-money surface:** yes — it changes which broker call a live signal makes. Needs owner sign-off before implementation and a demo session before it is trusted.
 **Leverage:** the resting path already exists in full; this only stops routing around it.
@@ -39,24 +39,43 @@ a limit order is.
 
 ## Tests first (TDD)
 
-- `tests/core/test_limit_keyword_beats_template.py`
-  - a `tp_open` signal on a **single**-mode template channel calls `handle_limit_order_signal` and
-    never `execute_auto_signal`
-  - a `tp_open` signal on a **grid** template channel still calls `execute_auto_signal` (grid keeps
-    its own placement branch)
-  - a `tp_open` signal on a channel with no override is unchanged — still Limit Runner
-  - a signal **without** `tp_open` on a single template still calls `execute_auto_signal`, so the
-    market path is untouched
-  - the gap-fire regression: a single-template `tp_open` BUY whose market price is 13.74 above the
-    zone places a resting order and does **not** open a market trade
-- Read the dispatch function's own source, strip comments and docstrings, and match `name(` — not a
-  module-wide grep. Two tests in
-  [reversal-engine/100](../reversal-engine/100-revalidating-every-waiting-order.md) passed with the
-  guard deleted because they matched the `import` line.
+**Written 2026-09-10, red before any fix:**
+[`tests/e2e/test_limit_keyword_beats_template.py`](../../../tests/e2e/test_limit_keyword_beats_template.py)
+— 8 tests, **5 red, 3 green**. End-to-end rather than unit, because the bug is not inside any one
+function: every function involved does what its own comment says. It is in *which function gets
+called*. `tests/core/test_limit_order_signal.py` already pins the placement; what was untested is
+that a LIMITS message on a template channel ever reaches it.
+
+Harness is `test_trend_gate_end_to_end.py`'s: `FakeMT5Bridge`, `FakeTelegramReader`, empty bridge
+URL, no network. The EA is faked so `place_pending_order` and `open_trade` are both **counted** —
+the failure mode here is the wrong call, and a spy that only checks truthiness would not see it.
+
+Red (the behaviour to change):
+
+- a resting order is placed at 4415.00, the near edge of the zone
+- no market order is opened
+- the stop is not shifted to chase the market
+- a SELL LIMITS message rests too, at 4454.00 — the bottom of its zone, the side price reaches first
+- and opens nothing at market
+
+Green (the controls, which must stay green):
+
+- a message that does **not** say LIMITS on the same channel and template still fills at market —
+  the control against over-correction, which "make everything rest" would fail
+- a **grid** template still stages its own legs
+- a channel with **no** template still rests, as Limit Runner already did
+
+Each control was verified capable of failing by breaking its assertion once and re-running.
+
+**The red output reproduces the live incident exactly.** BUY LIMITS 4415/4410 with the market at
+4428.74 opens a market BUY with `stop_loss` 4416.89 and TPs 4431.89 / 4435.89 / 4440.89 — the
+signal's own 4403 / 4418 / 4422 / 4427, every one shifted +13.89. The live alert reported +13.7. The
+SELL case mirrors it: zone 4454–4460 with the market at 4440.00 opens a market SELL with SL 4446.85,
+a +14 shift off 4461.
 
 ## What to do
 
-1. Write the tests above; run them; confirm they fail for the right reason.
+1. ~~Write the tests above; run them; confirm they fail for the right reason.~~ Done 2026-09-10.
 2. In `scan_messages.py`, replace the `is_template_override(strategy)` clause with a grid-only test.
    Put the "is this a grid template" question in one named helper — `ea_templates` is the right home
    — and call it from here and from `scan_auto_execute.py:444`, so the two cannot drift.

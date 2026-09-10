@@ -6,10 +6,10 @@ recommendations" and change only what you disagree with.
 Answer inline (write `ANSWER:` under each). Answered items stay, annotated — don't delete them.
 
 ## The decisions (quick list)
-1. Where is a resting order's template stop measured from?
-2. Which toggle turns the widened re-check on?
-3. How much does a withdraw/re-arm flap say on Telegram?
-4. Does the EA recompile go out on its own, or with the whole pack?
+1. Where is a resting order's template stop measured from? — **answered 2026-09-10: resting price**
+2. Which toggle turns the widened re-check on? — **answered 2026-09-10: its own tunable**
+3. How much does a withdraw/re-arm flap say on Telegram? — **answered 2026-09-10: first withdrawal + first re-placement, then quiet**
+4. Does the EA recompile go out on its own, or with the whole pack? — **still open**
 
 ---
 
@@ -26,7 +26,9 @@ from the price you just filled at. A limit order fills later, at a price you nam
   But the stop then sits a distance from the entry that nobody chose: on the 2026-09-10 example it
   would be 13.7 points wrong.
 
-ANSWER:
+ANSWER: **From the resting price** (owner, 2026-09-10). Pinned by 020's killer test: `sl_pips = 60`,
+BUY limit resting at 4415.00, stop at 4409.00 — with the tick deliberately at 4428.74, where a
+tick-referenced implementation would have put it at 4422.74.
 
 ## 2. Which toggle turns the widened re-check on?
 
@@ -42,7 +44,9 @@ that coupling means **turning the trend gate off silently turns off the news re-
 - **Always on, no toggle** — simplest. But every other gate in this system has a switch, and a sweep
   that cancels live orders with no way to stop it is not a thing to ship on a Friday.
 
-ANSWER:
+ANSWER: **Its own tunable** (owner, 2026-09-10), default on. Added via the `/add-tunable` skill. The
+trend gate's `htf_bias_gate_enabled` keeps governing only the bias half of the sweep, so the two can
+be switched independently.
 
 ## 3. How much does a withdraw/re-arm flap say on Telegram?
 
@@ -58,7 +62,9 @@ candles. Each of those is, literally, a discard.
 - **Only the final outcome** — one message when the order fills or expires, summarising what happened
   to it. Quietest, but you lose the ability to see a withdrawal while it matters.
 
-ANSWER:
+ANSWER: **First withdrawal + first re-placement, then quiet** (owner, 2026-09-10). Further flaps are
+counted and reported once, in the message when the order finally fills, expires or is cancelled for
+good.
 
 ## 4. Does the EA recompile go out on its own, or with the whole pack?
 
@@ -77,7 +83,7 @@ ANSWER:
 ---
 
 ## Quick-confirm checklist
-- [ ] 1 — resting price, or tick?
-- [ ] 2 — own toggle, shared toggle, or none?
-- [ ] 3 — which flap policy?
+- [x] 1 — resting price
+- [x] 2 — own tunable, default on
+- [x] 3 — first withdrawal + first re-placement, then quiet
 - [ ] 4 — one demo session, or EA first?

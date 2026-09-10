@@ -1,6 +1,6 @@
 # 040 — Re-judge a resting order before it fills, and withdraw it if the setup has gone
 
-**Status:** not started
+**Status:** **BUILT 2026-09-10**, owner-signed-off, tests-first. `python -m tools.checks all` green. **NOT DEMOED** — no broker has seen any of it.
 **Depends on:** none (independent of 010-030, but the value rises once template limits rest here too)
 **Real-money surface:** yes — it cancels live broker orders, and re-places them. Owner sign-off before implementation; demo before trusted.
 **Leverage:** the sweep, the toggle and the cancel call all exist; only the gate set and the outcome change.
@@ -52,29 +52,66 @@ The re-arm is the part with teeth. Three things it must not do:
 
 ## Tests first (TDD)
 
-- `tests/core/test_resting_revalidation_gates.py`
-  - each gate in turn — schedule, news, fill delay, pre-trade filters, momentum, bias — refuses, and
-    `cancel_pending_order` is called with a reason naming that gate
-  - all gates pass → nothing is cancelled
-  - a gate refuses while price is **11 points** away → **not** cancelled (proximity holds it)
-  - the same refusal at **9 points** → cancelled
-  - the bias check still runs at any distance, unchanged from today
-  - a neutral or unreadable bias withdraws nothing — the existing fail-open behaviour, which exists
-    so a price-feed hiccup cannot pull the whole book
-  - **it never closes anything.** `resting_revalidation.py`'s docstring already promises this and
-    says a test asserts it by name; that test must still pass with the wider gate set
-- `tests/core/test_resting_revalidation_rearm.py`
-  - a withdrawn row whose gates now pass is re-placed at the **same** price, SL and TPs
-  - the re-placed order's expiry is the original expiry, not `now + 60min`
-  - a withdrawn row past its original TTL is expired, never re-placed
-  - a row already `'working'` is never re-placed (no double order)
-  - withdraw → re-arm → withdraw again is stable and does not accumulate broker orders
-- Assert against a fake EA recording `cancel_pending_order` / `place_pending_order` calls. Counting
-  calls is the point here: the failure mode is two orders, not zero.
+**Written 2026-09-10, red before any fix.** Two files, 31 tests, **15 red**.
+
+[`tests/core/test_resting_revalidation_gates.py`](../../../tests/core/test_resting_revalidation_gates.py)
+— 19 tests, 8 red, 11 green.
+
+Each gate is patched **at the module where it is defined**, so an implementation that copies one, or
+binds it with `from x import f` at import time, fails here. `resting_revalidation.py` already calls
+`_gov.htf_bias_blocks` through its module for exactly that reason.
+
+Red: the schedule, the news blackout, the fill delay, the pre-trade filters and a contrary M5 candle
+each withdraw the order; proximity acts at 9 points; the trend gate's toggle no longer governs the
+other checks; and the signature takes a `tick` and `dpm_candles` at all.
+
+Green, and already true today: an unreadable bias withdraws nothing, an order with no broker ticket
+is left alone, a throwing gate does not take the sweep down, a turned bias still withdraws, the bias
+is asked at any distance, and nothing is withdrawn when every gate passes.
+
+`revalidate_resting_orders` does not take a tick or candles yet, so the test file passes only the
+kwargs the current signature accepts. Without that, all 19 failed with the same `TypeError` and the
+run said nothing about which behaviour was missing. `test_the_signature_takes_the_market_it_is_
+judging_against` is what stops the shim standing in for a parameter that never gets added.
+
+`TestItNeverCloses` is the named test `resting_revalidation.py`'s docstring promises, carried
+forward: it reads the module's own source and fails if `close_trade`, `record_close`,
+`_make_close_trade_ctx` or `partial_close_trade` appears outside the docstring. It has its own
+negative control, because a source search that matches nothing looks identical to one that passes.
+
+[`tests/core/test_resting_revalidation_rearm.py`](../../../tests/core/test_resting_revalidation_rearm.py)
+— 12 tests, 7 red, 5 green. **Real database, not a fake repo**: the whole question is what state the
+row is left in, and a fake would answer it with whatever the test imagined.
+
+Written against the three ways re-arm goes wrong, not the happy path:
+
+* **the immortal order** — seeded 45 minutes into a 60-minute life, a correct re-arm asks for ~15
+  minutes, not another 60. `vantage_pending_orders` has **no expiry column**, so the original clock
+  has to be derived from `created_at` — exactly the detail a test written after the code would have
+  quietly ratified.
+* **the drifted order** — re-placed at the stored price, stop, targets, lot and strategy, never at
+  "the current near edge".
+* **the doubled order** — a working row is never re-placed, a cancelled one never comes back, and
+  withdraw → re-arm → withdraw ends with exactly 2 cancels, 1 place and one live order at every
+  point.
+
+Plus: a withdrawn row must not read `cancelled` (that status is final and `apply_pending_cancelled`
+cancels the signal with it, which would make re-arm impossible), the signal row stays `pending`, a
+broker refusal leaves the row withdrawn rather than stranding it as working, and an order past its
+original TTL is marked something that is neither `withdrawn` nor `working` so it is not reconsidered
+forever.
+
+**Honest note on the green ones there:** the "never does X" tests pass today because nothing is ever
+re-placed at all. They are guards for after the feature exists, and are the ones to break
+deliberately once it does.
+
+**Names these tests pin** (change them here and in the tests together): the tunable
+`resting_revalidation_enabled`, the row status `withdrawn`, and `tick` / `dpm_candles` on the sweep's
+signature.
 
 ## What to do
 
-1. Write the tests above; run them; confirm they fail for the right reason.
+1. ~~Write the tests above; run them; confirm they fail for the right reason.~~ Done 2026-09-10.
 2. Add the new `status` value and its repo reads/writes. Check the migration conventions before
    touching the table.
 3. Widen `revalidate_resting_orders`: keep the bias check where it is, add the proximity test, and
@@ -107,9 +144,11 @@ The re-arm is the part with teeth. Three things it must not do:
 
 ## Notes
 
-The toggle question is open. Today the sweep is gated on `htf_bias_gate_enabled`, which is the bias
-gate's own switch — reusing it for schedule and news re-checks would mean turning off the trend gate
-silently turns off the news re-check too. See QUESTIONS.md.
+**Its own tunable, default on** (owner, 2026-09-10). Today the sweep is gated on
+`htf_bias_gate_enabled`, the trend gate's own switch; reusing it would mean turning the trend gate off
+silently turns off the news re-check too. `htf_bias_gate_enabled` keeps governing only the bias half.
+Add the new setting via the `/add-tunable` skill — it is a behaviour constant that must be
+user-editable, which is exactly what that skill exists for.
 
 Out of scope, and still true from reversal-engine/100: orders placed by hand on the terminal are
 invisible to this sweep, because it reads `vantage_pending_orders`.

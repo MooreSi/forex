@@ -1,6 +1,6 @@
 # 020 — The template manages the fill
 
-**Status:** not started
+**Status:** **BUILT 2026-09-10**, owner-signed-off, tests-first. `python -m tools.checks all` green. **NOT DEMOED** — no broker has seen any of it.
 **Depends on:** [010](010-limit-keywords-beat-the-template.md); must ship in the same demo session as [030](030-carry-the-template-on-a-resting-order.md)
 **Real-money surface:** yes — it sets the stop distance and the lot size on a live resting order. Owner sign-off before implementation; demo before trusted.
 **Leverage:** every piece of template resolution already exists on the market path; none of it is reachable from the limit path.
@@ -38,7 +38,7 @@ Three things have to come from the template instead:
 from it — reusing `resolution.py:540-576` for the stop, `open_trade.resolve_template_tps` for the
 ladder and `scan_auto_execute.py:394-410`'s sizing shape. No second implementation of any of them.
 
-**The price reference is the resting price, not the tick.** `resolution.py` measures a template's SL
+**The price reference is the resting price, not the tick** (owner, 2026-09-10, QUESTIONS #1). `resolution.py` measures a template's SL
 from `tick.ask`/`tick.bid` because a market order fills there. A resting order fills at the price we
 are about to name, which may be an hour and many points away, so `sl_pips` must be measured from the
 limit price or the stop distance is right and the stop level is wrong. This is the one place this
@@ -46,24 +46,37 @@ task cannot simply call the existing function — the conversion is shared, the 
 
 ## Tests first (TDD)
 
-- `tests/core/test_limit_order_template_management.py`
-  - `_resolve_management` on a single-template channel returns that template's override, not the
-    Limit Runner default
-  - the resting order's SL is `limit_price - sl_pips * PIPS_TO_PRICE_XAUUSD` for a BUY (and `+` for a
-    SELL), **measured from the limit price** — pin this with a tick deliberately far from the limit
-    price, so a test cannot pass against a tick-referenced implementation
-  - `use_dynamic_atr` on the template beats `sl_pips`, and falls back to `sl_pips` when no candles
-  - `sl_pips = 0` still defers to the signal's own stop (matches `resolution.py`)
-  - TPs come from `resolve_template_tps`, not from the signal's `tp1..tp8`
-  - lot comes from `risk_pct` when set; from `lot_anchor` capped at `max_lot_size` when not
-  - a `TP OPEN` line still reserves `runner_reserve_pct` — that is a property of the signal, not the
-    ladder, and the existing docstring says so
-- Assert on the arguments actually handed to `place_pending_order`, with a fake bridge. A test that
-  only checks `_resolve_management`'s return value proves nothing about the order that goes out.
+**Written 2026-09-10, red before any fix:**
+[`tests/core/test_limit_order_template_management.py`](../../../tests/core/test_limit_order_template_management.py)
+— 16 tests, **11 red, 5 green**. Unit-level against `handle_limit_order_signal` with a fake EA that
+records its arguments; the routing that gets a signal here is 010's business, not this file's.
+
+**Every test places the tick deliberately far from the resting price** — zone 4410–4415 with the
+market at 4428.74, the live geometry. A tick-referenced implementation cannot pass any of them by
+accident. `sl_pips = 60` from the resting price is 4409.00; from the tick it is 4422.74, which for a
+BUY is seven points *above* the entry and not a stop at all.
+
+The template's TP pips are 40 / 90 / 150, chosen so the expected ladder (4419 / 4424 / 4430) collides
+neither with the signal's own stated 4418 / 4422 / 4427 nor with the tick-referenced 4432.74 /
+4437.74 / 4443.74. A test that could pass while the template was ignored would be worthless here.
+
+Red — the stop from `sl_pips` and measured from the resting price (both directions), the ladder from
+the template's pips and measured from the resting price, `risk_pct` sizing, sizing against the
+template's own stop, `lot_anchor` and its `max_lot_size` cap, the order stamped with the template
+strategy, and the template dict reaching the wire.
+
+Green, and must stay green — `sl_pips = 0` still defers to the signal's own stop, `tp_from_telegram`
+still keeps the message's levels, a `TP OPEN` line still reserves the runner, an untemplated channel
+is untouched, and the order still rests at the near edge. **All five verified capable of failing** by
+breaking each assertion once and re-running.
+
+One thing the fake had to get right: `suggest_lot_size_fn` returns 0.07 — neither the `lot_anchor`
+(0.02) nor the `max_lot_size` cap (0.10). Returning either would have made both anchor tests pass on
+the fake's own return value.
 
 ## What to do
 
-1. Write the tests above; run them; confirm they fail for the right reason.
+1. ~~Write the tests above; run them; confirm they fail for the right reason.~~ Done 2026-09-10.
 2. Extract the template-SL conversion out of `resolution.py:540-576` into one function that takes an
    explicit price reference, and call it from both sites. Do not copy it.
 3. `_resolve_management`: return the template override for a single-mode template; keep the existing
