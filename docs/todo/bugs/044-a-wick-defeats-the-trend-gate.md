@@ -1,7 +1,8 @@
 # 044 — A 3.53-point wick turns the trend gate off
 
-**Status:** OPEN, **nothing changed** — the rule decides which trades are
-taken, so it is the owner's call.
+**Status:** **FIXED 2026-09-10 on the owner's instruction** ("make the change,
+we need better risk management and improved profitability"). Option 1: closes,
+not wicks. See "What shipped" at the end.
 **Money:** yes. This is the gate that exists to stop the 2026-09-08 loss.
 **Found:** 2026-09-10 12:55, live, while the account was losing on BUYs.
 
@@ -80,3 +81,42 @@ live trading behaviour and belongs with the owner — the same reason blocking
 **My reading, for what it is worth:** option 1 is the smallest change that
 matches what every other measure of the same window already says, and it does
 not need a new threshold chosen.
+
+
+---
+
+## What shipped
+
+`get_htf_bias` compares the highest and lowest **close** of each half instead of
+the highest wick and lowest wick. The live case that found this — a 41.84-point
+decline vetoed by a 3.53-point wick — now reads **bearish**, which blocks BUYs.
+
+**This deliberately widens what the gate blocks.** More windows are now
+"decided", which is the point: [080](../reversal-engine/080-no-trend-gate-on-the-telegram-path.md)
+measured that the gate could only act on 70% of signals, and a good part of the
+other 30% was a wick vetoing a real trend.
+
+### Two things the existing tests caught that I had wrong
+
+**A missing `close` would have switched the whole gate off.** Six tests in
+`test_level_detector.py` build candles as bare `{"high": .., "low": ..}`. The
+first version read the absent close as `0.0`, which makes every window neutral
+— and neutral does not block. It now **falls back to wicks** when closes are
+absent or zero, rather than to zero, and that fallback is pinned in both
+directions plus the partial-payload case.
+
+**Both conditions are still required.** A mutant loosening `hh and hl` to
+`hh or hl` survived the first pass, because nothing distinguished them. An
+**expanding range** does: a higher high *and* a lower low is genuinely
+undecided, and calling it a trend would have the gate blocking inside a
+widening range — the over-refusal the runbook warns about. Pinned both ways.
+
+Three mutants die: reverting to wick highs, either-instead-of-both, and moving
+the split point.
+
+### Not changed
+
+The H4 weighting block below the structure test still uses wicks. It never runs
+on the gate's path — `governor.current_htf_bias` calls `get_htf_bias(candles)`
+with H1 only — so changing it would alter callers that were not the subject of
+this, with no measurement to justify it.
