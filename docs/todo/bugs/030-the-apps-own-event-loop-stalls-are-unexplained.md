@@ -1,6 +1,9 @@
 # 030 — The app's own event loop stalls, and nobody has looked since July
 
-**Status:** **Both causes fixed 2026-09-09.** The high-frequency stalls were
+**Status:** **Two causes fixed 2026-09-09. A THIRD found 2026-09-10** — a
+full page load. See the last section.
+
+**Superseded claim:** The high-frequency stalls were
 bugs/035; the ~5s stalls were the ML fit running on the event loop, fixed on
 the owner's explicit permission to touch the money path. Polling volume is
 measured and left alone. See the sections at the end. Recorded 2026-09-05 so it stops being
@@ -274,3 +277,62 @@ fit (identified, all of the worst case), and general polling volume
 quickly the app notices a fill or a close, which is money behaviour and the
 owner's call. It is recorded because 4 requests a minute for a year of deal
 history, with nothing open, is unlikely to be deliberate.
+
+
+---
+
+# Cause 3 — opening the page (2026-09-10)
+
+The fix above removed the ML fit, and the multi-second stalls stopped for four
+hours. Then, at 06:36:
+
+```
+06:36:31 [LoopMonitor] event loop stalled 2065ms
+06:36:33 [LoopMonitor] event loop stalled 1548ms
+```
+
+**So "the multi-second class is gone" was too strong a claim, and this
+corrects it.** The ML fit was one cause of multi-second stalls, not the only
+one.
+
+## What it is
+
+The 2,065 ms stall's task list carries about twenty-five render tasks that the
+sub-second stalls around it do not:
+
+```
+_render_active_trades.refresh, _render_calendar.reload,
+_render_connected._refresh_pending, _render_connected._update_slot_status,
+_render_equity_curve.refresh_chart, _render_history, _render_ml,
+_render_pending_signals.refresh, _render_slot_feed.refresh,
+_render_tg_signals.refresh, _render_trade_table.refresh_table,
+attach.open_start_here, render._refresh_all, render._refresh_candles,
+render._refresh_fvgs, render._render_analytics, render._render_balance,
+render._render_stats, render.refresh_perf ...
+```
+
+`attach.open_start_here` is a fresh client attaching. Every panel refreshes at
+once, each doing its own database reads and bridge calls, all on the event
+loop. Nothing was scheduled at 06:36 and no engine cycle lines them up — a
+browser opened the page.
+
+## Why it is worth recording rather than shrugging at
+
+* It happens **exactly when someone is watching**, which is also when they are
+  most likely to be about to act on what they see.
+* The EA reconnects after ten seconds of Python silence and a template trade
+  has no Python fallback while that lasts (see
+  [013](013-ea-stalls-leave-template-trades-unmanaged.md)). Two seconds is a
+  fifth of that budget, spent on rendering.
+* It scales with the number of clients. The Mac connects to this app too.
+
+## Not fixed
+
+The shape of the fix is the same as the ML one — do the work off the loop, or
+stagger the panels so they do not all refresh in the same tick — but it is a
+frontend change across roughly a dozen render functions, and it is a latency
+problem rather than a money one. Recorded with the evidence so the next person
+does not have to find it again.
+
+**Rate check for the record**: between 03:30 and 06:35, with the ML fit off the
+loop and nobody looking at the page, there were **no stalls at all**.
