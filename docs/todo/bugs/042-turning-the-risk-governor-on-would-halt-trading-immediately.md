@@ -1,7 +1,11 @@
 # 042 — Turning the Risk Governor on would halt trading on the first close
 
-**Status:** OPEN, **nothing changed.** Found 2026-09-09 (night) reading the
-live halt state on the demo account.
+**Status:** **FIXED 2026-09-10, test-first, four mutants killed** — option 1,
+on the owner's instruction ("fix the peak_balance watermark so the governor can
+go on, but don't turn it on"). **The governor is still OFF; nothing turned it
+on.** Applies to the running install **at the next restart**, not now — no
+database was hand-edited. Found 2026-09-09 (night) reading the live halt state
+on the demo account.
 **Money:** yes — it decides whether the app trades at all.
 
 ## The state, read live
@@ -74,3 +78,55 @@ held it has not been established.
 **Not chosen here.** It is a protective watermark; moving it makes the
 drawdown halt more permissive, which is a money decision even when the current
 value is probably wrong.
+
+
+---
+
+## What was done, 2026-09-10
+
+**Option 1, as code rather than as a hand-edit.** The watermark was not reset by
+typing a number into the live database. `db/account_registry.resolve_db_path`
+now stamps `peak_balance_account` on every resolve that names an account, and
+clears `peak_balance` when the stamp is absent or names a different account.
+`close_trade._update_peak_balance` then sets it again from the **live** balance
+on that account's next close. Nothing in the frozen close path was touched.
+
+Why that shape rather than a number:
+
+- The reset value should be the live MT5 balance, and that is only knowable
+  from inside the running app. Any figure written from outside would be a
+  guess — the internal sim ledger read $834.49 tonight, which is exactly the
+  number `rg_check_halt` is documented never to use.
+- It heals the **cause**. `app_config` is copied by `_seed_shared_tables` as an
+  install-wide table, so the next account added would have inherited the
+  watermark again.
+- It needs no write to a database the app currently has open.
+
+**State on the install, read read-only 2026-09-10 21:00:**
+
+```
+forex_trader_demo_26004592.db   peak_balance = 2403.25   (the active file)
+forex_trader_demo.db            peak_balance = 2403.25
+forex_trader_live.db            peak_balance absent
+```
+
+At the next restart the active file's watermark is cleared and stamped
+`26004592`. Until that account's next close there is no watermark, so the
+total-drawdown halt cannot fire — the same state a fresh install is in.
+
+**Not done, deliberately:** `risk_governor_enabled` is untouched (still 0), and
+the stale `risk_halt_reason` / `trade_pause_until` pair in the active file was
+left alone. That pause expired on 2026-08-30, so it holds nothing back, and
+clearing an inherited *pause* is a change in the permissive direction — a
+separate decision from the watermark.
+
+**Still yours:** the three items in
+[handover/011](../../simon-handover/011-your-halt-settings-do-not-match-what-you-confirmed.md)
+— governor on, daily loss 3%, drawdown 10%. Turning the governor on is now safe
+from the watermark's side, but **it has never been demoed on this account**: the
+first close after switching it on is the first time the total-drawdown branch of
+`rg_check_halt` will have run here at all.
+
+Tests: `tests/db/test_account_db_registry.py::TestThePeakBalanceWatermarkIsAccountScoped`
+(6 tests, written and watched fail first; mutants killed — owner check inverted,
+delete loop removed, stamp not written, re-anchor not called).
