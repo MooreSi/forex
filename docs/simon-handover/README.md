@@ -141,5 +141,7 @@ in the room.
 
 - [028-sharing-the-engines-learning-with-every-client.md](028-sharing-the-engines-learning-with-every-client.md) — should every client learn from every other client? Two decisions, neither urgent, and a recommendation to wait until the engine is worth copying
 
-> This list is behind: 021 to 026 exist in the folder and are not on it. Open
-> the folder itself for the full set until it is caught up.
+- [031-should-a-stopped-out-trade-be-held-instead.md](031-should-a-stopped-out-trade-be-held-instead.md) — a stop-out followed seconds later by the same trade at a better price: should the app widen the stop and hold instead? Measured over 91 pairs; the answer is no, and what to do instead
+
+> This list is behind: 021 to 026 and 029 to 030 exist in the folder and are
+> not on it. Open the folder itself for the full set until it is caught up.
