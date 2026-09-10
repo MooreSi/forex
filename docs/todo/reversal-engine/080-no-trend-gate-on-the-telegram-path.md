@@ -287,3 +287,42 @@ broker, and nothing surfaces it outside this column.
 And one row reads `error:EA Template refused: the chart is running EA v1.05...`
 — [bugs/033](../bugs/033-a-stale-ea-build-was-invisible.md) refusing a template
 on the stale build, in production, exactly as intended.
+
+
+---
+
+## How much of the time the gate can act at all (2026-09-10)
+
+`htf_bias_at_fill` across every signal since the gate was switched on:
+
+| bias at fill | n | share |
+|---|---|---|
+| bullish | 93 | 45.1% |
+| bearish | 52 | 25.2% |
+| **neutral** | 29 | **14.1%** |
+| not recorded | 32 | 15.5% |
+
+**The gate can only ever act on the 70% that is decided.** `htf_bias_blocks`
+returns None on `neutral` by design — "no clear trend" is a different claim
+from "the trend is against you" — so during a neutral stretch the gate is
+inert.
+
+That matters because this file's own measurement says neutral is not a safe
+group: **184 trades, 57.1%, -$1,234.06**, losing about as much as trading
+against the bias does. The 14% above is one night; a longer ranging spell would
+be a longer gap in the protection.
+
+Not a defect, and not changed: blocking neutral was explicitly ruled out as
+"a bigger change than was asked for", and [090](090-level-score-bypasses-the-bias-filter.md)
+is where that decision lives. Recorded because "the trend gate is on" reads
+like full coverage and is not.
+
+### A false alarm worth recording
+
+A Telegram SELL was auto-executed at 06:56 and the gate refused a SELL four
+minutes later for a bullish bias, which looked like the gate missing yet
+another route. It was not: `htf_bias_at_fill` was **neutral** at 06:56 and only
+became decided afterwards. The gate behaved correctly both times.
+
+Checked before reporting, after [037](../bugs/037-global-harvest-threshold-changed-to-the-old-accounts-value.md)
+turned out to be the owner changing a setting rather than a fault.
