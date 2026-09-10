@@ -103,3 +103,70 @@ $900 account is $4.50. The actual risk per trade is about **$50, roughly 5% of
 the account**, because a fixed lot overrides risk-based sizing. That is the
 configured behaviour, not a fault — but the two numbers on that screen say very
 different things about how much is at stake.
+
+
+---
+
+# A bigger confound than the sampling one (2026-09-10)
+
+The section above says `mae_pts` is sampled every five seconds and therefore
+under-reads fast moves. True, and it is the smaller problem.
+
+**`sl_dist` is the stop the trade OPENED with. The actual stop moves.**
+
+Traced on a live trade, ticket 1977022272:
+
+```
+06:56:25  opened SELL @ 4426.22  SL=4438.26        (12.04 pts away)
+07:09:50  partial close OK tp=1
+later     broker reports SL 4431.23                ( 5.01 pts away)
+```
+
+Nothing in the app log or the EA log records the move. The EA trails **without
+logging**, and it armed because `GD Instituational - single` sets
+`tp1_trigger_level = 1`, which the EA OR's with the pip-based
+`trail_activation`:
+
+```cpp
+if(!trailArmed) {
+   int tplTrigLevel = TplI(t.tplCfg, "tp1_trigger_level", 0);
+   if(tplTrigLevel > 0 && tplTrigLevel <= MAX_TPS)
+      trailArmed = t.triggered[tplTrigLevel - 1];
+}
+```
+
+So TP1 arms the trail even though `trail_activation` is 100 pips and the trade
+was only 3 points in profit. That is deliberate, added 2026-08-04 for the
+Asian-Grid case where the activation distance sat beyond the last defined TP.
+
+## What it means for this item
+
+A trade that reaches TP1 and is then stopped out is stopped at a **trailed**
+stop, which can be far tighter than `sl_dist`. Its `mae_pts` will legitimately
+read well below `sl_dist` with nothing wrong at all.
+
+**So `mae_pts / sl_dist` does not measure what this file wants it to.** A ratio
+under 1.0 has at least three innocent explanations now:
+
+1. the five-second sampler missed the spike;
+2. the stop had trailed in after a TP, so the real risk was smaller than
+   `sl_dist`;
+3. the trade closed for some other reason entirely (harvest, equity protect, a
+   manual close).
+
+Only after excluding all three does a ratio above 1.0 mean what the file
+assumes — slippage or a gap past a stop that was still where it started.
+
+## What to record instead
+
+The comparison needs **the stop that was actually in force when the trade
+closed**, not the one it opened with. Nothing stores that today: the EA moves it
+silently and neither log carries the change.
+
+Cheapest fix: record the position's current SL alongside the excursion sample
+that already runs every five seconds, so the row carries the final stop as well
+as the initial one. That is the same call site as the excursion fix made
+2026-09-10 and would give a `sl_dist_at_close` worth dividing by.
+
+Not built. It changes what a column means mid-collection, and the decision
+belongs with the excursion-at-close question already open here.
