@@ -3,16 +3,16 @@
 **Shared status log. Any agent picking up a task updates this file** — claim a row (name + date under
 Owner), flip its Status as you go, leave a one-line Note (commit / blocker / decision).
 
-_Last updated: 2026-09-10 — 010, 020, 030 and 040 BUILT and green, owner-signed-off. `tools.checks all` passes (11 checks, 6943 tests). Nothing demoed. The EA redeploy and 050 (the Telegram message) remain._
+_Last updated: 2026-09-10 — **all five tasks built and green**, owner-signed-off, EA 1.07 deployed and compiled. `tools.checks all` passes (11 checks, 6957 tests). **Nothing demoed.**_
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
 
 ## Overall
 - Routing + template management (010-030): **all three done**; the EA redeploy is outstanding
-- Revalidation + alerts (040-050): **040 done**; 050 not started, so a withdrawal is currently visible in the log only
+- Revalidation + alerts (040-050): **both done**
 - **Gates:** 010/020/040 signed off by the owner 2026-09-10 · tests-first honoured? yes — every test written and watched fail before its code
-- **EA redeploy + recompile outstanding** — the owner's action. EA_VERSION is 1.07 and the chart is on 1.06, so `template_blocked_by_stale_build` refuses EVERY template order until `tools/deploy_ea.sh` is run and MetaEditor compiles (F7).
+- **EA 1.07 deployed and compiled 2026-09-10**, confirmed by the app's own badge reading green (`ea_ok` and not stale). Two of three Experts folders are still uncompiled — the DemoValidation install has never had an `.ex5`, which is the terminal a demo session would use.
 - **Nothing here has been demoed.** Every task changes what a live order does.
 
 ## Tasks
@@ -23,7 +23,7 @@ _Last updated: 2026-09-10 — 010, 020, 030 and 040 BUILT and green, owner-signe
 | 020 | [the template manages the fill](020-the-template-manages-the-fill.md) | done 2026-09-10 | Claude | new `trading/template_levels.py`; SL/TPs from the resting price; not demoed |
 | 030 | [carry the template on a resting order](030-carry-the-template-on-a-resting-order.md) | done 2026-09-10 | Claude | EA_VERSION 1.07; **needs `tools/deploy_ea.sh` + F7 — template orders are refused until then** |
 | 040 | [revalidate before the fill](040-revalidate-before-the-fill.md) | done 2026-09-10 | Claude | own tunable, on by default; withdraw and re-arm; not demoed |
-| 050 | [announce a discarded limit order](050-announce-a-discarded-limit-order.md) | not started | — | depends on 040 |
+| 050 | [announce a discarded limit order](050-announce-a-discarded-limit-order.md) | done 2026-09-10 | Claude | one `withdraw_count` column damps the flap; not demoed |
 
 ## Decisions log
 - Keyword decides the entry mechanic, template decides the management (owner, 2026-09-10)
@@ -75,9 +75,19 @@ negative control so a search matching nothing cannot look like a search passing.
 here uses fakes: `FakeMT5Bridge`, `FakeTelegramReader`, an EA double that records what it was asked
 to do, and an `EABridge` subclass that records the wire message instead of sending it.
 
+**2026-09-10, the commit of 050.**
+
+```
+python -m tools.checks all      all 11 checks pass
+pytest tests/ -q                6957 passed, 7 skipped
+```
+
+EA state confirmed from the app itself rather than from the shell: the top-bar badge renders green
+with text "EA", which `ea_badge_state` returns only when the EA is connected AND `ea_build_status`
+says not stale — so the attached build reports 1.07 and matches the repo.
+
 ## Blockers / open
 - **Nothing here has been demoed.** 010, 020 and 040 all change what a live order does.
-- Until 050 lands, a withdrawal reaches the log and not Telegram.
 - The EA redeploy for 030 needs the owner.
 - One open question in [QUESTIONS.md](QUESTIONS.md): whether the EA recompile ships on its own or
   with the whole pack (Q4). It affects sequencing, not code.
