@@ -78,3 +78,32 @@ system and a marginally profitable one on the same history.
 That is a much larger change and it is the owner's call. Measure it properly
 first: some of "neutral" may be the bias being unreadable rather than genuinely
 flat, and those are not the same thing either.
+
+
+---
+
+## The "neutral loses money" evidence is now stale (2026-09-10)
+
+This file, and [080](080-no-trend-gate-on-the-telegram-path.md), both rest on a
+measurement of the neutral group: **184 trades, 57.1%, -$1,234.06**, losing
+about as much as trading against the bias does. That is the argument for
+eventually blocking neutral too.
+
+**It was measured under the old bias rule**, which compared wick highs and
+lows. [bugs/044](../bugs/044-a-wick-defeats-the-trend-gate.md) found that rule
+called a window neutral whenever a single wick poked above the previous half's
+high — on 2026-09-10 a 3.53-point wick, 0.080%, masked a 41.84-point decline.
+
+So the old "neutral" bucket contained two different things: genuinely undecided
+markets, **and trends that a wick had masked**. Measured across 680 windows,
+`neutral -> bearish` was the single most common reclassification, 52 of 127
+disagreements.
+
+Those masked trends were, by definition, counter-trend trades sitting in the
+neutral bucket — and counter-trend is the group with the worst record on the
+books. **A good part of that -$1,234 is likely to have been them.**
+
+**So the case for blocking neutral is weaker than it looked, and cannot be
+judged from the old figure.** Re-measure the neutral group under the new rule
+before deciding: the remaining neutral is a different, more genuinely undecided
+population than the one that number describes.

@@ -120,3 +120,46 @@ The H4 weighting block below the structure test still uses wicks. It never runs
 on the gate's path — `governor.current_htf_bias` calls `get_htf_bias(candles)`
 with H1 only — so changing it would alter callers that were not the subject of
 this, with no measurement to justify it.
+
+
+---
+
+## Does it suppress Asian-hours trading? No. (measured 2026-09-10)
+
+The owner asked, because the engine has historically profited overnight in
+Asia. Both rules were run over **680 rolling 20-bar windows**, 2026-07-30 to
+2026-09-10, bucketed by session:
+
+| session | bars | old decided | new decided | change |
+|---|---|---|---|---|
+| **asian** | 238 | 169 (71%) | 169 (71%) | **±0.0 pts** |
+| london | 120 | 86 (72%) | 87 (72%) | +0.8 |
+| overlap | 150 | 121 (81%) | 125 (83%) | +2.7 |
+| ny | 172 | 143 (83%) | 149 (87%) | +3.5 |
+| all | 680 | 519 (76%) | 530 (78%) | +1.6 |
+
+**Asian hours are exactly unchanged** in how often the gate has an opinion. The
+extra decisiveness lands in NY and the overlap, where trends actually run.
+
+### The net figure hides real movement, so: it disagrees 18% of the time in Asia
+
+It loosens about as often as it tightens there:
+
+* `bullish -> neutral` x15 — now PERMITS trades it used to block
+* `neutral -> bearish` x12 — now blocks trades it used to permit
+* `neutral -> bullish` x7
+
+Across the whole sample the dominant change is **`neutral -> bearish`, 52 of
+127 disagreements** — windows where price was genuinely falling and a wick
+masked it. That is the fault this file is about, and it concentrates in the
+trending sessions.
+
+Outright direction flips are almost absent: `bullish -> bearish` 4 times in
+680 windows, `bearish -> bullish` twice.
+
+### What this does NOT show
+
+How often the gate is *right*. It measures whether it has a view, not whether
+the view makes money, over six weeks of one instrument in one regime. The
+measurement to repeat is 080's blocked-versus-executed comparison, which will
+now include windows that used to be neutral.
