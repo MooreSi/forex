@@ -228,3 +228,59 @@ neither list fails, and stripping the gate out of `scan_auto_execute` fails.
 **This, not another gate, is the thing that would have caught all three
 misses.** The gate was believed complete twice, and both times the audit was a
 person reading code and listing what they remembered.
+
+
+---
+
+## First live measurement, 2026-09-10
+
+The gate was switched on 2026-09-09. Measured over every Reversal Engine signal
+raised since, using the engine's own tracked outcomes (it follows a signal to a
+result whether or not it was executed, which is how it learns):
+
+| | n | win rate | P&L |
+|---|---|---|---|
+| **blocked by the gate** | 43 | **74%** | **-$453.88** |
+| executed | 12 | 67% | +$99.37 |
+
+And the blocked set split by outcome:
+
+| | n | total | average |
+|---|---|---|---|
+| winners | 32 | +$516.52 | **+$16.14** |
+| losers | 11 | -$970.40 | **-$88.22** |
+
+**A 74% win rate that loses money.** The losers are 5.5x the size of the
+winners, which is the payoff problem this whole directory exists about — the
+engine's history is 59.4% wins at +0.642R against -1.161R. The gate is
+refusing exactly that shape: trades that usually win a little and occasionally
+lose a lot.
+
+**This is the first evidence the gate earns its place on this account**, rather
+than on the historical measurement it was designed from.
+
+### What this does NOT establish
+
+* **n is small.** 43 blocked and 12 executed, over roughly one day.
+* **The blocked P&L is paper.** It assumes a blocked signal would have been
+  managed identically — same template, same TP ladder, same partial closes. A
+  real fill can differ, and the biggest blocked loser (-$88) is larger than any
+  real loss on the account that day (~-$50), which is itself a hint that the
+  virtual path and the EA do not manage the same way.
+* **One day, one regime.** The bias was bullish most of the session and flipped
+  bearish overnight, so nearly all of these were SELLs refused into a rise.
+
+Worth re-running after a week. The query is the `live_exec_status` /
+`outcome` join above.
+
+### Two observations from the same data
+
+`live_exec_status` also shows **17 signals lost to
+`error:EA rejected template order: not enough money`**, all between 05:15 and
+11:47 on 2026-09-09, none since. That is a margin failure during the account's
+low point, not an ongoing fault — but it is 17 signals that never reached the
+broker, and nothing surfaces it outside this column.
+
+And one row reads `error:EA Template refused: the chart is running EA v1.05...`
+— [bugs/033](../bugs/033-a-stale-ea-build-was-invisible.md) refusing a template
+on the stale build, in production, exactly as intended.
