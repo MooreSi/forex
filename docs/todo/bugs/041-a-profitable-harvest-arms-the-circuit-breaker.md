@@ -78,3 +78,44 @@ positions in one action.
 * [027](027-global-harvest-was-per-trade-not-a-basket-total.md) — the harvest
   itself, verified working live the same day (twice).
 * Demo 8 in the runbook.
+
+
+---
+
+## Confirmed a second time, 2026-09-10 11:35 — and this one is starker
+
+```
+10:46:04  harvest closes five positions:
+            +$42.49  +$24.20  +$19.20  +$22.10  -$0.80
+          net +$107.19
+11:33:24  SL  -$49.80
+11:35:33  SL  -$52.50
+11:35:33  [CB] Circuit breaker triggered — live trading blocked for 15 min.
+```
+
+The threshold is **3** and only **two** real losses occurred after the harvest.
+So the counter stood at 1 when the basket finished: **the -$0.80 leg counted as
+a consecutive loss.**
+
+**An eighty-cent leg inside a $107 winning basket halted live trading fifty
+minutes later.**
+
+The first occurrence (2026-09-09, -$31.10 inside a +$78.10 basket) could be read
+as a real loss of a real size. This one cannot. The leg is a rounding error
+against the basket that closed it, and it still cost a fifteen-minute halt.
+
+### It is specific to a MIXED basket
+
+The 09:43 trip the same morning was **not** this bug: that harvest closed two
+positions, both winners, the counter correctly reset, and three genuine
+consecutive losses tripped it. So the counting is right whenever the basket has
+no losing leg — which isolates the fault precisely to a basket that mixes them.
+
+That also rules out "the breaker is simply too sensitive" as an explanation for
+either trip.
+
+### What it costs
+
+Two halts in under two hours on 2026-09-10, of which **one was caused by this**.
+Each is fifteen minutes of no live execution, and the day was net positive
+(+$1.62 across 27 closes) while it happened.
