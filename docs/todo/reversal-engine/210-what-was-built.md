@@ -130,3 +130,92 @@ All checks passed.
 suite proves the new code is correct and that turning it OFF changes
 nothing. It proves nothing about the behaviour of any of them turned ON.
 That is what the demo session is for, and it is why they ship off.
+
+---
+
+## First live run, 2026-09-11 15:26, demo account 26004592
+
+The app was restarted onto commit `2c7768e` and the study run from the
+panel. Migrations 39, 40 and 41 applied to the database actually in use
+(`forex_trader_demo_26004592.db`, now at schema version 41) and every new
+switch came up off.
+
+`forex_trader_demo.db` (account 25470480) is at version 35 and NOT migrated.
+It has not been written to since 2026-09-09 -- it is the previous account's
+database and is no longer in use. Worth knowing before anyone queries it and
+reads the numbers as current.
+
+### What the study found
+
+**The broker keeps 30 days of ticks, not 90.** `{1: 36797, 7: 27641,
+30: 25329, 90: 0, 180: 0}`. Excursion can be reconstructed a month back and
+no further, so the backfill is a one-off catch-up plus whatever the live
+sampler collects from here.
+
+**469 excursions reconstructed in about 90 seconds**, 31 with no tick
+coverage, zero failures. Coverage went from 102 to 571 of 785 closed live
+trades. Items 020 and 030 are no longer blocked on data.
+
+**The feed carries no trade side.** "quote-only feed: no trade side, so
+delta can only ever be a tick-rule proxy on this instrument". That is the
+measurement section 4.3 insisted on before building anything on delta, and
+the answer is: do not build measured delta on this broker.
+
+**Measured round-trip cost: 0.372R**, from 289 costed fills -- mean 0.219
+points of spread and 0.438 points of slippage against a mean 3.71 point
+stop. **Read the slippage figure carefully**: the reference price is the
+middle of the signal's own entry zone, so it measures the distance between
+where the signal said it wanted in and where it actually got in. That is a
+real cost and it is not broker slippage. Separating the two needs the
+decision-time tick, which is a small follow-up.
+
+**The fitted barriers are a diagnosis, not a recommendation.** Stop 18.82
+points (2.5x ATR), target 4.85 (0.6x ATR), implied R:R 0.258 from 351
+winners. Read plainly: on this population the trades that eventually win
+frequently go a long way against first and then barely travel in favour.
+Nobody should set a 2.5x ATR stop off this; it says the entries are the
+problem, not the exit geometry.
+
+**Every exit configuration's 95% interval straddles zero** on the 60-path
+sample. The best cell (stop 2 / target 12) is +0.481R [-0.364, +1.333],
+holding sign across both chronological halves. The gradient toward a
+tighter stop and a wider target is the same one `tools/exit_policy_lab.py`
+found independently in July, which is worth something; the intervals say
+raise the sample before acting.
+
+**Item 030's suspect is cleared.** The replay prices the breakeven move at
++0.036R, +0.027R and -0.007R across three stop/target pairs -- roughly free,
+not the large penalty the naive split implied. The attribution table shows
+exactly why the naive reading was wrong: BE-moved trades are 126 rows at a
+**100% win rate**, because a trade only reaches breakeven by going into
+profit first. The replay controls for that selection. **The breakeven move
+is not what is costing the engine money.**
+
+**`score_level`'s weights are contradicted by outcome.** `round_5` is
+scored highest at 0.78 and is the worst cohort on the book: 210 trades,
+-0.157R, -$1,322. `unicorn` is the best at +0.559R and +$625 on 18 trades.
+This is the evidence `simon-handover/029` said would be needed to refit
+those weights.
+
+**Item 040 confirmed on a much larger sample.** Fills under five minutes:
+453 trades, -$1,950. Every other delay bucket is near flat.
+
+**Asian session is the worst**: 309 trades, -$1,043.
+
+### A defect the run found in this build
+
+The macro repair reported "0 vectors to repair", which was wrong.
+`needs_backfill` skipped any vector shorter than the current 38-feature
+schema, and **3,359 of 5,000 stored vectors are 33-wide** against 698 at
+full width. It was therefore a no-op on 96% of exactly the population
+`data-inspect/003` identified.
+
+Fixed: a short vector is now widened with each missing feature's documented
+neutral -- through `_feature_schema.pad_to_schema`, the same function
+training uses, extracted verbatim so a repaired row and an in-memory padded
+one cannot come to mean different things -- and then its macro block is
+filled from history. It now reports **4,302 vectors to repair**. Still dry
+run by default: applying it changes what the ML gate learns.
+
+The test that pinned the old behaviour was rewritten rather than deleted,
+and says why the original expectation was wrong.
