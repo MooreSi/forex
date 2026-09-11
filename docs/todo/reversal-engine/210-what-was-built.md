@@ -327,3 +327,61 @@ not predictable from here.
 
 The pre-repair database is at
 `reversal_engine.db.pre-macro-repair-20260911-161641` if it needs undoing.
+
+---
+
+## Owner changes, 2026-09-11 17:30
+
+**The capability switches moved** to Signal Generator > Reversal Engine.
+They configure that engine, so they belong beside the panel that shows
+whether any of them is working.
+
+**Learn From Pro Signals is gone.** No longer used, so
+`re_learn_from_ref_signals` stays 0 and `pro_likeness` stays at its neutral
+for every signal. `pro_model` itself is untouched and still fitted on the
+signal-capture path.
+
+**The panel's numbers were reset.** Before: 5,384 signals, 71.6% win rate,
+-$20,282 total, -$19,282 virtual balance, $20,816 max drawdown. After: zero
+across the board and the balance back to $1,000.
+
+**No row was deleted.** All 5,384 signals, all 5,384 stored feature vectors
+and all 2,904 excursion measurements survive. The reset is a timestamp --
+`stats_epoch` -- that the reporting queries filter on. That distinction is
+load-bearing: deleting the rows would have taken the ML training set, the
+reconstructed excursion data and the whole attribution table with them, and
+the excursion half came from broker tick history that reaches back 30 days
+and no further.
+
+`get_recent_win_rate` is deliberately NOT filtered: it is a feature in the
+model's vector, not a number on a panel. The epoch changes what the user
+sees, not what the model learns.
+
+**Recommend and AI** (migration 44, `re_ai_tuning_enabled`, off).
+
+*Recommend* puts the measured evidence in front of the configured AI -- the
+fitted barriers, the per-cohort attribution, the measured round-trip cost,
+the meta-labeller's verdict on itself, the live spread -- and proposes
+settings with a rationale, writing nothing until Apply. First live run,
+2026-09-11 17:31, unprompted and unedited:
+
+> re_atr_barriers_enabled -> 1, re_atr_stop_mult -> 1.5, re_atr_tp1_mult -> 2.0
+>
+> "The fitted barriers show an implied RR of 0.229 (target 0.557 ATR vs stop
+> 2.728 ATR), which is far too tight a target against the stop [...] Enabling
+> it with a more balanced stop/target addresses the dominant structural cause
+> of the negative mean_r across nearly every cohort, while leaving level-type
+> blocking and gates alone given the thin or confounded evidence there."
+
+That is the right read of the fit, including the part about not acting on
+thin cohorts. It was not applied.
+
+*AI* hands the switches over permanently: every 15 minutes the engine
+re-reads the market and applies what the AI returns, with no confirmation.
+`ai_tuner.TUNABLE` is a fixed allowlist -- **sizing and live execution are
+not on it and never will be by this route** -- every number is clamped to
+the range the form allows a human, unparseable output changes nothing, and a
+block list covering every level type is rejected because a model that
+decides nothing is tradeable has switched the engine off rather than tuned
+it.
+
