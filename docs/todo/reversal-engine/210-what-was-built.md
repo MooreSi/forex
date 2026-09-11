@@ -64,6 +64,28 @@ money-touching half. The module is pure and its composed default returns
 the lot size it was given, unchanged. Connecting it is one call at the
 sizing site, and it wants a demo session and someone watching.
 
+## How to turn any of it on
+
+**Trading > Strategy > Reversal Engine Capabilities**, then Save
+Capabilities. The card sits beside the other behaviour gates because these
+are tier-2 trading behaviour, not calibration constants
+([60-adding-a-tunable](../../system/rules/60-adding-a-tunable.md)).
+
+The switches shipped on 2026-09-11 with no UI at all, which meant the only
+way to reach them was editing `vantage_risk_settings` by hand. That was an
+omission, not a design choice; the card and
+`tests/frontend/test_capability_switches_have_controls.py` (which fails if a
+migration adds a switch the form forgets) landed the same day.
+
+Two switches behave differently from the rest and the card says so:
+
+- **Ask the meta-labeller** does nothing until the Research study has costed
+  a few hundred trades. The model refuses to arm until it can beat a coin
+  out of sample, and an unarmed model blocks nothing.
+- **Scale size by volatility and drawdown** records the intent and changes
+  no lot size, because `sizing_policy` is deliberately not wired to the
+  order path yet.
+
 ## What to do next, in order
 
 Nothing in steps 1 to 3 risks a pound.
