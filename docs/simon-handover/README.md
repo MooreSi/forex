@@ -143,5 +143,7 @@ in the room.
 
 - [031-should-a-stopped-out-trade-be-held-instead.md](031-should-a-stopped-out-trade-be-held-instead.md) — a stop-out followed seconds later by the same trade at a better price: should the app widen the stop and hold instead? Measured over 91 pairs; the answer is no, and what to do instead
 
-> This list is behind: 021 to 026 and 029 to 030 exist in the folder and are
+- [032-a-trade-can-carry-twice-the-risk-the-template-says.md](032-a-trade-can-carry-twice-the-risk-the-template-says.md) — one -$120.30 stop on a day of -$50 stops, traced: nothing broke, the stop was simply wider than the template says. How often, what it has cost, and four options
+
+> This list is behind: 021 to 026 and 029 to 031 exist in the folder and are
 > not on it. Open the folder itself for the full set until it is caught up.

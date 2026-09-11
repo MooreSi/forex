@@ -82,7 +82,12 @@ _Rewritten 2026-09-11, after a round of answers closed six._
    — yours to set in the UI, ten minutes. The stale drawdown watermark that
    would have halted trading on the first close is fixed (bugs/042); it takes
    effect at the next restart.
-3. **One answer on the Out of Hours removal spec**
+3. **[032](032-a-trade-can-carry-twice-the-risk-the-template-says.md)** — a
+   trade can carry up to 2.4x the risk its template states, because the stop is
+   measured from the far edge of the entry zone and the fill often is not
+   there. $1,077 of extra realised risk over 14 days, 28% of the period's loss.
+   Four options; the recommended one costs nothing.
+4. **One answer on the Out of Hours removal spec**
    ([docs/todo/002](../todo/002-remove-the-out-of-hours-resolver.md) §3) —
    drop the eight database columns, or leave them inert.
 
