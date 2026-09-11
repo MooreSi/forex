@@ -1,6 +1,9 @@
 # 010 — Migrating the 95 local `fresh_db` fixtures
 
-**Status:** done for the equivalents (2026-08-27); the genuine variants remain
+**Status:** **the Windows-hazard group is done too (2026-09-11).** 66 local
+definitions -> 37, baseline lowered to match. What remains is 37 genuine
+variants, five of which still carry the hazard and cannot be swept — see the
+second Done section.
 **Blocks:** `tests/refactor/test_fixture_dedup.py` (2 of the 3 assertions), and therefore
 `python -m tools.checks all` going green
 **Risk:** low per file, but it is 95 files of judgement, not a mechanical sweep
@@ -114,3 +117,53 @@ The consolidation sweep then globbed `tests/**/*.py`, matched the shared fake
 it had just written, deleted it and replaced it with an import of itself -- 15
 collection errors, caught immediately by the suite.
 
+
+
+---
+
+## Done (2026-09-11) — and this half was not tidying
+
+Re-censused by AST and found something the 2026-08-27 pass did not look for:
+**34 local `fresh_db` fixtures called `os.remove(path)` without ever calling
+`reset_db_worker_thread_connection()`.**
+
+That pair is the documented Windows failure. `db.init()` leaves a handle on the
+calling thread AND on the `to_db_thread` worker; POSIX unlinks a file with an
+open handle, Windows raises `PermissionError: [WinError 32]`. The first Windows
+CI run this repo completed produced **50 teardown errors** from exactly this.
+`tests/conftest.py`'s fixture resets both and deletes through `remove_db_file`,
+which tolerates the handle semantics.
+
+**29 of the 34 were mechanical**, in two AST-identical shapes:
+
+```
+_reset_thread_local_connection()          # local copy of the conftest helper
+fd, path = tempfile.mkstemp(suffix=".db")
+os.close(fd)
+db.init(path)
+[db._rs_cache = None; db._rs_cache_ts = 0.0]   # present in 17, absent in 12
+yield db
+_reset_thread_local_connection()
+os.remove(path)                            # <- the hazard
+```
+
+Both are the canonical fixture minus the worker reset and with a bare
+`os.remove`, so deleting them and inheriting `tests/conftest.py`'s is strictly
+safer, never weaker. Each file's local `_reset_thread_local_connection` was
+checked for other callers before deletion — the trap this file warned about —
+and in all 29 it had none. Orphaned `import os` / `import tempfile` were pruned
+only where the name no longer appears anywhere in the file.
+
+    local fresh_db definitions   66 -> 37   (baseline 66 -> 37)
+    still carrying the hazard    34 -> 5
+
+**The five that remain are genuine and must not be swept.** Each does extra
+work in the fixture body: two seed a channel parser config and drive
+`db._db_executor` directly, one clears `ea_bridge.set_instance(None)`, one
+clears a strategy-params cache, one resets the executor explicitly. They still
+use `os.remove`, so they are still Windows-fragile — but fixing them means
+reading each one, which is what this file has said from the start.
+
+Verified: `python -m tools.checks all` green, 11/11. The suite is the only
+thing that can speak for a fixture change, and it ran in full before the
+baseline moved.
