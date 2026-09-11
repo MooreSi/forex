@@ -1,6 +1,10 @@
 # 001 — Wire market_context macro features into the Reversal Engine ML
 
-**Status:** Building — steps 1-5 implemented 2026-09-05, awaiting the owner decision in section 3 before the first live cycle
+**Status:** **SHIPPED.** Built 2026-09-05; the status line said "awaiting the
+owner decision in section 3" until 2026-09-11, which was stale — the v9 bump
+went live on 2026-09-05, the decision it was waiting for was overtaken by the
+handover fix of 2026-09-08, and the one criterion that genuinely could not be
+answered then has now been measured. See section 9.
 **Domain:** engines (`docs/system/domains/engines/README.md`)
 **Touches money:** no direct order path change. It *does* move the input to the
 live-execution ML gate (`predicted R < 0` blocks live exec), so the gate's
@@ -196,10 +200,11 @@ Not "the tests are green". Green output is not evidence.
 - [x] `python -m tools.checks all` green (11/11, exit 0, suite 355.2s), 2026-09-05
 - [x] No real or demo MT5 order placed, modified or closed at any point
 - [x] `docs/system/domains/engines/README.md` updated with what this taught us
-- [ ] Owner decision on live execution during the retrain window recorded
-- [ ] LightGBM importances for the five macro features reported — **not at the
-      first retrain**, which cannot answer it (see the correction in section 6),
-      but once a meaningful number of signals carry real macro values
+- [x] Owner decision on live execution during the retrain window — **not
+      needed; superseded.** `ml_handover` (2026-09-08) removed the window
+      entirely. See section 9.
+- [x] LightGBM importances for the five macro features reported — section 9,
+      measured 2026-09-11 on the live model
 
 ## 8. What was actually built
 
@@ -220,3 +225,86 @@ Not "the tests are green". Green output is not evidence.
   `predict()` accepts a live vector afterwards. That is the path the `_version`
   bump forces on the first production cycle, and nothing else exercised it.
 - No schema change, no migration, no new dependency.
+
+
+---
+
+# 9. Closing it out, 2026-09-11
+
+## The decision this was waiting for no longer exists
+
+Section 3 asked Simon to confirm whether live execution stays enabled while the
+model retrains after a version bump, because a bump left `predict()` returning
+None and the gate reads:
+
+```python
+if fresh_prob is not None and float(fresh_prob) < _ML_BLOCK_THRESHOLD
+```
+
+— so a None **does not block**: the gate fails open and every signal executes
+unfiltered until training finishes.
+
+Three things have happened since:
+
+1. **The v9 window already passed, unfiltered.** `ml_handover`'s own docstring
+   records it: v9 shipped Saturday 2026-09-05, the first v9 retrain was Monday
+   09:27. Asking the question now cannot change that.
+2. **`ml_handover` (2026-09-08) removed the window.** A bump now hands the
+   previous model over to keep scoring — valid because features are
+   append-only, so the first 33 slots of a v9 vector *are* a v8 vector — with a
+   refusal below `LABEL_EPOCH = 5`, where the label itself changed. There is no
+   longer an untrained gap for a future bump to ask about.
+3. **The gate still fails open when there is no model at all** — a fresh
+   install, or a handover refused across the label epoch. That is a live
+   property, narrower than the "the ML gate no longer fails open" shorthand in
+   the 2026-09-09 session note, and it is not what this spec asked. Recorded in
+   the engines domain file rather than reopened here.
+
+## The importances, measured
+
+Section 6 asked for these and was corrected to say they could not be read at
+the first retrain: every historical row was right-padded with the same
+constant, so the macro columns had zero variance and LightGBM could not split
+on them. That is no longer true — **632 of 5,293 labelled rows (12%) now carry
+real macro values**, across 226 distinct macro vectors.
+
+Read from the live `re_ml_batch.pkl` (retrained 2026-09-11 07:00, 100 trees,
+`labeled_count` 4,475), rank of 38:
+
+| feature | rank by split | rank by gain |
+|---|---|---|
+| `dxy_momentum` | **7** | **7** |
+| `vix_level` | 14 | 18 |
+| `tip_momentum` | 16 | 17 |
+| `us10y_level` | 21 | 24 |
+| `gvz_level` | 22 | 26 |
+
+Both orderings agree on the shape: **the outcome section's "all five in the
+bottom quartile" case did not happen.** DXY momentum is the seventh most-used
+feature of thirty-eight by both measures, above `level_score`, `adx_norm` and
+every hour/session term. The bottom quartile (ranks 29-38) contains none of the
+five; it contains `bias_aligned`, `regime_score`, `equity_drawdown_pct` and the
+two `ref_*` scores, all at zero.
+
+**Three caveats, and they matter more than the table.**
+
+1. **Importance is not predictive value.** Split count measures how often the
+   tree used a feature, gain how much it reduced error *in training*. This file
+   already has the cautionary case: `level_score`'s highest band is its biggest
+   loser (-$1,378 over 400 trades), and the model still splits on it. Whether
+   macro *helps* needs a held-out comparison of v9 against the same rows
+   without the five columns — not an importance table.
+2. **A continuous feature attracts splits by construction.** `dxy_momentum` is
+   a real-valued return with 226 distinct observed values; a binary flag like
+   `bias_aligned` has two. Some of rank 7 is cardinality, not signal.
+3. **88% of the training rows still carry the neutral constant.** The model is
+   reading macro from an eighth of its data. The reading will change as that
+   share grows, and it is worth re-running this table at, say, 50%.
+
+## What this taught us, for the domain file
+
+The useful, transferable finding is not the ranking. It is that **a feature
+added to an append-only vector is unreadable until enough rows carry real
+values, and the number of rows that do is knowable** — count the stored vectors
+whose tail differs from `_FEATURE_NEUTRAL`. That count, not the time since the
+bump, is what says whether an importance table means anything.
