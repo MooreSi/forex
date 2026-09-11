@@ -241,3 +241,34 @@ run by default: applying it changes what the ML gate learns.
 
 The test that pinned the old behaviour was rewritten rather than deleted,
 and says why the original expectation was wrong.
+
+---
+
+## Housekeeping, 2026-09-11 16:00
+
+The stale databases were cleared at the owner's request:
+`forex_trader.db` (empty since August) and `forex_trader_live.db` (never held
+a trade) deleted, the pre-migration backups deleted, and the 25470480
+database moved to `data/archive/` rather than destroyed -- it holds 1,398
+trades from 21 July to 3 September and several docs cite its numbers.
+
+**That archive move broke the next boot**, because the file it moved was
+also the DEFAULT database path, which `account_registry` falls back to on
+every startup before the EA has said which account it is. The app created a
+fresh empty database and ran on it for about a minute. Verified inert: zero
+trades, zero signals, zero templates, every live-execution flag at its
+schema default of off, and no positions at the broker.
+
+Fixed by consolidating onto one file -- the live account's database now IS
+the default path, and `accounts.json` maps 26004592 to it -- so the fallback
+and the resolved path can no longer diverge. Verified after restart: schema
+43, 291 trades, 23 templates, `re_live_execution` back at 1, the 289
+execution-cost rows intact, and every capability switch still off.
+
+The full write-up is in
+[docs/system/domains/data](../../system/domains/data/README.md); it also
+explains why the archived database was six migrations behind, which had been
+an open puzzle.
+
+Four older `.bak-*` files remain in the data directory, including one from
+the in-progress ledger repair. Those are not mine to remove.
