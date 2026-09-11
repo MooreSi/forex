@@ -1,6 +1,10 @@
 # 060 — News calendar off the event loop; cache empty results
 
-**Status:** not started
+**Status:** **DONE** — shipped 2026-08-11, this line read "not started" until 2026-09-11.
+Verified: `utils/news_calendar.py` refreshes on a daemon thread
+(`name="news-calendar-refresh"`), and the module comment records both halves of the
+fix — "the fetch did up to ~10s of blocking urllib ON THE EVENT LOOP" and a None
+result now being cached like any other.
 **Depends on:** none
 **Touches money:** no (but it stalls the loops that manage money)
 **Layer:** service/utils

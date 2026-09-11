@@ -1,6 +1,9 @@
 # 010 — Guardrail gates: scan real paths, fail closed, feed the ratchet
 
-**Status:** not started
+**Status:** **DONE** — shipped 2026-08-11, this line read "not started" until 2026-09-11.
+Verified: `tools/refactor_audit/orphan_modules.py:175` — "must fail closed rather
+than audit an empty graph" — and the coverage ratchet is one of the eleven checks
+`tools.checks all` runs.
 **Depends on:** none (may run in parallel with phase 1)
 **Touches money:** no
 **Layer:** tools/tests

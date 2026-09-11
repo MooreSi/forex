@@ -19,7 +19,17 @@ session, both recorded in Notes.
 - Phase 4 (frontend split): **DONE.** Contract 59 → 0 and **enforced at zero** — restructure 060 landed 2026-09-02 (the owner chose to give `_email.py` a controller rather than name an exception), and this line said it was still "blocked on a decision" until 2026-09-11. Verified by running the checker, not remembered: `frontend-reaches-the-backend-through-controllers: enforced at zero`, no baseline key
 - Phase 5 (debug complete): **done except the `_make_bridge` seam** (2026-08-11) — fakes, guards, banner and the offline e2e all landed; the 3-line seam edit + run.py subprocess skip await Simon (sign-off + demo)
 - Money-path: **moved to [stage 3](../stage3/README.md)** (Simon-gated) — not part of stage 2
-- Phase 7 (handoff): in progress — HANDOFF.md done; rest not started
+- Phase 7 (handoff): **030 is as done as it can be.** HANDOFF.md and the
+  give-to-Simon checklist shipped 2026-08-11. Retiring the two remaining packs
+  is still refused, for the same honest reason as before — `stage1` has one
+  task open (phase2/030 risk-gate atomicity, code done, waiting on a live
+  killer demo) and `local-debug-mode` has two (the `_make_bridge` seam, owner-
+  gated, and 090 docs). **What WAS wrong is now fixed: six stage1 task files
+  and the phase2 README all still said "not started" on 2026-09-11 for work
+  that shipped on 2026-08-11.** Each was re-verified against the code before
+  its status was changed — localhost bind, the fail-closed orphan gate, the
+  migration registry, the `AND status='open'` close guard, `busy_timeout` plus
+  dated backups, and the news calendar's daemon thread.
 
 ## Tasks
 

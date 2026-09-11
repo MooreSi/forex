@@ -1,6 +1,8 @@
 # 050 — Bind the dashboard to localhost
 
-**Status:** not started
+**Status:** **DONE** — shipped 2026-08-11, this line read "not started" until 2026-09-11.
+Verified in the code, not remembered: `run.py:302` defaults `host` to `127.0.0.1`
+and `run.py:286` carries `_LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}`.
 **Depends on:** none
 **Touches money:** no (but it guards everything that does)
 **Layer:** frontend (serving config)

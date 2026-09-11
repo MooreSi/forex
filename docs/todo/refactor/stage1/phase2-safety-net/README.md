@@ -1,6 +1,18 @@
 # Review remediation — phase 2: make the safety net real
 
-**Status:** not started
+**Status:** **six of seven DONE; one waits on a demo.** This line read "not started"
+until 2026-09-11, by which point every task under it had shipped — the same
+stale-status problem the pack itself exists to prevent, in the pack's own README.
+
+| task | state, verified in the code 2026-09-11 |
+|---|---|
+| 010 gates fail closed | done — `orphan_modules.py:175` |
+| 020 schema migrations | done — `migrations/registry.py`, 38 numbered steps |
+| 030 risk-gate atomicity | code + tests done 2026-08-29; **NOT Done** — needs the live killer demo |
+| 040 record_close idempotency | done — `apply_full_close` carries `AND status='open'` |
+| 050 connection hardening + backups | done — `busy_timeout=5000`, dated snapshots on the live install |
+| 060 news calendar offload | done — daemon refresh thread |
+| 070 update channel off | shipped, then reversed by the owner (he uses the admin console) |
 **Gated on:** phase 1 landed (all six tasks Done, money tasks demo-signed) — except 010, which may
 start any time; a working gate suite makes phase 1 itself safer to land
 **Touches money:** YES — tasks 030, 040

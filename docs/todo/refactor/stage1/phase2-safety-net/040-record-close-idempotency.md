@@ -1,6 +1,12 @@
 # 040 — record_close idempotency guard
 
-**Status:** not started
+**Status:** **DONE** — shipped, this line read "not started" until 2026-09-11.
+Verified: `trade_repo.apply_full_close` carries `AND status='open'`, and its own
+comment names this task — "Only an OPEN trade may become closed (stage1
+phase2/040)... a duplicate call pays the same profit out again and feeds the
+breaker the same outcome twice". Pinned by `tests/trading/test_close_idempotency.py`.
+The guard went into the repo function rather than `record_close` itself, which is
+why the frozen path was not reshaped.
 **Depends on:** phase 1 landed (1/040 reduced the caller set to the guarded wrappers)
 **Touches money:** YES — run `/safe-change` first. Not Done without owner sign-off + a demo session.
 The frozen path itself is edited here — this is the pack's most sensitive task.

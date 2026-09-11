@@ -1,6 +1,9 @@
 # 020 — Versioned schema migrations
 
-**Status:** not started
+**Status:** **DONE** — shipped 2026-08-11, this line read "not started" until 2026-09-11.
+Verified: `backend/migrations/registry.py` stamps `schema_version` per step and
+raises `SystemExit` on a real error rather than continuing. The registry has since
+grown to 38 numbered steps.
 **Depends on:** none
 **Touches money:** no (but a broken schema trades badly — treat with care)
 **Layer:** repo/db

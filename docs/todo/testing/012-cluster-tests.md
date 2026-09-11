@@ -149,3 +149,47 @@ three background loops, both dispatch chains, and the diagnostics package.
 **One rule learned the hard way here:** make a fake refuse what the real table
 refuses. A permissive `record_consolidated_trade` fake hid bugs/019 — two tests
 passed against it while the real schema would have raised.
+
+
+---
+
+## The split, measured rather than estimated (2026-09-11)
+
+Attempted under an explicit "work through everything buildable". **Not done,
+and the measurement is why** — recorded so the next attempt starts from facts.
+
+`remote/server.py` is 1,204 lines, the only file over the 800 ceiling that is
+not permanently exempt. It rebinds **twelve** module globals:
+
+```
+_pending            _allowed_tokens     _revoked_tokens     _admin_machines
+_server_obj         _server_task
+_kg_sign_fn         _kg_insert_fn       _kg_get_all_fn
+_kg_revoke_fn       _kg_reinstate_fn    _kg_delete_fn
+```
+
+**28 of its 41 functions touch at least one of them.** Rules/70 §5: splitting a
+module that rebinds a global forks that state — each half gets its own copy and
+writes land in the wrong one. On this file that would mean an approval writing
+to one `_pending` while the websocket handler reads another.
+
+The state-free remainder is **143 lines across 10 functions** —
+`_repo_root_for_files`, `_notify_new_registration`, `_push_clients_to_all_admins`,
+`_close_ws`, `_is_rate_limited`, `_record_failure`, `_ping_loop`,
+`push_update`, `push_update_to_client`, `request_diagnostics`. Moving all ten
+leaves **1,061 lines, still over the ceiling**, and they share nothing but the
+absence of state: rate limiting, websocket teardown, admin notification and
+update pushing are four different concerns. Rules/70: *"If you cannot name the
+section in three words, it is not a section."*
+
+**So the order of work is fixed, and it is not a split first.** The twelve
+globals have to become a state module that every section imports —
+`remote/_state.py` holding the four registries plus the six keygen function
+hooks — and only then does a seam exist. That is a change to the surface that
+decides who may connect, what licence they are granted and who can revoke it,
+at 83% coverage, and it is not an evening's work. The "days of work" note above
+is still the right estimate.
+
+**The 800 ceiling is not what should drive it.** Nothing is failing: the file
+is on the LOC baseline, and the baseline is shrink-only, so it cannot quietly
+grow. A rushed split of this file is a worse outcome than a long file.

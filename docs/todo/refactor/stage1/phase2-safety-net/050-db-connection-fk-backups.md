@@ -1,6 +1,8 @@
 # 050 — DB connection hardening, FK-safe deletes, daily backup
 
-**Status:** not started
+**Status:** **DONE** — shipped 2026-08-11, this line read "not started" until 2026-09-11.
+Verified: `database.py:177` sets `PRAGMA busy_timeout=5000`, and the live install's
+`data/backups/` holds dated snapshots (most recent checked 2026-09-09).
 **Depends on:** 020-schema-migrations.md (backup-before-migrate hooks its runner)
 **Touches money:** no
 **Layer:** repo/db
