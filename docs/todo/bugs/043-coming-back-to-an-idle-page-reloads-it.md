@@ -1,7 +1,10 @@
 # 043 — Coming back to an idle page reloads it, and that stalls the loop
 
-**Status:** FIXED 2026-09-10, test-first. **Needs the owner to confirm the
-symptom is gone**, since it depends on real browser throttling.
+**Status:** **CLOSED 2026-09-11.** Fixed 2026-09-10, test-first, and the owner
+confirmed the symptom is gone: *"this appears to be fixed now, it doesn't
+refresh after being idle."* That confirmation was the only thing this could
+ever have — the fault depends on real browser throttling, which no test here
+can reproduce.
 **Money:** no, but the reload costs a ~2s event-loop freeze, and the EA
 reconnects after ten seconds of Python silence.
 **Reported by the owner:** *"often if I haven't been using the app for a while

@@ -1,7 +1,9 @@
 # 041 — A profitable Global Harvest pushes the circuit breaker toward a halt
 
-**Status:** OPEN, **not changed** — how a basket should score against the
-breaker is a design decision, not a repair.
+**Status:** **ANSWERED 2026-09-11 — option 1**, owner: *"a harvest shouldn't
+trip or count towards the breaker."* **NOT BUILT**, and it cannot be built
+entirely on this side — see *What option 1 needs* at the bottom. One
+consequence of it is worth a yes/no before anyone writes the code.
 **Money:** yes. It halts live trading.
 **Found:** 2026-09-09, from the live demo account. Complete evidence below.
 
@@ -119,3 +121,58 @@ either trip.
 Two halts in under two hours on 2026-09-10, of which **one was caused by this**.
 Each is fifteen minutes of no live execution, and the day was net positive
 (+$1.62 across 27 closes) while it happened.
+
+
+---
+
+## What option 1 needs (2026-09-11)
+
+### 1. Nothing can currently tell that a close was a harvest
+
+Traced end to end. The EA closes each leg with `trade.PositionClose(ticket)`
+inside `CheckGlobalHarvest` and sends **no** marker with it. The reason string
+that reaches Python is derived afterwards, in the generic detector at
+`ForexTraderBridge.mq5:3078`, by reading the last deal's comment:
+
+```
+if      comment contains "tp" -> reason = "TP"
+else if comment contains "sl" -> reason = "SL"
+else                          -> reason = "MT5_close"
+```
+
+A harvested leg therefore arrives as **`MT5_close`** — the same string as a
+position closed by hand in the MetaTrader terminal. There is no way to tell
+them apart from Python, and inferring it (*"several closes landed in the same
+second"*) would be guesswork that misfires on a busy minute.
+
+**So this needs an EA change:** `CheckGlobalHarvest` marks the tickets it is
+about to close, and the detector reports those as `global_harvest`. That is a
+new EA version, `tools/deploy_ea.sh`, and F7 in MetaEditor — the same loop as
+EA 1.07.
+
+### 2. The Python half is one line, inside the frozen close path
+
+`record_close` (`services/trading/close_trade.py:339`) calls
+`record_live_trade_outcome(won=...)` for every close with an `mt5_ticket`. The
+change is to skip that call when the reason is `global_harvest`. One condition
+— but `record_close` is on the frozen list (golden rule 4), so it ships with a
+demo session, not overnight. The same applies to `equity_protect` and
+`check_basket_harvest`, which also close several positions in one action and
+would want the same marker.
+
+### 3. One consequence to confirm, because "doesn't count" cuts both ways
+
+Today a basket's legs each score individually, so a basket of **winners resets
+the counter** — that is what happened at 09:43 on 2026-09-10, correctly.
+
+Under option 1 the breaker cannot see a harvest at all, so:
+
+* a losing leg no longer pushes you toward a halt — the fault, fixed; **and**
+* a **winning** basket no longer clears the counter either.
+
+Recorded as **invisible in both directions**, because that is what "shouldn't
+count towards the breaker" says. If you would rather a profitable basket still
+clear the counter — bank the winners, reset the streak — that is a one-word
+change to the spec and should be said before it is built.
+
+**ANSWER (invisible both ways, or reset on a winning basket?):**
