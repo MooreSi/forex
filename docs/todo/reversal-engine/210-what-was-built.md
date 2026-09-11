@@ -385,3 +385,62 @@ block list covering every level type is rejected because a model that
 decides nothing is tradeable has switched the engine off rather than tuned
 it.
 
+---
+
+## Better evidence for the AI, 2026-09-11 17:37
+
+The first Recommend proposed a 2.0x ATR target that neither the reach data
+nor the exit-policy sweep supports. The model reasoned correctly; it had
+only been shown the fitted barriers. Two fixes:
+
+**The sweep sample went from 60 paths to 250** (239 usable). At 60 the
+intervals were so wide the sweep could not distinguish any exit rule from
+no edge.
+
+**The reach distribution and the sweep now travel with the evidence**,
+read from the last study rather than recomputed -- the sweep is hundreds of
+bridge round trips and asking for a recommendation must not mean waiting a
+minute. The prompt also explains how to read them: the fit is a diagnosis
+not a target, a straddling interval is not evidence, and where the three
+disagree, prefer changing nothing.
+
+### The reach figure the engine was built on is wrong
+
+Measured on 750 executed trades with tick-reconstructed excursion:
+
+| reaches | share |
+|---|---|
+| 0.5R | 51.2% |
+| **1.0R** | **42.4%** |
+| 2.0R | 26.1% |
+| 3.0R | 15.7% |
+
+Median 0.562R, mean 1.397R.
+
+`signal_generator.calculate_tp_cascade`'s docstring justifies its short
+fixed ladder with "only 9.4% of signals ever travel 1.0R (median 0.43R)".
+**The real figure is 42.4%, four and a half times that.** The original was
+computed before the live path recorded excursion at all -- of 745 executed
+signals only 52 carried an MFE and none after 2026-08-28 -- so it rested on
+a small, badly selected sample. The docstring now says so.
+
+This does NOT mean widen the ladder. It means the argument for keeping it
+short is much weaker than it reads, and the question is open again.
+
+### And with the full picture, the AI declined
+
+Second run, same button, unedited:
+
+> "No change is justified: the exit sweep's top rows (e.g. stop 2/target 12,
+> expectancy 0.346) have confidence intervals straddling zero and split-half
+> results that disagree in sign, so they are not evidence. The reach, sweep,
+> and fitted-barrier data disagree (median reach is only 0.56R while the
+> sweep's best cell needs a 12-point target), and with the meta-labeller
+> unfitted and most level types showing small or ambiguous samples, the
+> safest action is to change nothing rather than guess."
+
+Verified: five of the six top sweep cells do flip sign between
+chronological halves. Given half the evidence it produced a confident
+number; given all of it, it refused. That is the behaviour to want from
+something allowed to write live settings.
+
