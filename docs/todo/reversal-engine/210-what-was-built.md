@@ -444,3 +444,57 @@ chronological halves. Given half the evidence it produced a confident
 number; given all of it, it refused. That is the behaviour to want from
 something allowed to write live settings.
 
+---
+
+## First switch turned on, 2026-09-11 17:50
+
+**`min_fill_delay_enabled` = 1** on demo account 26004592, at the owner's
+instruction. The first thing in this whole series that changes what the app
+trades. `fill_too_soon` is reached on the live path at
+`reversal_engine_live_execute.py:278`, so it is live from the next signal.
+
+### The window is 30 seconds, and the evidence is about 300
+
+`min_fill_delay_s` was already sitting at **30.0**, not the 300 default.
+Measured over every executed, closed reversal signal:
+
+| fill delay | n | net | per trade |
+|---|---|---|---|
+| under 30s (the window in force) | 277 | -$438 | -$1.58 |
+| under 300s (what the evidence measures) | 456 | -$1,915 | -$4.20 |
+| 300s or slower | 333 | -$229 | -$0.69 |
+
+So the 30-second window catches 277 of the 456 bad fills and only **$438 of
+the $1,915**. The worst band is the one it misses entirely: 179 trades
+between 30s and 300s carrying $1,476 of loss, **-$8.25 a trade**.
+
+The switch is on with the window untouched, because the 30.0 may have been
+chosen deliberately and a changed setting is a question for the owner, not
+drift. **Raising it to 300 is the open decision**, and it is the difference
+between capturing a quarter of the effect and all of it.
+
+### A save on the Risk card reverted a setting, and it can do it again
+
+Turning the switch on through Trading > Risk also set
+`htf_bias_gate_enabled` back to 0. It had been 1 since the owner turned it
+on on 2026-09-09, and it is the gate whose own tooltip records trades with
+the trend as the only profitable group on the account (+$101 over 369
+against -$1,211 over 201). Caught within a minute and restored.
+
+**The mechanism is the hazard, not the incident.** `save_risk()` writes
+back EVERY field on the card from whatever the form currently shows, and
+the form is built once from a single `get_risk_settings()` read. If that
+read is stale for any reason, pressing Save on one checkbox silently
+reverts every other setting on the card to whatever the form was built
+with. A fresh page load renders correctly, so this is not a permanent
+defect in the binding -- which makes it worse, because it will not
+reproduce on demand and it leaves no trace.
+
+**The fix worth making**: have the handler re-read current settings at save
+time and write only the fields that actually differ from what the form was
+built with. Roughly ten lines, on a money path, so it wants its own
+test-first change rather than being tacked on here.
+
+Until then: after pressing Save Risk Settings, check the other switches on
+that card still say what you meant.
+
