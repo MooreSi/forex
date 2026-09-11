@@ -1,9 +1,10 @@
 # 041 — A profitable Global Harvest pushes the circuit breaker toward a halt
 
-**Status:** **ANSWERED 2026-09-11 — option 1**, owner: *"a harvest shouldn't
-trip or count towards the breaker."* **NOT BUILT**, and it cannot be built
-entirely on this side — see *What option 1 needs* at the bottom. One
-consequence of it is worth a yes/no before anyone writes the code.
+**Status:** **ANSWERED 2026-09-11, fully specified.** Owner: *"a harvest
+shouldn't trip or count towards the breaker"*, then **B** on the follow-up — a
+losing leg is invisible, a **winning basket still clears the counter**.
+**NOT BUILT**, and it cannot be built entirely on this side: the EA has to say
+which closes were a harvest. See *The spec* at the bottom.
 **Money:** yes. It halts live trading.
 **Found:** 2026-09-09, from the live demo account. Complete evidence below.
 
@@ -175,4 +176,69 @@ count towards the breaker" says. If you would rather a profitable basket still
 clear the counter — bank the winners, reset the streak — that is a one-word
 change to the spec and should be said before it is built.
 
-**ANSWER (invisible both ways, or reset on a winning basket?):**
+**ANSWER 2026-09-11: B — invisible for losses, still clears on a winning
+basket.**
+
+---
+
+# The spec
+
+## Behaviour
+
+For a close whose reason is `global_harvest`:
+
+| the basket | the consecutive-loss counter |
+|---|---|
+| net profit >= 0 | **reset to 0** |
+| net profit < 0 | **untouched** — no increment, no reset |
+
+and an individual leg never scores on its own, whichever way it went. So the
+-$0.80 leg inside the +$107.19 basket does nothing, and the +$107.19 clears the
+streak once.
+
+**"Net" means the basket, not the leg.** That is the whole point of the
+decision, and it is also the hard part: the legs arrive as separate closes,
+one message each. Whatever is built has to know they belong together and what
+they summed to.
+
+## Three pieces, in order
+
+**1. The EA marks its own harvest closes.** `CheckGlobalHarvest` already knows
+the combined total (`GlobalHarvestFloating`) and the exact set of tickets it is
+about to close. It must carry both across: a reason of `global_harvest`
+instead of the generic `MT5_close`, plus the basket's net and a basket id so
+the legs can be tied together on this side. That is a new EA version,
+`tools/deploy_ea.sh` and F7 — the same loop as EA 1.07.
+
+Without this there is nothing to build on: a harvested leg is currently
+indistinguishable from a position closed by hand in the terminal.
+
+**2. The breaker call learns the reason.** `record_close`
+(`services/trading/close_trade.py:339`) calls
+`record_live_trade_outcome(won=...)` for every close carrying an `mt5_ticket`.
+It needs to skip that call for a harvested leg, and instead score the basket
+**once**, on its net, when the last leg of that basket arrives.
+
+`record_close` is on the frozen list (golden rule 4), so this ships with a demo
+session.
+
+**3. The same marker for the other two basket closers.**
+`equity_protect` and `check_basket_harvest` also close several positions in one
+action and have the identical problem. They should use the same mechanism
+rather than a second one.
+
+## How it gets demoed
+
+Demo 8 already drives a Global Harvest on the demo account. This extends it:
+open a mixed basket (at least one leg in loss), harvest it, and read
+`circuit_breaker_consec_losses` before and after.
+
+* **Pass:** a mixed basket that nets positive leaves the counter at **0**; a
+  mixed basket that nets negative leaves it **unchanged** from before.
+* **Fail:** the counter moves by the number of losing legs — today's behaviour.
+
+## What it is worth
+
+Two halts in under two hours on 2026-09-10, one of them caused by this. Each
+is fifteen minutes with no live execution, and the day was net positive while
+it happened.

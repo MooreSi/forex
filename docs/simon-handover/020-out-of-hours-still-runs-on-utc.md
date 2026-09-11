@@ -364,3 +364,10 @@ edit — which is the state this file was originally raised to complain about.
 **If you ever switch `ooh_enabled` to 1 in the database, a strategy you cannot
 see on any screen starts managing your overnight trades.** That is the one
 thing to remember about this change.
+
+**And it is why the next step is to delete the machine too**, on your
+instruction of the same day. The spec is
+[docs/todo/002-remove-the-out-of-hours-resolver.md](../todo/002-remove-the-out-of-hours-resolver.md)
+— it needs one answer from you (§3: drop the eight database columns, or leave
+them inert) and a demo session, because it touches which strategy manages an
+open trade.

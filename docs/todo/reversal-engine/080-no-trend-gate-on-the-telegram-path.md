@@ -211,7 +211,17 @@ gates (trading schedule, news blackout) and NOT from the **protective** ones
 (the risk halt, `max_open_trades`).
 
 The bias gate is arguably protective, which would put it on the enforced side.
-**That is the owner's call and it has not been made.** Nothing was changed;
+
+**ANSWERED 2026-09-11: A — the three manual routes stay EXEMPT** (owner). A
+manual order is the operator overriding the system on purpose, and a button
+that refused because H1 disagrees would be surprising. The line drawn by
+`tests/core/test_manual_order_exemptions.py` therefore stands as it is: manual
+orders skip the **scheduling** gates (trading schedule, news blackout) and the
+**bias** gate, and still obey the **protective** ones (risk halt,
+`max_open_trades`).
+
+*(Original wording, kept:)* That was the owner's call and it had not been made.
+Nothing was changed;
 the exemption is written down so the question is visible instead of being
 implied by absence — which is exactly how the three misses survived.
 

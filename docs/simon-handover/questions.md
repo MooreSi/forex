@@ -71,14 +71,35 @@ Numbered files 008 onward. "Fixed" means the code change landed with tests;
 
 ### Still open, in one place
 
-1. **The demo session** ([013](013-the-five-demos-runbook.md)) — five money-path
-   fixes are written, tested and mutation-tested, and none of them is `done`
-   without you at a demo terminal.
-2. **Out of Hours on UTC** ([020](020-out-of-hours-still-runs-on-utc.md)).
-3. **Your halt settings** ([011](011-your-halt-settings-do-not-match-what-you-confirmed.md))
-   — yours to set in the UI, ten minutes.
+_Rewritten 2026-09-11, after a round of answers closed six._
 
-Nothing else in this folder is waiting on you.
+1. **The demos** ([013](013-the-five-demos-runbook.md)) — 10 of 18 passed.
+   The eight left need conditions an agent cannot create: a slow EA, a broker
+   refusing a close, a position vanishing mid-disconnect, a 20% drawdown, a
+   signal on one named channel, a closed schedule window. **The whole
+   limit-orders pack is also built, green and undemoed.**
+2. **Your halt settings** ([011](011-your-halt-settings-do-not-match-what-you-confirmed.md))
+   — yours to set in the UI, ten minutes. The stale drawdown watermark that
+   would have halted trading on the first close is fixed (bugs/042); it takes
+   effect at the next restart.
+3. **One answer on the Out of Hours removal spec**
+   ([docs/todo/002](../todo/002-remove-the-out-of-hours-resolver.md) §3) —
+   drop the eight database columns, or leave them inert.
+
+**Answered 2026-09-11 and now waiting on build, not on you:**
+[041](../todo/bugs/041-a-profitable-harvest-arms-the-circuit-breaker.md) (needs
+an EA change and a demo), [023](023-strategies-are-not-ea-templates.md),
+[024](024-per-account-databases.md), [027](027-what-should-a-direction-only-message-do.md),
+[028](028-sharing-the-engines-learning-with-every-client.md) (and deliberately
+not yet).
+
+**Answered 2026-09-11 and needing nothing:**
+[030](030-what-sl-parsing-off-costs-per-trade.md) (leave SL parsing off),
+[040](../todo/bugs/040-a-resting-order-filling-into-news-is-not-closed.md)
+(leave a news-blackout fill alone), the trend gate's manual-order exemptions,
+the three give-back numbers in [001](001-trading-defaults.md), and
+[020](020-out-of-hours-still-runs-on-utc.md)/
+[043](../todo/bugs/043-coming-back-to-an-idle-page-reloads-it.md), both closed.
 
 ### Two answers that changed other things
 

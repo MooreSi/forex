@@ -68,9 +68,13 @@ trades in a row. Retune later from real data rather than guessing now.
 > *give-back guard* that stops the day once a share of the day's profit has been
 > handed back. It ships **off**, arms above **$50** of day profit and triggers at
 > **40%** given back (`giveback_guard_enabled` / `giveback_arm_usd` /
-> `giveback_pct`). It arrives with the merge of `MooreSi/forex`. Simon has not
-> been asked to confirm those three numbers yet — raise them at the Part B
-> sitting alongside the B5 protective-halts demo.
+> `giveback_pct`). It arrives with the merge of `MooreSi/forex`.
+>
+> **ANSWER 2026-09-11: confirmed as they ship** — guard **off**, arms above
+> **$50** of day profit, triggers at **40%** given back. Retune from real data
+> rather than guessing, same as the answer above. This closes the last open
+> item of Q001 and the "confirm the three give-back numbers" line on the Part B
+> agenda; the **demo** of the protective halts is unaffected and still owed.
 
 
 ---

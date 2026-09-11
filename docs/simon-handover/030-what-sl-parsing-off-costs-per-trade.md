@@ -1,5 +1,9 @@
 # What "Enable SL Parsing OFF" actually costs per trade
 
+**DECIDED 2026-09-11: leave it OFF — the template's stop stands** (owner,
+option A). Nothing changes; this file stays as the record of what that costs,
+and the comparison at the bottom is still the thing that could overturn it.
+
 **Measured 2026-09-10 from 41 live replacements.** Not a bug — this is the
 configured behaviour working exactly as designed. It is written down because
 the **magnitude** bears directly on the payoff problem, and it is not visible

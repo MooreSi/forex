@@ -1,8 +1,10 @@
 # 040 — A pending order that fills during a news blackout is kept
 
-**Status:** OPEN, **not changed** — it is a design question, and the answer
-belongs to the owner. Found 2026-09-09 auditing gate coverage across every
-order route.
+**Status:** **CLOSED 2026-09-11 — option B, leave it as it is** (owner). A
+resting order that fills inside a news blackout is **kept**. Nothing was
+changed, and nothing needs building; the asymmetry with the schedule gate is
+now deliberate rather than accidental, which is all this file was raised to
+settle. Found 2026-09-09 auditing gate coverage across every order route.
 **Money:** yes — it decides whether a position opened into a news event is
 kept or closed.
 
@@ -68,3 +70,20 @@ The *cancel* half of this question — withdrawing a resting order before it fil
 rather than closing the position after — is
 [limit-orders/040](../limit-orders/040-revalidate-before-the-fill.md). This file remains the *close*
 question, which is still the owner's to answer.
+
+
+---
+
+## Decided, 2026-09-11
+
+**B — leave it.** Closing a position the instant it fills into a news spike
+realises the widest spread of the day, and that cost is highest in exactly the
+case this would fire. The fill is kept and managed normally.
+
+What this does NOT change: `limit-orders/040` still **withdraws** a resting
+order before it can fill into a blackout, so most of these never happen. This
+answer only covers the one that slips through and fills anyway.
+
+The asymmetry is now intentional and should stay written down: **schedule
+closes on fill, news does not.** Anyone auditing gate coverage later will find
+the same gap and should find this answer with it.

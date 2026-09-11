@@ -1,6 +1,10 @@
 # 028 — Should every client learn from every other client?
 
-**Status:** open. Two decisions, neither urgent.
+**Status:** **ANSWERED 2026-09-11.** *"I dont want to share trade data with
+other users of the app just the learned ml engine as it develops."* So the
+plan changes: **ship the trained model, not the training rows.** Still not
+urgent, and still recommended to wait — see *Your answer, and what it changes*
+at the bottom. Nothing is built.
 **Money:** yes, indirectly. It changes what the Reversal Engine's ML learns
 from, and the ML decides which trades are allowed to execute.
 **Raised:** 2026-09-08, from your own request.
@@ -51,3 +55,60 @@ land spreads something worth having.
 
 **Nothing has been built.** The design is
 `docs/todo/reversal-engine/070-share-training-data-with-the-fleet.md`.
+
+
+---
+
+## Your answer, and what it changes
+
+**One thing worth knowing, in case it changes your mind — and then I will stop
+asking.** What the original plan proposed sharing was not your trades in any
+recognisable form. Each row was a list of numbers describing the market at that
+moment, plus one number for how the trade did. **No ticket, no account number,
+no channel name, no balance, no prices.** Nobody could have read it and learned
+anything about you, your broker or which channels you follow.
+
+If you would rather not hand over the raw material of your edge regardless,
+that is a perfectly good reason and the answer stands. It just costs more than
+it looks, and here is what.
+
+### It still works — three of the four things you asked for come free
+
+A new client arrives already knowing what your engine has learned, it refreshes
+with the ordinary GitHub update, and its own trading still counts. Nothing
+about the promise changes.
+
+### What it costs
+
+**1. Your learning and theirs never actually merge.** With rows, a client
+retrains one model that has learned from both. With a model, the client runs
+**your** model and **its own** side by side, and blends the two answers by a
+weight. It starts fully on yours and shifts to its own as it accumulates
+trades. That is close to what you asked for, but it is two opinions being
+averaged rather than one thing that learned from everything.
+
+**2. It becomes a recurring job rather than a one-off.** Whenever the engine
+learns to look at something new — a feature is added — every trained model is
+thrown away by design and rebuilt. A model shipped before that change stops
+applying to clients after it, **silently**. So every time the engine changes in
+that way, somebody has to export a fresh one, or the fleet quietly goes back to
+learning from nothing. Rows would have survived those changes untouched.
+
+**3. It touches the part that decides which trades are allowed.** The blend
+happens inside the function that scores a signal, so this is a money-path
+change and wants a demo. Sharing rows would have been a change to what the
+model trains on, not to how it decides.
+
+None of that makes it wrong. It is your edge and your call — it just needs
+saying that the cheap version was the other one.
+
+### The recommendation that has not changed: not yet
+
+Right now the model has correctly learned that the engine's signals lose money
+— it scores the average trade at **-0.083R**. Shipping it today installs that
+conclusion on every client. Three fixes are specifically about changing what it
+learns. Build the plumbing whenever you like; **export the first shared model
+after those land.**
+
+The revised design is
+[docs/todo/reversal-engine/070](../todo/reversal-engine/070-share-training-data-with-the-fleet.md).
