@@ -1,15 +1,18 @@
 # 020 — Out of Hours still runs on UTC, unlike your schedule
 
-**Status:** **ANSWERED 2026-09-07 — neither option offered.** You said: *"move
-it to the local time of the computer so it remains consistent, there could be
-users of the app in other countries."* **BUILT 2026-09-07** as a configurable named zone (your follow-up answer),
-defaulting to UTC so nothing changes until you set it. Not yet reachable from
-the UI — see *Built* at the bottom, which also flags something worse that
-turned up while building it.
-**Decision was needed:** yes, but small.
+**Status:** **CLOSED 2026-09-11 — the card is removed and the question is
+moot.** You said: *"we don't need the out of hours on the trading page as we
+already have a schedule which does the same thing and is more detailed, remove
+this only from the trading > strategy page. Ensure to keep the schedule page."*
+Done — see *Removed* at the bottom, which also records the one way the two are
+**not** the same thing, and what is still live behind the removed card.
+
+*(Earlier status, kept for the record: answered 2026-09-07 — "move it to the
+local time of the computer so it remains consistent, there could be users of
+the app in other countries" — and built 2026-09-07 as a configurable named
+zone, defaulting to UTC.)*
 **Money:** indirectly. It decides which strategy manages a trade, not whether
 one is taken.
-**Urgency:** low. Nothing is broken; this is a consistency question.
 
 ## What changed and what did not
 
@@ -320,3 +323,44 @@ key nothing consulted, which looked like it worked.
 
 **So there is nothing left to do by hand.** Open Trading > Strategy, set your
 zone, press Save.
+
+
+---
+
+## Removed, 2026-09-11
+
+`render_out_of_hours_card()` was the third sub-card on the Risk row, and
+`render_risk_card` is rendered in exactly one place — `frontend/pages/trading/
+_strategy.py:86`, the **Trading > Strategy** tab. So removing it from there
+removed it from the app. `frontend/pages/settings/_out_of_hours.py` and its
+test file were deleted with it, because a settings module nothing imports is
+what `test_every_section_module_is_reachable_from_the_package_shell` exists to
+refuse — a parked, unrendered card is the same silent-dead-UI shape as
+bugs/010 and bugs/011. Git has both files if it is ever wanted back.
+
+**The Trading Schedule is untouched** — its own tab, its own card, its own
+tests.
+
+### The one way they are not the same thing
+
+Worth knowing, because the reason given for removing it does not quite hold:
+
+* the **Trading Schedule** decides **whether a trade is opened** — per window,
+  per source, with profit targets;
+* **Out of Hours** decides **which strategy manages a trade that is already
+  open** during the overnight stretch.
+
+So the schedule cannot do what Out of Hours did. What makes the removal safe
+is not that the schedule covers it, but that **`ooh_enabled` is 0 on your
+install** (read 2026-09-11), so the feature has not been managing anything.
+
+### What is still live
+
+`get_effective_strategy` still reads all eight `ooh_*` columns and
+`monitor_cycle.py:206` still calls it. Nothing was removed from the engine.
+The eight fields are simply back to being settable only by a direct database
+edit — which is the state this file was originally raised to complain about.
+
+**If you ever switch `ooh_enabled` to 1 in the database, a strategy you cannot
+see on any screen starts managing your overnight trades.** That is the one
+thing to remember about this change.
