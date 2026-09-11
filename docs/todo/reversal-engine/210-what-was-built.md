@@ -272,3 +272,58 @@ an open puzzle.
 
 Four older `.bak-*` files remain in the data directory, including one from
 the in-progress ledger repair. Those are not mine to remove.
+
+---
+
+## The macro repair, applied 2026-09-11 16:16
+
+The owner authorised it. 4,288 of 5,000 stored training vectors repaired;
+712 already carried real values. Every stored vector is now 38 wide and
+none carries the macro constants.
+
+### It did not work the first time, and the dry run is why that was cheap
+
+The first dry pass reported **4,288 rows with "no data"** and wrote nothing,
+which reads exactly like Yahoo having no history for the period. It was not:
+`fetch_history` did `row["Close"]` over `df.iterrows()`, and yfinance 1.7
+returns **MultiIndex columns** -- `('Close', '^VIX')` -- even for a single
+ticker, so that expression yields a one-element Series rather than a float.
+`float()` on it raised, the broad `except` swallowed it, and every symbol
+came back empty.
+
+A guessed dataframe shape. The seam is now `_closes_from_frame`, tested
+against both column layouts, against a NaN row and against a frame with no
+Close at all. Second dry pass: 4,288 to repair, **zero** without data.
+
+### What the constants were actually saying
+
+They were not merely uninformative. They were systematically wrong about
+the regime the engine was trading in:
+
+| feature | neutral it held | real range in the training set |
+|---|---|---|
+| `gvz_level` | 0.425 (GVZ 17) | 0.581 to 0.736 (GVZ 23 to 29) |
+| `vix_level` | 0.500 (VIX 20) | 0.350 to 0.516 (VIX 14 to 21) |
+| `us10y_level` | 0.750 (4.50%) | 0.769 to 0.825 (4.61% to 4.95%) |
+| `dxy_momentum` | 0.000 | -1.000 to +0.509, 545 distinct values |
+| `tip_momentum` | 0.000 | -1.000 to +1.000, 196 distinct values |
+
+Gold volatility is the clearest: every historical row told the model GVZ
+was 17 through a period when it never once dropped below 23. The model was
+not just missing the macro picture, it was being given a false one.
+
+### When it takes effect, and what to watch
+
+The model persisted before the repair is still in memory and still scoring
+signals. A batch retrain fires every 5 closed signals
+(`_RETRAIN_EVERY = 5`), so the repaired data reaches the live gate within
+an hour or two of trading, not on restart.
+
+**Watch the block rate.** `_ML_BLOCK_THRESHOLD` is 0.0 and the gate was
+already refusing most signals (11% executed on 2026-09-07). If five inputs
+going from a false constant to real values changes what it refuses, that
+shows up as a step change in the `ml_skipped` count, and the direction is
+not predictable from here.
+
+The pre-repair database is at
+`reversal_engine.db.pre-macro-repair-20260911-161641` if it needs undoing.
