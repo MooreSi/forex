@@ -63,3 +63,36 @@ and the gate moved to after the claim.
 
 The scan loop passes the risk settings it already holds, so the gate costs no
 extra read per message. A caller without them falls back to reading once.
+
+---
+
+## Live evidence, three days of it (2026-09-12)
+
+The status line says NOT DEMOED. Nobody has watched it decline on a demo
+terminal, and that is still true — but the live database now has three days of
+it, and they say the right thing.
+
+**The fix landed at 13:52 on 2026-09-09** (`1a849bd`). The account's own tables
+either side of that moment:
+
+| | |
+|---|---|
+| SL adjustments **announced as applied** | **3**, all on 2026-09-09 at 11:38, 12:22 and 13:08 — every one **before** 13:52 |
+| SL adjustment messages **claimed** since the fix | **37** (9 on 09-09, 18 on 09-10, 13 on 09-11) |
+| SL adjustments announced since the fix | **0** |
+
+`lk_enable_sl_parsing` is `0` on this account and every other `lk_*` parsing
+switch is off too, except `lk_enable_close_all_parsing`.
+
+So thirty-seven instructions arrived that would previously have been candidates
+to move a live stop, and no stop moved.
+
+**Stated honestly:** the claim rows are written by
+`recovered_repo.try_claim_sl_adjustment`, which is a dedup marker taken before
+the broker call, not proof of an attempt that was then refused. Some of those
+37 will have had no matching open trade at all. What the data does establish is
+the part that matters — **after the fix, nothing moved a stop, and before it,
+three things did, in the two hours before it landed.**
+
+That is not a substitute for the demo. It is a reason to expect the demo to
+pass.
