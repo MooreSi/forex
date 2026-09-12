@@ -83,3 +83,35 @@ passed, which is what proves the normal path still closes).
    `vantage_simulation_account`. Repairing it, and checking whether
    `trade_pause_until` / `risk_halt_reason` were set off the back of it, is a
    separate decision.
+
+---
+
+## The guard is now verified LIVE (2026-09-12, from the owner's own data)
+
+The status line above says the guard is verified by tests. It has now been
+verified in production, by reading `vantage_telegram_log` and the trade ledger
+for a date nobody had looked at.
+
+**2026-09-07, 01:15:17 to 01:21:03 UTC.** The EA reported trade
+`c55bed33-7bc8-4d` as gone **seventeen times**, roughly every eleven seconds —
+its `CheckForClosures` polling cycle. Every one carried no close price, and the
+broker had no closing deal to offer, because the machine had lost its network:
+the last of those log rows carries `[Errno 8] nodename nor servname provided`.
+
+Before this fix, the first of those seventeen would have booked an exit at
+$0.00 on a trade opened at ~4402 — a fabricated loss of roughly **-$44,000**,
+written to `net_pnl`, `realised_pnl` and the simulated balance, and handed to
+the daily-loss guard.
+
+What actually happened: the guard refused all seventeen, left the row open, and
+**nine minutes later the trade closed properly at 4401.99 for -$48.00.**
+
+That is the whole fix working end to end, in anger, on a real position. It is
+the strongest evidence this file is going to get short of the owner watching it
+happen.
+
+## One thing it exposed, filed separately
+
+Seventeen alerts for one ticket in six minutes, and **all seventeen failed to
+send** — the network outage that created the condition is the same outage that
+stopped the warning about it reaching anyone. `docs/todo/bugs/050`.
