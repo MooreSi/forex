@@ -71,7 +71,8 @@ Numbered files 008 onward. "Fixed" means the code change landed with tests;
 
 ### Still open, in one place
 
-_Rewritten 2026-09-11, after a round of answers closed six._
+_Rewritten 2026-09-11, after a round of answers closed six. Items 5-10 added
+2026-09-12._
 
 1. **The demos** ([013](013-the-five-demos-runbook.md)) — 10 of 18 passed.
    The eight left need conditions an agent cannot create: a slow EA, a broker
@@ -90,6 +91,54 @@ _Rewritten 2026-09-11, after a round of answers closed six._
 4. **One answer on the Out of Hours removal spec**
    ([docs/todo/002](../todo/002-remove-the-out-of-hours-resolver.md) §3) —
    drop the eight database columns, or leave them inert.
+
+_Added 2026-09-12, after a day spent reading your live databases rather than
+the code. Nothing below has been changed on your account; each is a decision._
+
+5. **[033](033-two-engines-disagree-about-the-asian-session.md) — the Asian
+   session.** Your two engines hold opposite rules for the same hours. Both are
+   now measured, and on its own numbers **each is right for the engine that
+   holds it**, which makes them genuinely different rather than one being
+   wrong. The switch built for the Reversal Engine is off; turning it on would
+   admit about seven or eight signals a day.
+6. **[034](034-the-bounce-engine-has-not-produced-a-signal-since-august.md) —
+   one of your three engines has produced nothing since 2026-08-27.** It found
+   514 setups in those sixteen days and refused every one, after its own AI
+   tuner raised the quality bar to the maximum it is allowed. On that engine's
+   record that may be the right answer. It now says so in the log either way.
+   It has never placed a real order, so nothing is at risk while you decide.
+7. **[bugs/051](../todo/bugs/051-withdraw-and-re-arm-has-never-re-armed.md) —
+   the one I would look at first.** On 2026-09-10 you chose that a resting
+   order failing its re-check should be *withdrawn and put back*, not
+   cancelled. In production it is cancelled, every time, one second later, by
+   the EA reporting the order gone. Ten for ten since it shipped. The fix is
+   three lines and it makes the app place orders it currently drops, so it
+   needs your word and a demo.
+8. **[bugs/054](../todo/bugs/054-the-channel-scorecard-counts-every-reversal-engine-trade-twice.md)
+   — the Reversal Engine's scorecard counts 45 of its trades twice**, because
+   the same trade reaches the ledger under two different ids. The duplicates
+   are the winners, so the channel reads better than it is: 54.5% and -$1,833
+   against a true 51.3% and -$2,067. The 55% line is what multiplies that
+   channel's position size by 1.3.
+9. **[bugs/057](../todo/bugs/057-four-definitions-of-the-trading-session.md) —
+   "the Asian session" means four different things** in different parts of the
+   app, disagreeing on eight hours of the day. Your **Asia** button covers
+   21:00–06:59; both engines call 07:00 Asian and the button does not. Worth
+   settling before anyone acts on a session-split number again — including the
+   ones in 033.
+10. **[bugs/048](../todo/bugs/048-two-engines-describe-a-daily-loss-stop-that-does-not-exist.md)
+    — two engines advertise a daily loss stop that is not implemented.** Each
+    names the day it would have prevented. Your real orders are still covered
+    by the app-level daily-loss halt, which does work; the per-engine one has
+    never existed. Delete the description, or build it.
+
+Also filed and needing nothing from you unless you are curious: **049** (two
+ledger columns that are never corrected — harmless, nothing reads them),
+**050** (a warning that cannot be delivered during the outage that raises it —
+the repetition is fixed, the delivery is not), **052** (the fill-quality
+numbers are measured against the wrong moment — guarded now), **053** (the AI
+fallback has recovered nothing in 61 calls), **055** and **056** (both fixed
+the same day).
 
 **Answered 2026-09-11 and now waiting on build, not on you:**
 [041](../todo/bugs/041-a-profitable-harvest-arms-the-circuit-breaker.md) (needs
