@@ -77,6 +77,29 @@ continues a state that has held for ten days and has placed zero orders. So
 this is filed rather than done — and it is filed loudly, because the code
 currently claims a safety property it does not have.
 
+## Three reads outlived the panel
+
+Found 2026-09-12 while attributing the event-loop stalls. `panel_data.__all__`
+is the exact surface a panel calls — one named operation each. Three of Bounce's
+are now referenced by nothing at all:
+
+* **`change_signature`** — *"a cheap comparable snapshot used to decide whether
+  the panel needs a re-render… it IS the diffing check."* The Reversal and
+  Breakout panels clear and rebuild **six containers** on a timer and account
+  for 30% of this app's event-loop stalls (`docs/todo/bugs/030`). The mechanism
+  that would stop them was built, works, and is wired to a panel that no longer
+  exists.
+* **`param_specs`**, **`ml_features_for_signal`** — same cause, no such
+  consolation.
+
+The other two engines are clean: 17 of 17 and 13 of 13 exported names are
+referenced. Pinned by `tests/refactor/test_panel_reads_have_a_panel.py`, a
+shrink-only ratchet with those three listed, so the next panel removal cannot
+leave its reads behind quietly.
+
+Whether they are deleted or wired up depends on this file's own decision: they
+are only dead while the panel is.
+
 ## Two things that WERE done
 
 * The claims above are corrected in place, so nobody reads the old ones as

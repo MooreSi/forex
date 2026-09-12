@@ -516,6 +516,29 @@ reducing it means diffing instead of rebuilding — a change to the owner's own
 screens rather than a contained one. Worth knowing before someone reaches for
 `to_thread` here and finds it does nothing.
 
+**How much they rebuild:** the Reversal Engine's `_refresh_all` calls `.clear()`
+on **six** containers every pass — levels, open signals, history, ML, analytics
+and the analysis log — and builds each one again from scratch. The Breakout
+panel is the same shape. On a timer, whether or not anything changed.
+
+**And the fix already exists, for a panel that no longer does.**
+`test_signal/panel_data.change_signature` is exactly this: *"a cheap comparable
+snapshot used to decide whether the panel needs a re-render… the 30s tick runs
+it unconditionally — it IS the diffing check."* One worker-thread hop, returns
+a tuple of stats, balance and the open rows.
+
+Nothing calls it. Its only consumer was the Bounce panel, deleted on
+2026-09-02 (`docs/todo/bugs/046`), so the mechanism survives and the panel that
+used it does not — while the two panels that DO exist, and DO stall, have never
+had it.
+
+That makes the next step concrete rather than open-ended: give the Reversal and
+Breakout panels a per-container signature and skip the rebuild when it has not
+moved. **Not done here**, and the reason is the failure mode: a signature that
+omits a field leaves a trading screen showing a stale number, which is worse
+than a stall the owner can see. That wants him watching the panel while it is
+switched on, not an overnight commit.
+
 ## And it only happens when someone is looking
 
 Slow-task warnings by hour of day:
