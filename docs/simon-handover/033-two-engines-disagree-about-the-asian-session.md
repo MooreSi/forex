@@ -224,3 +224,22 @@ against its own session column, which is the one its own rule acts on. It
 matters if you ever decide the two should be made consistent: that is a third
 change, not part of either option, and it would move the Bounce engine's rule
 by an hour without anyone intending it.
+
+### And it is worse than two: there are four
+
+Four definitions of the Asian session live in this app, disagreeing on **eight
+hours of the day** — `docs/todo/bugs/057`. The two not in the table above are
+the two you meet directly:
+
+* the **Trading Markets** buttons use a fourth definition, where Asia is
+  **21:00–06:59**. So the Asia button already covers two hours both engines
+  call "off", and does **not** cover 07:00, which both engines call Asian.
+* every **per-session P&L figure** you read uses that same fourth definition.
+  A trade the Reversal Engine opened at 07:30 as an Asian trade is reported to
+  you as a London one.
+
+None of it is wrong arithmetic and no trade has been mispriced. It does mean
+that "Asia" on your screen, "Asia" in the engine that placed the trade, and
+"Asia" in the numbers at the top of this file are three different windows —
+and that the new switch, when you turn it on, will stand the trend gate down
+for 07:00, the hour immediately before the London open.
