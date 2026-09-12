@@ -242,3 +242,45 @@ open a mixed basket (at least one leg in loss), harvest it, and read
 Two halts in under two hours on 2026-09-10, one of them caused by this. Each
 is fifteen minutes with no live execution, and the day was net positive while
 it happened.
+
+---
+
+## Why this did not get built on 2026-09-12
+
+Picked up under "fix everything you can". It is the only unbuilt item on the
+list that stops live trading, and it was the first thing looked at. Both halves
+turn out to be doors that need the owner on the other side, and one of them is
+not the door the spec above names.
+
+**The EA half cannot be committed unattended, and that is a harder rule than it
+looks.** The spec says piece 1 is a new EA version plus `deploy_ea.sh` and F7 —
+which reads like "the change waits for a deploy". It does not. Committing the
+`.mq5` edit *is itself* the live change: the handshake greps `EA_VERSION` out of
+the repo copy on every connection, so the moment the source says 1.08 and the
+chart is running 1.07, on the owner's own machine and with nothing deployed:
+
+* the top-bar EA badge goes stale (`ea_build_status`);
+* **every EA Template order is refused** — `template_refusal_for_stale_ea`,
+  which is bugs/033 working exactly as intended, because a template is managed
+  entirely by the build on the chart;
+* the macOS/Wine bridge restarts the MT5 terminal once, as soon as the book is
+  empty (`ea_deploy.reload_decision`) — about two minutes managing nothing.
+
+So an overnight commit of the EA marker would have stopped template trading on
+the running demo account until someone sat down at MetaEditor. Recorded in the
+broker domain README as a general rule, because it applies to every EA change,
+not just this one.
+
+**The Python half is one condition inside `record_close`**, which is golden
+rule 4's frozen list. Not ours either, and the spec already says so.
+
+**What that leaves.** Building the middle — a basket registry and a scoring
+module — while both ends are unreachable would put a few hundred lines of
+plumbing in the tree that nothing calls and nothing can exercise end to end.
+That is the shape the 2026 audit was called for. It was not done.
+
+**This is a one-sitting job with the owner**, and the sitting already has to
+happen for the demo the spec describes: EA edit, `deploy_ea.sh`, F7, the
+`record_close` condition, then open a mixed basket on demo and read
+`circuit_breaker_consec_losses` before and after. Everything needed to do it is
+written down above.
