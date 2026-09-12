@@ -435,3 +435,30 @@ source-text grep, which passes just as happily with the code deleted.
 **What it needs:** the owner looking at the header before and after, or
 `_refresh_header` lifted to a callable function first so the change can be
 tested. Either is a session with someone watching, not an overnight edit.
+
+## The test blocker is gone (2026-09-12)
+
+> *"or `_refresh_header` lifted to a callable function first so the change can
+> be tested"* — the second of the two routes above.
+
+The part that needed lifting was never the whole of `_refresh_header`; it was
+the eight lines inside it that decide what counts as funding. Those are now
+`frontend/app/_header_pnl.net_deposited_from_deals`, pinned by
+`tests/frontend/test_header_net_deposited.py` (six cases, four mutants killed:
+`credits - debits` → `+`, `credits <= 0` → `< 0`, the `type == 2` filter
+removed, and the withdrawal branch inverted).
+
+**The number did not change.** Same filter, same "no credit in the window means
+no answer" rule, same caller and same cache. What changed is that the header's
+definition of funding is now readable, comparable to the service's, and fails a
+test if anyone alters it by accident.
+
+The last test in that file states the difference between the two
+implementations as an executable assertion: a balance operation that is not
+`DEAL_TYPE_BALANCE` is counted by `get_total_deposits` and invisible here.
+
+**Still the owner's, and unchanged:** routing the header through
+`engine.get_total_deposits()` — which is what actually kills the 3,650-day
+fetch this section was written about. It moves a money figure he reads on every
+screen, by an amount that depends on deal types at the broker. The three-line
+change is now safe to make and safe to test; it is not safe to make unattended.
