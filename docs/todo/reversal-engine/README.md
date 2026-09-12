@@ -29,6 +29,7 @@ current win rate returns +0.12R a trade.
 | [100](100-revalidating-every-waiting-order.md) | re-evaluate a waiting order before it becomes a trade | **BUILT** — the Telegram path re-checks schedule, news and fill delay |
 | [200](200-what-a-professional-desk-would-add.md) | design note: what a professional desk would add, and in what order | design |
 | [210](210-what-was-built.md) | what shipped 2026-09-11, and the switches still waiting on a demo session | **BUILT, all off by default** |
+| [210](210-what-was-built.md#the-trend-gate-is-wrong-in-the-asian-session-2026-09-12) | the trend gate points the wrong way in the Asian session | **BUILT**, `htf_bias_asian_exempt` off, not demoed |
 
 ## Picking this up again
 

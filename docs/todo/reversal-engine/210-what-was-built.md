@@ -498,3 +498,78 @@ test-first change rather than being tacked on here.
 Until then: after pressing Save Risk Settings, check the other switches on
 that card still say what you meant.
 
+
+---
+
+## The trend gate is wrong in the Asian session, 2026-09-12
+
+The gate the owner turned on on 2026-09-09 was justified on a measurement
+taken across all hours together. Split by session, over all 5,414
+`re_signals` rows, it reverses:
+
+| session | with the bias | against it |
+|---|---|---|
+| asian (00-07 UTC) | n=693, **-$6.26**, CI [-9.40, -3.12] | n=621, -$0.50, CI [-3.69, 2.69] |
+| every other | n=1,480, -$1.02, CI [-3.30, 1.27] | n=1,154, **-$4.81**, CI [-7.48, -2.14] |
+
+The two bolded cells hold their sign across chronological halves; the other
+two only straddle zero. Outside Asia the gate refuses the group losing $4.81
+a trade, which is what it is for. Inside Asia it refuses the group losing
+nothing and admits the one losing $6.26 -- about **$5.76 a trade across
+1,314 signals**, pointing the wrong way.
+
+**Built: `htf_bias_asian_exempt`** (migration 45, **off**), on the
+Capabilities card. It stands the trend rule down for 00-07 UTC and changes
+nothing at any other hour. It does NOT invert the rule: -$0.50 with an
+interval straddling zero is not an edge, and preferring counter-trend trades
+in Asia would be reading a straddling interval as a signal -- the mistake
+the AI declined to make on 2026-09-11.
+
+**The caveat this shares with everything else on this page:** almost all of
+that P&L is the engine's virtual ledger. Only a minority of signals reach
+the broker, so this is the population the engine simulates.
+
+### Two rules, not one, and the first mutation pass caught it
+
+That path refuses a counter-bias trade in two places: the owner's gate, and
+the original `level_score < 0.75` bypass beside it (090). While the gate is
+on, the second is a strict subset of the first and changes no outcome --
+which is exactly why exempting only the gate would have gone unnoticed. It
+would have turned the switch into "counter-bias in Asia, but only on levels
+scoring 0.75 or better".
+
+The first version of the change was pinned only by a source-shape assertion,
+and **a planted mutation removing the exemption from the second clause
+survived it**. `tests/reversal_engine/test_asian_bias_exemption_on_the_live_path.py`
+runs the branch instead, at level scores 0.60 and 0.95; the 0.60 case is
+what kills that mutant. Four mutations were planted in total and all four
+are now killed.
+
+### Why the switch is not an argument to `htf_bias_blocks`
+
+The first attempt added `session=` to `governor.htf_bias_blocks`. It was
+backed out: six order routes share that function and the evidence above is
+Reversal Engine data. `capability_gates.asian_bias_exempt` answers "does
+this session opt out at all", the governor rule keeps its signature and all
+six callers, and a structural test pins that no other route consults the
+exemption.
+
+### Still waiting on you
+
+**Nothing here has been demoed.** Three things are now measured and ready,
+in the order they would be turned on:
+
+1. **`session_liquidity_gate_enabled`** (built 2026-09-11, off). Blocks
+   Sunday 21:00 UTC to Monday 01:00 UTC. Sunday from 21:00 is 102 signals at
+   -$9.10 each; Monday 00:00-00:59 is 67 at -$19.32, CI [-32.47, -6.17],
+   both halves negative. -$2,223 inside the hours this gate already covers.
+2. **`min_fill_delay_s` 30 -> 300**, the open decision from the section
+   above, re-measured 2026-09-12 and confirmed: over executed closed signals
+   the 30-300s band is 180 trades at -$8.02 (-$1,443), both halves negative,
+   against -$1.58 under 30s and -$0.83 over 300s. It is one band, not a
+   gradient, and the window in force catches the cheap end.
+3. **`htf_bias_asian_exempt`**, this section.
+
+And the question that is not ours: **the Bounce engine holds the opposite
+Asian rule** and has since before any of this was measured. See
+[simon-handover/033](../../simon-handover/033-two-engines-disagree-about-the-asian-session.md).
