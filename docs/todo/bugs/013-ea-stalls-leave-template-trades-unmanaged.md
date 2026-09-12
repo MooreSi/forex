@@ -378,3 +378,53 @@ rotated logs from before 2026-09-09.
 **It does not make Option B unnecessary.** A five-second freeze was one cause
 of the silence; a genuinely stalled or detached EA is still possible, and a
 template trade still has no Python fallback while it happens.
+
+---
+
+## Interim read on the week's data (2026-09-12) — the recompile worked
+
+The status line says the v1.06 recompile happened at 14:43:48 on 2026-09-09 and
+*"the week's data starts now"*. Three of those seven days are in, and the answer
+is already clear enough to be worth writing down.
+
+Every `EA unhealthy` warning across every log on disk: **1,338 warnings in 54
+distinct episodes**, 2026-08-13 to 2026-09-11. An episode is a run of warnings
+with no two-minute gap — one stall, however many monitor cycles it spans.
+
+| window | episodes | total time a live template trade was unmanaged |
+|---|---|---|
+| 2026-08-28 → 2026-09-09 14:43 (before) | 27 | **713 s** |
+| 2026-09-09 14:43 → 2026-09-11 (after) | 9 | **7 s** |
+
+**A hundredfold less exposure.** The stalls have not stopped — they still
+happen a few times a day — but they now last a single monitor cycle instead of
+minutes.
+
+### A correction to the first reading
+
+Counting episodes per day says the opposite: 1, 2 before and 4, 2, 6 after,
+which reads as "no better, possibly worse". That was the first answer here and
+it was wrong. The count barely moved; the **duration** collapsed. What matters
+for an unmanaged position is how long it is unmanaged, and that is the column
+that changed.
+
+### The worst three, and they share a shape
+
+```
+2026-09-01 16:37:48   298 s   571 warnings   tickets 0, 1906484660
+2026-09-01 00:33:03   171 s   327 warnings   ticket  0
+2026-09-01 00:16:10   162 s   158 warnings   ticket  0
+```
+
+Nearly five minutes with a live position on the chart and nothing managing it —
+no harvest, no breakeven, no trailing, no partial ladder. All three are before
+the recompile, all three are 2026-09-01, and all three involve **ticket 0** —
+the unfilled-placeholder shape from bugs/016 and the one Sig Guard treats as
+blocking for the same reason.
+
+### What is still owed
+
+Four more days, and the full week's read. This is three days, one of which was
+a closed market, which is why it is filed as interim rather than as the answer.
+If the remaining four look like these three, the fix has held and bugs/013 can
+close on the numbers rather than on hope.
