@@ -542,11 +542,40 @@ recently rather than always having been this bad.
 and which needed the owner's explicit permission because it sat on the money
 path. The fix is the same: run the CPU-heavy parts off the loop.
 
-**Not applied here**, for a reason worth stating: every one of those calls
-reads the database, and this repo's connection model is thread-local with
-documented hazards (`to_db_thread`, the Windows handle rules in CLAUDE.md).
-Moving them to a thread is not a one-line change and getting it wrong is worse
-than a 21-second stall a human triggers on purpose.
+### Fixed, 2026-09-12 — and it was narrower than it first looked
+
+The first reading here said this could not be done safely, because "every one
+of those calls reads the database". That was wrong, and measuring it is what
+showed the difference.
+
+**The expensive one is `barrier_fit.sweep`, and it touches nothing.**
+`backend/src/services/market/barrier_fit.py` imports `random`, `dataclasses`
+and `typing` — no database, no bridge, no I/O at all. It is arithmetic over
+lists already in memory. Benchmarked on this machine, 250 paths, against the
+path lengths `_paths_for` actually builds from tick history:
+
+| points per path | `sweep` |
+|---|---|
+| 400 | 3.45 s |
+| 2,000 | 9.97 s |
+| 6,000 | **24.93 s** |
+
+The cost is the replay, not the bootstrap: six stops by five targets means
+every tick path is walked **thirty times**. Dropping the 1,000-sample bootstrap
+saves under a second of it.
+
+So the three pure calls — `fit_barriers`, `reach_distribution`, `sweep`, plus
+`_breakeven_penalty` which is more of the same — now go through
+`asyncio.to_thread`. Same inputs, same functions, same results; the loop stays
+answerable while they run. **The database reads were left exactly where they
+are**, on the loop, because they are fast and because moving them is the change
+that would need care.
+
+Pinned by `tests/reversal_engine/test_study_does_not_block_the_loop.py`: each
+call is asserted to run on a thread that is not the loop's, a concurrent task
+is asserted to still get a turn while the study runs, and the report is
+asserted to come back with the same sections. Three mutants killed — one per
+call put back on the loop.
 
 ## What this changes about the three earlier sections
 
