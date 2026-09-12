@@ -193,6 +193,21 @@ Worth noting while you are looking at that: the gate has not choked the engine.
 Executions went 11 → 14 → 22 across 2026-09-09 to 09-11, against a steady ~165
 signals generated a day.
 
+## The shadow log cannot answer this for you
+
+Worth knowing before anyone suggests it. The Reversal Engine's
+champion/challenger shadow log records its comparison deep inside the live
+path — below the bias gate. So a challenger that differs on the **bias** never
+sees the signals it would have decided differently about: they returned before
+the recorder. Setting the Asian exemption as a shadow variant would produce
+nothing at all, in either direction.
+
+A live Asian session on demo really is the only way to attribute this, which is
+what the recommendation above already says — now for a second reason.
+
+(For scale: that log currently holds 12 signals from one afternoon, and three
+of its five arms have never disagreed with the live decision once.)
+
 ## The two engines do not agree on when "Asian" is
 
 They each have their own `get_session`, and they differ:
