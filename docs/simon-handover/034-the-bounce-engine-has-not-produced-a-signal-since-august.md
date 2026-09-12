@@ -10,16 +10,19 @@ about whether one of your three engines is working or quietly switched off.
 The last signal the Bounce engine created was **SIG-0173, on 2026-08-27 at
 05:15 UTC**. Sixteen days ago.
 
-It has not been idle. Since 2026-08-29 it has run **9,250 analysis cycles** and
-found **424 entry candidates**. It refused every one:
+It has not been idle. In the sixteen days since, it found **514 entry
+candidates** — cycles where it had something to judge — and refused every one:
 
 | refused by | count |
 |---|---|
-| ML gate (`predicted_R` below the 0.00 floor) | 303 |
-| quality score below 85% | 72 |
-| conflicting open signal | 29 |
-| Asian counter-bias rule | 19 |
+| ML gate (`predicted_R` below the 0.00 floor) | 369 |
+| quality score below 85% | 88 |
+| conflicting open signal | 31 |
+| Asian counter-bias rule | 25 |
 | DXY gate | 1 |
+
+(Cycles that found no candidate at all are excluded — there are thousands, and
+they are the market rather than a gate.)
 
 ## It is not the market, and it is not the app
 
@@ -85,10 +88,23 @@ rows have no MT5 ticket. This engine is entirely virtual today.
 
 Two things, in this order.
 
-1. **Make silence visible.** A signal engine that has produced nothing for a
-   fortnight should say so on its own panel — "no signal in 16 days; 424
-   candidates refused, 303 by the ML gate". That is a display change with no
-   money in it, and I can build it whenever you want it.
+1. **Make silence visible.** — **done 2026-09-12, in the log.** Every six
+   hours, once the engine has gone more than two days without producing
+   anything, its watchdog now writes:
+
+   > `TestSignalEngine: no signal in 16 days — 514 candidates found and every
+   > one refused, 369 by ml_gate`
+
+   The log rather than a panel, because **this engine has no panel** — it was
+   removed on 2026-09-02 — which is the reason nobody saw this for a
+   fortnight. See `docs/todo/bugs/046`: it is running anyway.
+
+   It stays quiet on the three cases that would train you to ignore it: under
+   two days, an engine that has never produced a signal, and silence with
+   nothing refused (that is a quiet market, not a gate). It counts a cycle as a
+   candidate when the row carries one rather than matching a list of gate
+   names, so a gate added next year is counted without anyone remembering to
+   update it.
 2. **Then decide the gates.** If you want it trading again, the honest
    experiment is one parameter at a time: drop `min_quality_score` back to 0.70
    and leave the ML floor alone for a week. If it stays silent, the ML gate is
