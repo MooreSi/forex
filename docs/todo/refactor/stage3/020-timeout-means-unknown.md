@@ -271,3 +271,54 @@ executor rather than a socket, and I cannot reason about which of them mean
 rather than guessed at — see `docs/simon-handover/016`.
 
 **Still not `done`** — the demo needs a terminal.
+
+---
+
+## Live evidence, from the logs rather than a demo (2026-09-12)
+
+The status line says the killer demo needs a live broker. It still does. But
+the condition itself has occurred **nine times** on the owner's account since
+2026-08-27, and the logs say what happened each time.
+
+```
+2026-08-27 17:45:46  2cf547b5  template:GD Instituational - single
+2026-08-27 17:45:49  83aa3510  template:Asian Reversal - ATR
+2026-08-31 15:02:09  be1aea4e  template:GD VIP - Single
+2026-09-01 00:16:07  a0b5528c  template:30 TP1 SL50 and Trail
+2026-09-01 00:33:09  222757e4  template:30 TP1 SL50 and Trail
+2026-09-08 07:31:28  642b6b2a  template:30 TP1 SL50 and Trail
+2026-09-09 13:08:10  062f91ad  template:30 TP1 SL50 and Trail
+2026-09-10 07:15:57  3c45d367  template:30 TP1 SL50 and Trail
+2026-09-11 15:32:06  854f264f  template:30 TP1 SL50 and Trail
+```
+
+Every one is *"[EA] template open ack timed out after 15s … the EA may have
+placed legs"* — the exact ambiguity this task is named after.
+
+### The four most recent all resolved correctly
+
+| trade | ticket | outcome |
+|---|---|---|
+| 642b6b2a | 1955604089 | closed, SL, +$34.64 |
+| 062f91ad | 1969210518 | closed, SL, -$83.10 |
+| 3c45d367 | 1977189515 | closed, MT5_close, +$35.20 |
+| 854f264f | 1994807429 | closed, closed_while_disconnected, -$47.20 |
+
+Each got a real broker ticket, stayed tracked, and closed with a real P&L.
+None re-opened, none double-filled, none went missing.
+
+### The one that did not is the one from before
+
+`83aa3510`, 2026-08-27 17:45:49 — the second line in that list — is
+`docs/todo/bugs/016`: *"a trade that does not exist is holding one of five
+trade slots"*, same trade id, same strategy, same minute. That row sat `open`
+with `mt5_ticket = 0` for 26 hours against a broker that had no such position.
+
+So the shape is: **before the work, an ack timeout could leave a phantom; after
+it, four for four have reconciled.** That is not the demo — nobody faked a lost
+response after a confirmed fill, which is still the only way to prove the
+dangerous half — but it is nine real occurrences of the condition with no bad
+outcome in the recent seven.
+
+Worth knowing when the demo is scheduled: this fires roughly once every three
+trading days without anyone arranging it.
