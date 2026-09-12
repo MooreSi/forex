@@ -25,6 +25,24 @@ _Last updated: 2026-09-10 — **all five tasks built and green**, owner-signed-o
 | 040 | [revalidate before the fill](040-revalidate-before-the-fill.md) | done 2026-09-10 | Claude | own tunable, on by default; withdraw and re-arm; not demoed |
 | 050 | [announce a discarded limit order](050-announce-a-discarded-limit-order.md) | done 2026-09-10 | Claude | one `withdraw_count` column damps the flap; not demoed |
 
+## First live results (2026-09-12)
+
+Seventeen orders have rested since 2026-09-09. **One filled.** Ten were
+cancelled straight after a revalidation withdrawal, four reached the ~60-minute
+TTL, two were cancelled early and one was manual.
+
+**The withdraw-and-re-arm decision is not in effect, and never has been.**
+Every withdrawal is followed within one second by the EA reporting the order
+gone, and `_on_pending_order_cancelled` applies that unconditionally — row and
+signal both to `cancelled`, out of the sweep's `('working','withdrawn')` set,
+no way back. Ten setups, ten cancelled signals, zero re-arms, zero trades. The
+fingerprint is a row that is `cancelled` with `withdraw_count = 1`.
+
+Everything reported success throughout: both alerts sent, all checks green, and
+the re-arm tests pass because they drive the sweep directly and no EA echo ever
+reaches them. `docs/todo/bugs/051` has the fix (three lines) and why it was not
+applied unattended.
+
 ## Decisions log
 - Keyword decides the entry mechanic, template decides the management (owner, 2026-09-10)
 - Grid templates unchanged — already resting (this pack, 2026-09-10)
