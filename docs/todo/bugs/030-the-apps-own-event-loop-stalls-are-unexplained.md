@@ -495,6 +495,27 @@ took N seconds` line. Nobody had aggregated them.
 panel re-renders. Three of the 186 are engine loops. The trading loops are not
 the blockers here; they are the victims.
 
+### Narrowed to two files
+
+The warnings also carry a source location. Of the 55 panel re-renders:
+
+| | |
+|---|---|
+| `frontend/pages/breakout_panel/__init__.py:529` | 30 |
+| `frontend/pages/reversal_panel/__init__.py:555` | 22 (+3 at `:553`) |
+
+Both are the same `_safe_refresh` → `_refresh_all()` pair, and **their database
+reads are already off the loop** — the comment at both sites says so, and it is
+true. What is left blocking is the rendering itself: NiceGUI element creation
+and update, which cannot be moved to a thread because UI objects are not
+thread-safe.
+
+So the remaining 30% is not an I/O problem with a thread-shaped fix. It is two
+panels rebuilding more of themselves than they need to, on a timer, and
+reducing it means diffing instead of rebuilding — a change to the owner's own
+screens rather than a contained one. Worth knowing before someone reaches for
+`to_thread` here and finds it does nothing.
+
 ## And it only happens when someone is looking
 
 Slow-task warnings by hour of day:
