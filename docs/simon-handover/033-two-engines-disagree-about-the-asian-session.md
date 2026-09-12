@@ -166,3 +166,46 @@ That leaves:
 gates were lifted into `services/test_signal/_gates.py` and pinned by tests on
 the same day, which changed no behaviour — the old expressions and the new
 functions were compared across every combination of their inputs.
+
+---
+
+# Two more things worth knowing before you decide (2026-09-12)
+
+## What the switch would actually let through, per day
+
+Since you turned the trend gate on, the Reversal Engine has refused **122**
+signals on it. By its own recorded session:
+
+| session | refused by the trend gate |
+|---|---|
+| overlap | 43 |
+| london | 31 |
+| **asian** | **23** |
+| ny | 18 |
+| off | 7 |
+
+So the new switch would admit roughly **seven or eight signals a day** — the 23
+Asian ones over three days — and change nothing about the other 99. That is the
+size of the decision. For scale, the engine executed 11, 14 and 22 live orders
+on those same three days, so this is not a small adjustment to its volume.
+
+Worth noting while you are looking at that: the gate has not choked the engine.
+Executions went 11 → 14 → 22 across 2026-09-09 to 09-11, against a steady ~165
+signals generated a day.
+
+## The two engines do not agree on when "Asian" is
+
+They each have their own `get_session`, and they differ:
+
+| engine | calls this Asian |
+|---|---|
+| Reversal Engine (`level_detector.get_session`) | 00:00–07:59 UTC |
+| Bounce (`signal_generator.get_session`) | 23:00–07:59 UTC |
+
+The **23:00 hour** is inside the Bounce rule and outside the Reversal Engine's.
+So "the same hours" in this file is not exactly true, and neither is it wrong
+in a way that changes the picture — each engine's numbers above were measured
+against its own session column, which is the one its own rule acts on. It
+matters if you ever decide the two should be made consistent: that is a third
+change, not part of either option, and it would move the Bounce engine's rule
+by an hour without anyone intending it.
