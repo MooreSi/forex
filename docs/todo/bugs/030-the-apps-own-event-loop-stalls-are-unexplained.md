@@ -462,3 +462,101 @@ implementations as an executable assertion: a balance operation that is not
 fetch this section was written about. It moves a money figure he reads on every
 screen, by an amount that depends on deal types at the broker. The three-line
 change is now safe to make and safe to test; it is not safe to make unattended.
+
+---
+
+# The stalls are attributed (2026-09-12)
+
+> *"Severity: unknown, which is the problem. Sub-second, frequent,
+> unattributed."*
+
+They are attributed now, and the evidence was in the log the whole time. Python
+names the offending coroutine in every `WARNING asyncio — Executing <Task ...>
+took N seconds` line. Nobody had aggregated them.
+
+## One day, 2026-09-12
+
+| | |
+|---|---|
+| slow-task warnings | **186** — median 0.63s, p90 0.97s, **max 21.49s**, total **149.1s** |
+| `LoopMonitor` stalls | **122** — median 647ms, p90 954ms, max 21,256ms, total **104.5s** |
+
+## Who blocks the loop
+
+| coroutine | n | share |
+|---|---|---|
+| `Timer._invoke_callback()` | 110 | 59% |
+| `render.<locals>._safe_refresh.<locals>._run()` | 55 | 30% |
+| `TaskHandle._run_coro()` (starlette middleware) | 7 | 4% |
+| `render._refresh_all()`, `PanelMixin._panel_loop()`, `Outbox.loop()` | 2 each | 3% |
+| `_VelocityMixin._velocity_loop()`, `TradingRuntime._tp_ladder_fast_loop()`, `ReversalEngine._outcome_loop()` | 1 each | 2% |
+
+**Eighty-nine per cent is the dashboard refreshing itself** — NiceGUI timers and
+panel re-renders. Three of the 186 are engine loops. The trading loops are not
+the blockers here; they are the victims.
+
+## And it only happens when someone is looking
+
+Slow-task warnings by hour of day:
+
+```
+00: 1    07: 28    08: 32    09: 91    10: 1    13: 33
+```
+
+Nothing at all in the other eighteen hours. 185 of the 186 fall in the windows
+the owner was at the dashboard.
+
+That is the answer to "how bad is this": **overnight, when the app is trading
+unattended, the loop is not stalling.** The stalls are real, they do freeze
+order dispatch while they last, and they happen while a human is watching the
+screen rather than while the app is alone with the market.
+
+## The worst single block, and it is a new one
+
+```
+13:28:47  Executing <Task finished name='_render_research_section.<locals>._run'>
+          took 21.492 seconds
+```
+
+**Twenty-one and a half seconds** with nothing else able to run — no order
+dispatch, no position monitoring, no EA message, no Telegram.
+
+That is the **Run study** button on the Reversal Engine panel.
+`research_lab.run_study` awaits its bridge reads properly, then does its
+arithmetic inline on the event loop:
+
+```python
+report["attribution"] = attribution.render(attribution.cohorts(closed))
+report["macro"]       = macro_backfill.backfill(measure_repo.training_vectors(), ...)
+fit                   = barrier_fit.fit_barriers(obs)
+report["reach"]       = barrier_fit.reach_distribution(obs)
+report["sweep"]       = barrier_fit.sweep(paths, DEFAULT_STOPS, DEFAULT_TARGETS,
+                                          cost_pts=..., bootstrap=1000)[:10]
+```
+
+A 1,000-sample bootstrap over a stop-by-target grid is the obvious candidate,
+and the sweep was widened to 250 paths on 2026-09-11 — so this got slower
+recently rather than always having been this bad.
+
+**Same shape as the ML fit**, which this file already records as a fixed cause
+and which needed the owner's explicit permission because it sat on the money
+path. The fix is the same: run the CPU-heavy parts off the loop.
+
+**Not applied here**, for a reason worth stating: every one of those calls
+reads the database, and this repo's connection model is thread-local with
+documented hazards (`to_db_thread`, the Windows handle rules in CLAUDE.md).
+Moving them to a thread is not a one-line change and getting it wrong is worse
+than a 21-second stall a human triggers on purpose.
+
+## What this changes about the three earlier sections
+
+Nothing they say is wrong. It does re-rank them:
+
+* the polling volume measured earlier is real but is not what stalls the loop;
+* the History page's deal fetches are already coalesced and do not appear here
+  at all;
+* the header's 3,650-day fetch is still worth killing, and is still the
+  owner's, but it is not the cause of these numbers either.
+
+The cause of these numbers is the dashboard's own refresh cycle, and the worst
+of it is one button.
