@@ -89,3 +89,80 @@ Turn the new switch on for one Asian session on demo, with **Only trade with
 the trend** left on, and compare that session against the last few. One
 switch, one window, attributable afterwards. Leave the Bounce engine alone
 until its own numbers have been pulled.
+
+---
+
+# The Bounce engine, measured (2026-09-12)
+
+Option 2 above was *"the Bounce rule was never measured and is inherited
+belief"*. It has now been measured, from that engine's own database. **It
+survives.** On its own data the rule it holds is the right way round, which
+means option 1 — the two engines genuinely differ — is the reading the evidence
+supports.
+
+## Its record, split the same way
+
+All 100 closed Bounce signals, by session and by whether they agreed with the
+H1 bias:
+
+| session | side | n | average | 95% CI |
+|---|---|---|---|---|
+| asian | **with the bias** | 21 | **+$2.09** | [-24.92, +31.55] |
+| asian | against it | 5 | -$27.94 | [-68.50, +1.18] |
+| asian | no bias | 8 | -$31.90 | [-50.86, -12.90] |
+| other | with the bias | 40 | -$12.31 | [-31.23, +8.69] |
+| other | against it | 14 | **-$23.79** | [-35.78, -11.99] |
+| other | no bias | 12 | -$11.77 | [-39.95, +19.52] |
+
+Two things stand out, and they are the opposite of the Reversal Engine's table
+at the top of this file:
+
+* **Asian trend-aligned is the only positive cohort anywhere in this engine.**
+  +$2.09 a trade — barely, and the interval straddles zero, so call it "not
+  losing" rather than "winning". It is still the best thing this engine does.
+* **Against-the-bias outside Asia is its worst real cohort**, -$23.79 with an
+  interval that clears zero.
+
+So the Bounce engine's Asian rule admits its best group and refuses its worst.
+The Reversal Engine's gate does the reverse in the same hours. On the evidence
+available, both rules are pointing the right way for the engine that holds
+them.
+
+## The rule is also working exactly as written
+
+All five Asian against-the-bias trades were `liquidity_sweep` — the one pattern
+the rule deliberately exempts. Nothing else got through. That is a clean
+confirmation that the 49 refusals it has logged are the rule doing its job,
+not a leak.
+
+## How much to trust this
+
+Less than the Reversal Engine's table, and that one already carried a caveat.
+
+* **The samples are small.** 21 and 5, against 693 and 621. Every interval
+  above is wide; two of the six are nowhere near significant.
+* **It is entirely virtual.** Not a minority this time — **none** of these 100
+  closed signals ever reached the broker. Every figure is the engine's own
+  simulated ledger.
+* **The engine has produced nothing since 2026-08-27**, so this record stops
+  growing. See `docs/simon-handover/034`.
+
+## What this changes about the question
+
+The question is still yours, but it is now narrower. Option 2 is out: the
+Bounce rule is not unmeasured belief any more, and its own numbers back it.
+That leaves:
+
+* **Option 1** — the two engines genuinely differ, and both rules are right for
+  their own setups. This is what the data says. If you agree, the thing to do
+  is write it down as intended, which is now done in the engines domain README
+  so that the next person does not read it as an accident.
+* **Option 3** — both measurements are artefacts of simulated ledgers, and
+  neither should be acted on until more signals have been filled at a broker.
+  Still entirely defensible, and it argues for leaving the new Reversal Engine
+  switch off a while longer rather than for changing anything here.
+
+**Nothing on the Bounce engine has been changed.** Its three counter-trend
+gates were lifted into `services/test_signal/_gates.py` and pinned by tests on
+the same day, which changed no behaviour — the old expressions and the new
+functions were compared across every combination of their inputs.
