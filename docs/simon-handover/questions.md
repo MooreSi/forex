@@ -132,6 +132,10 @@ the code. Nothing below has been changed on your account; each is a decision._
     by the app-level daily-loss halt, which does work; the per-engine one has
     never existed. Delete the description, or build it.
 
+**Closed 2026-09-13:** **058** — the bot token in the diagnostics upload. You
+decided not to rotate it. The upload is scrubbed, so nothing further leaves;
+what that accepts is written down in the file.
+
 Also filed and needing nothing from you unless you are curious: **049** (two
 ledger columns that are never corrected — harmless, nothing reads them),
 **050** (a warning that cannot be delivered during the outage that raises it —

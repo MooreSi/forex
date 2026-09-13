@@ -1,8 +1,8 @@
 # 058 — A live Telegram bot token leaves the machine in the diagnostics upload
 
-**Status:** found and **FIXED 2026-09-12**, test-first, four mutants killed.
-**The token itself still needs rotating** — see the bottom. That part is the
-owner's.
+**Status:** **CLOSED 2026-09-13.** Code fixed 2026-09-12, test-first, four
+mutants killed. **The owner has decided not to rotate the token** — his call,
+recorded below with what that accepts.
 **Touches money:** no, and that undersells it. A bot token is control of the
 bot: read every message it can see, and post as it.
 **Severity:** a live credential, written to disk 7,245 times a day and
@@ -59,16 +59,28 @@ along with the secret.
 diagnostics bundle up to now, and it is still in every log file on disk —
 7,245 lines in today's alone, and the rotated files going back to 2026-08-12.
 
-Two things worth deciding:
+## The decision, 2026-09-13
 
-1. **Rotate the bot token** (`/revoke` then `/token` with BotFather, then
-   update it in Settings). That is the only action that makes a leaked token
-   harmless, and it costs one restart.
-2. **Decide about the log files themselves.** The fix stops the token leaving
-   in a bundle; it does not stop httpx writing it. Quietening the httpx logger
-   to WARNING would stop it at source, but that also removes the per-request
-   line that several investigations have used. Worth a conscious choice rather
-   than a default.
+**The owner has decided not to rotate the token.** Recorded as taken, and this
+file is closed on it.
 
-Neither is urgent if the admin server is trusted and the bundles have only ever
-gone there. Both are cheap.
+What that accepts, stated plainly so it is a decision and not an oversight:
+
+* the token is in every log file on disk, back to 2026-08-12, and in every
+  diagnostics bundle uploaded before 2026-09-12;
+* anyone who has one of those files has full control of the bot — read what it
+  can see, post as it;
+* nothing further is exposed from here: the scrub means no future bundle
+  carries it.
+
+That is a reasonable position if the admin server is trusted and the bundles
+have only ever gone there, which is the case as far as this repo can tell.
+
+**One option left on the table, not taken and not urgent.** The scrub stops the
+token *leaving*; it does not stop httpx *writing* it, so the log files keep
+accumulating it at roughly 7,000 lines a day. A logging filter using the same
+`scrub_log_secrets` would redact it as each line is written, keeping the
+per-request line that several investigations have used while never putting the
+secret on disk. It is perhaps twenty lines and it touches every log record,
+which is why it is written here rather than done: it is a change to the app's
+logging for a risk the owner has just accepted. Ask for it if you want it.
