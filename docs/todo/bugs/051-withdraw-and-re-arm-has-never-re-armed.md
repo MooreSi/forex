@@ -1,8 +1,8 @@
 # 051 — "Withdraw and re-arm" has never re-armed: the EA cancels it one second later
 
-**Status:** found 2026-09-12 from the live demo database. **Not fixed** — the
-fix makes the app place orders it does not place today, and that is the owner's
-call however clearly the intent is written down.
+**Status:** found 2026-09-12. **FIXED 2026-09-13 on the owner's instruction**
+("Fix 054 and 051"), test-first, three mutants killed. **Shipped without a demo
+session, at his direction** — it was live for the Asian open the same evening.
 **Touches money:** yes. It is the difference between a setup coming back and a
 setup being thrown away, on the live-execution engine's order path.
 **Severity:** an owner decision taken on 2026-09-10 has been silently inverted
@@ -121,3 +121,34 @@ a demo session, and it is small enough to do inside one.
 * `docs/todo/limit-orders/040-revalidate-before-the-fill.md` — the feature.
 * `docs/todo/bugs/039` — cancelling a signal left its order resting: the same
   two surfaces disagreeing, in the other direction.
+
+
+---
+
+## Fixed, 2026-09-13
+
+`_on_pending_order_cancelled` now returns early when the row it is about is
+already `withdrawn`: that report is this app's own withdrawal echoing back off
+the EA, not the broker or the user cancelling anything.
+
+A **status check, not a blanket ignore.** An order that really expired, or that
+was pulled by hand in the terminal, is `working` when the report arrives and is
+still cancelled — and still cancels its signal. Two tests assert exactly that,
+because a fix that simply stopped listening would have looked identical on the
+day and lost every genuine cancellation afterwards.
+
+`tests/core/test_withdrawal_survives_the_ea_echo.py` goes the whole way round,
+which is what no existing test did: withdraw, deliver the EA's cancellation,
+then confirm the row is still `withdrawn`, its **signal is still `pending`**
+(the half that made this unrecoverable — the sweep re-places from that signal),
+that it is still inside `fetch_revalidatable_pending_orders`'s
+`('working','withdrawn')` set, that five repeated echoes change nothing, and
+that a re-arm then puts it back under a new ticket.
+
+Three mutants killed: the guard removed, the guard made unconditional (which
+swallows real cancellations), and the status flipped to `working`.
+
+**Not demoed.** The owner instructed the fix directly and it went live the same
+evening. What it changes is that a withdrawn setup can now come back, which is
+what he decided on 2026-09-10; the first live evidence either way will be the
+next time a re-check withdraws an order.

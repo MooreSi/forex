@@ -132,6 +132,14 @@ the code. Nothing below has been changed on your account; each is a decision._
     by the app-level daily-loss halt, which does work; the per-engine one has
     never existed. Delete the description, or build it.
 
+**Closed 2026-09-13:** **051** and **054** — you instructed both fixes and they
+are in, test-first, live from that evening's restart. 051 means a withdrawn
+resting order can come back, which is what you decided on 2026-09-10; 054 means
+the Reversal Engine's scorecard reads 51.3% and -$2,067 rather than 54.5% and
+-$1,833, which moves it further below the line that raises its lot size.
+Neither was demoed — you asked for them directly and they went live the same
+evening.
+
 **Closed 2026-09-13:** **058** — the bot token in the diagnostics upload. You
 decided not to rotate it. The upload is scrubbed, so nothing further leaves;
 what that accepts is written down in the file.

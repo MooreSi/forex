@@ -1,8 +1,8 @@
 # 054 — The channel scorecard counts 45 Reversal Engine trades twice, and one that never existed
 
-**Status:** found 2026-09-12 by checking `channel_performance` against the
-trade ledger. **Not fixed** — the numbers it corrupts drive `lot_mult` and the
-pause flag, which is position sizing.
+**Status:** found 2026-09-12. **FIXED 2026-09-13 on the owner's instruction**
+("Fix 054 and 051"), test-first, four mutants killed. **Shipped without a demo
+session, at his direction.**
 **Touches money:** yes. `resolution.py` reads this row before every trade: a
 paused channel is refused, and an unpaused one has its lot scaled by
 `lot_mult`.
@@ -110,3 +110,38 @@ bugs/041 and bugs/051.
 * `docs/todo/bugs/049` — the same ledger, a different column, also uncorrected.
 * `docs/todo/bugs/031` — the app traded one account and booked to another. Same
   family: two records of one trade that never reconcile.
+
+
+---
+
+## Fixed, 2026-09-13
+
+Two changes inside `get_channel_scorecard`, both in the read:
+
+* the ledger rows are deduped on the **broker ticket** as well as the trade id,
+  so one trade reaching the ledger under two ids is counted once;
+* the ledger query is `COALESCE(mt5_ticket, 0) != 0` instead of
+  `IS NOT NULL`, so a row with the placeholder ticket `0` is not scored as a
+  trade that happened.
+
+**Both halves of the dedup are needed**, and there is a test for the case only
+the id catches: a local row carrying `mt5_ticket = 0` puts nothing in the
+ticket set, so if the ledger holds the same trade under its own id with a real
+ticket, only the id match stops the double count. That mutant survived the
+first pass and now does not.
+
+It also keeps counting what the merge exists for: a paired node's trade, with
+its own ticket and no local twin, still counts. And the surviving row is the
+**local** one — it carries entry and close prices, where a ledger row has none,
+so taking the ledger copy instead would quietly flatten `avg_pts` and
+`payoff_rr` for the whole channel.
+
+The two tests written on 2026-09-12 asserting the broken answers were flipped
+to the correct ones. They were written that way deliberately, each carrying a
+message saying what to change when the fix came; this is that change, not a
+test edited to make something pass.
+
+**What the owner will see:** the Reversal Engine's row recomputes to roughly
+51.3% and -$2,067 from 54.5% and -$1,833. That is further below the 55% line
+that multiplies its lot size by 1.3, so the correction moves sizing in the
+conservative direction.
