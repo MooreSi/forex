@@ -1,6 +1,10 @@
 # 034 — The Bounce engine has produced nothing for sixteen days, and its own tuner did it
 
-**Status:** open, **for your decision**. Nothing has been changed.
+**Status:** **CLOSED 2026-09-14 — the engine is stopped** (`docs/todo/bugs/046`),
+on the owner's instruction. The question below was whether its silence was the
+gates working or the tuner over-tightening; it no longer needs an answer,
+because the engine no longer runs. Kept as the record of what eighteen days of
+silence looked like and how it was found.
 **Money:** not directly — no Bounce signal has ever reached the broker. It is
 about whether one of your three engines is working or quietly switched off.
 **Found:** 2026-09-12, reading the live `test_signal.db` while measuring 033.

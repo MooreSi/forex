@@ -132,6 +132,24 @@ the code. Nothing below has been changed on your account; each is a decision._
     by the app-level daily-loss halt, which does work; the per-engine one has
     never existed. Delete the description, or build it.
 
+**Closed 2026-09-14 — the Bounce engine is stopped.** You said it had been
+removed; it had not, and was running as you said so. It is now
+(`docs/todo/bugs/046`), and nothing is deleted — the service, its database and
+its history are intact, and reviving it is one constant.
+
+That closes **034** (its eighteen days of silence no longer need explaining)
+and **046** itself. Two related items survive it, and both are about the
+**Breakout** engine, which still runs:
+
+* **[048](../todo/bugs/048-two-engines-describe-a-daily-loss-stop-that-does-not-exist.md)**
+  — Breakout still advertises a daily loss stop that does not exist.
+* **[045](../todo/bugs/045-a-tuned-parameter-that-changes-nothing-and-crosses-engines.md)**
+  — Breakout still reads a parameter out of the *stopped* engine's database.
+
+And **[057](../todo/bugs/057-four-definitions-of-the-trading-session.md)** is
+unchanged: four session definitions still exist in the code, and your Asia
+button still covers different hours from the engine that places the trades.
+
 **Closed 2026-09-14:** **041** — the profitable harvest that armed the circuit
 breaker. You instructed the fix, compiled EA v1.08 and re-attached; both halves
 are live. Not demoed, and Demo 8 needs one more thing first: the

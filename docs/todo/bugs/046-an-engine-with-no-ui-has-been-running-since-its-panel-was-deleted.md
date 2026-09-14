@@ -1,9 +1,8 @@
 # 046 — The Bounce engine has been running with no UI since its panel was deleted
 
-**Status:** found 2026-09-12, confirmed against the live install while it was
-happening. **Not fixed** — the one-line fix stops an engine, and whether this
-one should keep collecting research data is the owner's call, not an
-overnight one.
+**Status:** found 2026-09-12. **FIXED 2026-09-14** — option 1, on the owner's
+word: *"the bounce engine has now been removed so there shouldn't be any
+decisions relating to this"*. It had not been; it is now.
 **Touches money:** not today, and only because of a second switch. `sg_live_execution`
 is **0** on this install, so the engine cannot place an order. If it were 1
 it would be placing live MT5 orders with nothing on screen saying so.
@@ -122,3 +121,44 @@ are only dead while the panel is.
 `sg_live_execution` must stay **0** under options 2 and 3. An engine that can
 place orders with no screen is the thing the original change existed to
 prevent.
+
+
+---
+
+## Fixed, 2026-09-14 — and there was a third starter
+
+The owner said the engine had been removed. It had not: it was running at the
+moment he said so, having been started eight minutes earlier by an app restart.
+What was removed on 2026-09-02 was the **panel**.
+
+Reading the starters again for the fix turned up one this file had missed.
+There are **three**, not two:
+
+| | |
+|---|---|
+| `engines_controller.start_stopped_engines` | excludes it — correct, and always was |
+| `app.py` startup | starts it unless `sg_engine_enabled` is `"0"` |
+| **`app.py._signal_engine_watchdog_loop`** | **re-starts it every five minutes if it finds it stopped** |
+
+The third is why stopping it by hand would never have held, and why a
+`sg_engine_enabled = 0` in the database was not the fix either — it would work,
+but it leaves the code still claiming something untrue and still starting the
+engine the moment that row is touched.
+
+**The guard is in `TestSignalEngine.start()`**, behind
+`services/test_signal.PANEL_REMOVED`. One place, every path, including the
+fourth caller nobody has written yet. Same lesson as bugs/014, 019 and 051:
+defend the place, not each path.
+
+It refuses out loud rather than silently — `status_detail` names the date the
+panel went and this bug — because being started invisibly is how the engine
+spent twelve days analysing for a screen nobody could open.
+
+**Nothing is deleted.** The service, its database, its 173 signals and its slot
+in the fixed `(breakout, bounce, reversal)` order the sync server binds by are
+all intact. Reviving it is that one constant, and a test asserts the way back
+actually works rather than leaving it as a claim in a comment.
+
+Two of the three known-dead panel reads (`change_signature`, `param_specs`,
+`ml_features_for_signal`) stay dead, and `tests/refactor/test_panel_reads_have_a_panel.py`
+still holds them — the engine being stopped does not give them a caller.

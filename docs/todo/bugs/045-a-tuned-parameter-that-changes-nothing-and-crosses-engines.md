@@ -104,3 +104,25 @@ is the same question asked in a place nobody was reading.
   2026-08-27, also found in this pass.
 * `tests/test_signal/test_generate_gates.py` — the gates `generate` actually
   consults, pinned 2026-09-12.
+
+
+---
+
+## What the Bounce engine's removal does and does not settle (2026-09-14)
+
+The engine is stopped (`docs/todo/bugs/046`), so **the tuner half is gone**: no
+Bounce batch analysis runs, so nothing spends a decision on `allow_asian` any
+more, and nobody will read `ap:allow_asian = 0.0` as a statement about a
+running engine.
+
+**The cross-engine half is not.** `session_quality` still lives in
+`test_signal/signal_generator.py`, still reads `ap.get("allow_asian")` from the
+Bounce database, and is still imported and called by
+`breakout_signal_velocity.py` — which is a running engine. So a stopped
+engine's stored parameter is still consulted on the Breakout engine's path.
+
+It still changes nothing, for the same reason as before: the line after the
+call refuses the Asian session unconditionally. But the coupling is real, it
+now crosses from a **retired** engine into a live one, and the cheapest way to
+end it is to move `get_session`/`session_quality`/`session_is_active` somewhere
+neither engine owns — which is also what `docs/todo/bugs/057` needs.

@@ -114,3 +114,19 @@ that nothing calls the reader. Finding that needs a call graph, not a grep.
 * `docs/todo/bugs/045` — `allow_asian`, the same shape, found first.
 * `docs/simon-handover/034` — what the tuner did to `min_quality_score`, which
   is why its prompt is treated as a money-path input.
+
+
+---
+
+## Halved by the Bounce engine's removal (2026-09-14)
+
+The engine is stopped (`docs/todo/bugs/046`), so its two dead entries —
+`daily_loss_stop_usd` and `hour_filter_enabled` — describe a protection on an
+engine that no longer trades, and its tuner can no longer spend a decision on
+either.
+
+**The Breakout engine's `daily_loss_stop_usd` is untouched by that.** It is a
+running engine, its catalogue still promises *"Stop generating new signals for
+the rest of the UTC day once today's closed PnL reaches this loss (Jul 2 ran to
+-$457 unchecked)"*, and nothing reads it. That half of this file stands exactly
+as written.

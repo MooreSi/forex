@@ -243,3 +243,26 @@ that "Asia" on your screen, "Asia" in the engine that placed the trade, and
 "Asia" in the numbers at the top of this file are three different windows —
 and that the new switch, when you turn it on, will stand the trend gate down
 for 07:00, the hour immediately before the London open.
+
+
+---
+
+## The Bounce engine is stopped (2026-09-14)
+
+It no longer runs (`docs/todo/bugs/046`), which simplifies this file without
+changing what it says.
+
+**The measurement above still stands as evidence** — it is the record of what
+that engine's own data said about the Asian session, and it is what closed off
+option 2 ("the Bounce rule was never measured"). But there is no longer a
+second live engine holding the opposite rule, so:
+
+* **the disagreement is now historical.** Only the Reversal Engine trades these
+  hours, and only its numbers bear on what to do next;
+* **the decision narrows to one question**: turn the Asian exemption on for the
+  Reversal Engine, or leave it off. The "two engines genuinely differ" reading
+  is no longer something to act on, only something that was true;
+* **`docs/todo/bugs/057` is unaffected.** Four definitions of the Asian session
+  still exist in the code, the Breakout engine still imports the Bounce
+  engine's, and the Trading Markets buttons and every per-session P&L figure
+  still use a different window from the engine that places the trades.
