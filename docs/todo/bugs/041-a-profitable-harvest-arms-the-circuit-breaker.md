@@ -284,3 +284,98 @@ happen for the demo the spec describes: EA edit, `deploy_ea.sh`, F7, the
 `record_close` condition, then open a mixed basket on demo and read
 `circuit_breaker_consec_losses` before and after. Everything needed to do it is
 written down above.
+
+---
+
+# Built, 2026-09-14 — everything except the compile
+
+The owner instructed the fix ("fix 041"). The Python half is **done, tested and
+committed**; the EA half is written out below and deliberately **not committed**,
+for a reason the spec above did not anticipate and this file now records twice.
+
+## What is in, and it is inert
+
+| | |
+|---|---|
+| `services/risk/basket_breaker.py` | the decision: a basket scores **once, on its net** — reset at `>= 0`, untouched below — and no leg ever scores alone |
+| `trading/close_trade.record_close` | one call swapped, on the frozen path, with the owner's sign-off |
+| `ea_bridge/_events._on_basket_closed` | receives the EA's announcement and registers the tickets |
+
+**With nothing registered, `score_close` is exactly the call it replaced**, so
+the app behaves today precisely as it did before. 25 tests, eight mutants
+killed, including the 2026-09-10 incident replayed end to end through
+`record_close` against a real database: a winning basket's losing leg plus the
+two real losses that followed it must leave the breaker **inactive**, and it
+does.
+
+Two of those mutants were assumptions of mine that turned out to be wrong, and
+they are worth knowing because both looked like "obviously equivalent":
+
+* **scoring once is observable.** A basket clears the counter; a genuine loss
+  then closes and the counter is 1; if a remaining leg of the same basket
+  arrives *after that*, scoring it again wipes a streak the basket had nothing
+  to do with. The legs are separate closes and nothing guarantees they are
+  contiguous.
+* **a second announcement must not change the verdict.** First registration
+  wins, or a resend carrying a stale or partial total could flip a losing
+  basket into a counter-clearing one.
+
+## What is left: one file, and it cannot be done unattended
+
+`CheckGlobalHarvest` must announce the basket before it closes anything:
+
+```mql5
+   // bugs/041: say which tickets, and what the basket is worth, BEFORE
+   // closing them. A harvested leg is indistinguishable from a manual close
+   // by the time it reaches Python, so the breaker cannot tell them apart
+   // without this.
+   string ids = "";
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong t = PositionGetTicket(i);
+      if(t == 0 || !PositionSelectByTicket(t)) continue;
+      if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+      if(ids != "") ids += ",";
+      ids += (string)t;
+   }
+   SendJson("{\"type\":\"basket_closed\",\"basket_id\":\"gh-" +
+            (string)TimeCurrent() + "\",\"net\":" + DoubleToString(total, 2) +
+            ",\"tickets\":[" + ids + "]}");
+```
+
+placed immediately after the threshold `Print` and before the closing loop, plus
+the same three lines in `equity_protect` and `check_basket_harvest` with their
+own `basket_id` prefix — and `EA_VERSION`, `EA_VERSION_DATE` and
+`#property version` bumped to **1.08** in the same edit.
+
+### Why it is not committed
+
+**Committing it is itself a live change**, which is the rule recorded in the
+broker domain README after this same file stalled on it on 2026-09-12. The
+handshake greps `EA_VERSION` out of the repo copy on every connection, so the
+moment the source says 1.08 and the chart runs 1.07:
+
+* **every EA Template order is refused** — `template_refusal_for_stale_ea`;
+* the badge goes stale and the macOS bridge restarts the terminal once.
+
+It was tried: `MetaEditor`'s `/compile` CLI *"does not work headlessly under
+CrossOver — it exits 0, writes no log, and rebuilds nothing"*, which is why
+`tools/deploy_ea.sh` refuses to pretend. **F7 needs a person.**
+
+At the time of writing the market is open, a live template position is on the
+chart and Global Harvest is armed at $75. Landing the bump now would stop
+template trading for however long it took to get to MetaEditor.
+
+### The sitting, which is about five minutes
+
+1. apply the block above, bump the three version fields to 1.08;
+2. `tools/deploy_ea.sh`;
+3. **F7** in MetaEditor, re-attach the EA;
+4. confirm the badge reads v1.08 and `[EABridge] EA v1.08` is in the log.
+
+Nothing else is needed — the Python side is already waiting for the message.
+
+**Still not demoed.** Demo 8 drives a Global Harvest; the check is
+`circuit_breaker_consec_losses` before and after a mixed basket. Pass: a
+positive net leaves it 0, a negative net leaves it unchanged. Fail: it moves by
+the number of losing legs.
