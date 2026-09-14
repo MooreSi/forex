@@ -1,10 +1,10 @@
 # 041 — A profitable Global Harvest pushes the circuit breaker toward a halt
 
-**Status:** **ANSWERED 2026-09-11, fully specified.** Owner: *"a harvest
-shouldn't trip or count towards the breaker"*, then **B** on the follow-up — a
-losing leg is invisible, a **winning basket still clears the counter**.
-**NOT BUILT**, and it cannot be built entirely on this side: the EA has to say
-which closes were a harvest. See *The spec* at the bottom.
+**Status:** **FIXED AND LIVE 2026-09-14 09:29**, on the owner's instruction —
+EA v1.08 compiled and re-attached, Python half running. Answered 2026-09-11
+(option **B**: a losing leg is invisible, a winning basket still clears the
+counter). **Not demoed** — see the deployment note below, which also records a
+blocker for that demo.
 **Money:** yes. It halts live trading.
 **Found:** 2026-09-09, from the live demo account. Complete evidence below.
 
@@ -287,7 +287,36 @@ written down above.
 
 ---
 
-# BUILT AND DEPLOYED, 2026-09-14 — awaiting F7 only
+# LIVE, 2026-09-14 09:29 — built, deployed, compiled
+
+```
+09:29:40  [EABridge] EA v1.08 (compiled 2026.09.14 09:29:35)
+09:29:49  [EABridge] EA connected from 127.0.0.1 on port 9111 ... EA v1.08
+```
+
+Owner compiled and re-attached. No version mismatch since, no template refusal,
+no errors. The refusal window between the commit and the compile was about four
+minutes.
+
+**Both halves are now running:** the EA announces a harvested basket before it
+closes anything, and the breaker scores that basket once on its net. The two
+Python-side basket closers — `equity_protect` and `check_basket_harvest` —
+register their own baskets directly and have been live since the app restart
+that preceded the compile.
+
+**Still not demoed**, and the demo has a blocker of its own: of the three
+Experts folders, only `Program Files/MetaTrader 5` is compiled. The
+**DemoValidation** install has still never had an `.ex5` — first noted in
+`docs/todo/limit-orders/PROGRESS.md` on 2026-09-10 — and that is the terminal a
+demo session drives. F7 there too before Demo 8, or there is no EA to harvest
+with.
+
+The check that closes this file:
+`circuit_breaker_consec_losses` either side of a mixed basket. Pass — a basket
+that nets positive leaves it **0**, one that nets negative leaves it
+**unchanged**. Fail — it moves by the number of losing legs.
+
+# Built, 2026-09-14 — everything except the compile (superseded above)
 
 > The section below was written while the EA half was still being held back.
 > The owner then asked for it: *"commit it and ensure it is loaded into my

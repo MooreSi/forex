@@ -132,6 +132,12 @@ the code. Nothing below has been changed on your account; each is a decision._
     by the app-level daily-loss halt, which does work; the per-engine one has
     never existed. Delete the description, or build it.
 
+**Closed 2026-09-14:** **041** — the profitable harvest that armed the circuit
+breaker. You instructed the fix, compiled EA v1.08 and re-attached; both halves
+are live. Not demoed, and Demo 8 needs one more thing first: the
+**DemoValidation** terminal has still never had a compiled EA, so press F7
+there too before the sitting.
+
 **Closed 2026-09-13:** **051** and **054** — you instructed both fixes and they
 are in, test-first, live from that evening's restart. 051 means a withdrawn
 resting order can come back, which is what you decided on 2026-09-10; 054 means
