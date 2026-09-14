@@ -162,3 +162,24 @@ actually works rather than leaving it as a claim in a comment.
 Two of the three known-dead panel reads (`change_signature`, `param_specs`,
 `ml_features_for_signal`) stay dead, and `tests/refactor/test_panel_reads_have_a_panel.py`
 still holds them — the engine being stopped does not give them a caller.
+
+## "Stopped" is not "deletable" — its package is now a shared library
+
+Worth knowing before anyone reads "removed" as "delete the folder". Two live
+engines import code out of `services/test_signal/`:
+
+| importer | what it takes |
+|---|---|
+| `reversal_engine/re_macro.py`, `macro_backfill.py` | `market_context` — and `re_macro` feeds the **live ML gate** |
+| `breakout_signal/breakout_signal_service.py` | `market_context.get_context` |
+| `breakout_signal/signal_generator.py`, `breakout_signal_velocity.py` | `get_session`, `session_quality`, `session_is_active` (bugs/045) |
+
+None of that breaks with the engine stopped — they are module-level functions,
+not calls into a running engine, and the app came back clean with the Reversal
+Engine's macro features intact. But it does mean the retired engine's package
+is now a **shared library for the two engines that still trade**, and deleting
+it would take the Reversal Engine's macro inputs with it.
+
+Moving `market_context` and the session helpers somewhere neither engine owns
+is the prerequisite for ever deleting this folder — and it is the same move
+`docs/todo/bugs/057` needs for the session definitions.
