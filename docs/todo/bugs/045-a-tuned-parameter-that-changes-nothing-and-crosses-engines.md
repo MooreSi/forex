@@ -126,3 +126,29 @@ call refuses the Asian session unconditionally. But the coupling is real, it
 now crosses from a **retired** engine into a live one, and the cheapest way to
 end it is to move `get_session`/`session_quality`/`session_is_active` somewhere
 neither engine owns — which is also what `docs/todo/bugs/057` needs.
+
+---
+
+## Resolved by deletion, 2026-09-14
+
+The Bounce engine's code was deleted (`docs/todo/bugs/046`), and its
+`adaptive_params` catalogue with it. There is no longer an `allow_asian` for
+anything to read.
+
+**The cross-engine coupling is ended, not re-plumbed.** `session_quality` moved
+to `services/market/sessions.py` and no longer reads an adaptive parameter at
+all. The value that parameter actually held — `0.0`, which graded the Asian
+session `"low"` — is now a named constant, `ASIAN_SESSION_QUALITY`, with the
+history in the module docstring. Today's behaviour is preserved exactly.
+
+Two things this does not do:
+
+* It does not settle whether the Asian session **should** grade low. That is
+  still a decision, and it is now a one-word edit in one place rather than a
+  number in a retired engine's database. The only live caller,
+  `breakout_signal_velocity`, still refuses the Asian session unconditionally
+  on the line after it asks, so the grading changes nothing either way until
+  that changes too.
+* It does not touch `docs/todo/bugs/057`. `market/sessions.py` is still only
+  one of four disagreeing definitions of a trading session; moving it did not
+  reconcile it with the other three, and deliberately so.

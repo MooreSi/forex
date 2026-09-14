@@ -183,3 +183,59 @@ it would take the Reversal Engine's macro inputs with it.
 Moving `market_context` and the session helpers somewhere neither engine owns
 is the prerequisite for ever deleting this folder — and it is the same move
 `docs/todo/bugs/057` needs for the session definitions.
+
+---
+
+## Deleted, 2026-09-14
+
+Owner: *"remove the bounce engine but ensure you don't impact the market
+context and anything else for the reversal engine as this is the main signal
+generator ... while you can remove the bounce engine backend, don't impact the
+reversal engine."*
+
+`backend/src/services/test_signal/` and `tests/test_signal/` are gone — 18
+modules and 11 test modules.
+
+**The prerequisite named above was done first.** Everything the two live
+engines imported out of that package moved to `services/market/`, which no
+engine owns:
+
+| now at | what moved | who reads it |
+|---|---|---|
+| `market/macro_context.py` | was `test_signal/market_context.py` | Reversal (`re_macro`, `macro_backfill`), Breakout |
+| `market/news_window.py` | was `test_signal/news_filter.py` | Reversal, `market/levels` |
+| `market/sessions.py` | `get_session`, `session_quality`, `session_is_active` | Breakout |
+| `market/levels.py` | `compute_htf_bias`, `identify_key_levels`, `is_news_window`, the private level helpers | Breakout (service + backtest) |
+| `market/indicators.py` | `compute_h4_bias`, `compute_adx`, `compute_macd_hist`, `detect_regime` | Breakout (service + backtest) |
+
+What did **not** move is everything that read the Bounce engine's own adaptive
+parameters — `check_entry_trigger`, `calculate_risk_levels`,
+`check_scalp_trigger`, `calculate_scalp_risk_levels`, `_counter_bias_allowed`
+and the candle-pattern helpers only those used. That was the engine, and it
+went with the engine.
+
+`tests/refactor/test_the_bounce_engine_backend_is_gone.py` holds all of it: the
+package is gone, nothing imports it, each moved primitive is **called** and its
+answer checked, and the Reversal Engine's macro path is exercised rather than
+merely imported.
+
+### The one thing deliberately left behind
+
+The **name** `bounce` still occupies position 1 of 3 in
+`engines_controller._ENGINE_SERVICES`, bound to `None`. `remote_node.py`
+unpacks that tuple positionally into `server_start`, the sync server keys its
+`signal_gen_stats` payload by the same names, and `stood_down_engines` persists
+them into the database and over the wire. Dropping the slot would put the
+Reversal Engine in Bounce's position on any paired node still running the old
+build. The wire key stays too, carrying `{}` — which is exactly what that
+snapshot already sent whenever the engine was unavailable.
+
+Removing the slot is a coordinated two-node upgrade, not a tidy-up.
+
+### What is genuinely lost
+
+`panel_data.change_signature` — the cheap re-render diffing check that
+`docs/todo/bugs/030` wants. It was built for the Bounce panel, orphaned when
+that panel went, and has now been deleted with the rest. The Reversal and
+Breakout panels still rebuild six containers on a timer. If 030 is picked up,
+the mechanism is in git history, not in the tree.
