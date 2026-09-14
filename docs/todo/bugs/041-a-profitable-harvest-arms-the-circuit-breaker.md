@@ -287,6 +287,21 @@ written down above.
 
 ---
 
+# BUILT AND DEPLOYED, 2026-09-14 — awaiting F7 only
+
+> The section below was written while the EA half was still being held back.
+> The owner then asked for it: *"commit it and ensure it is loaded into my
+> local version of the app/mt5 and i will compile it"*. It is committed, and
+> `tools/deploy_ea.sh` has copied it into the terminal's Experts folder.
+>
+> **Until F7 is pressed, the chart runs v1.07 while the repo says v1.08, so
+> every EA Template order is refused** — that is the handshake doing its job,
+> not a fault. The refusal message names the fix.
+>
+> `equity_protect` and `check_basket_harvest` turned out to be Python-side,
+> not EA-side as the spec above assumed, so they register their own baskets
+> directly and needed no EA change at all.
+
 # Built, 2026-09-14 — everything except the compile
 
 The owner instructed the fix ("fix 041"). The Python half is **done, tested and
