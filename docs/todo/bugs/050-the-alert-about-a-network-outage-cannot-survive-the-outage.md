@@ -85,3 +85,49 @@ filed rather than done.
   is a different cause (transport down, not payload rejected) with the same
   ending: the operator is not told.
 * `docs/todo/bugs/035` — the same per-poll repetition, fixed there.
+
+---
+
+## It is not rare, and it is not one ticket (2026-09-14)
+
+The 2026-09-07 incident above was found from `vantage_telegram_log`. Reading
+the app logs for the same pattern shows it is recurring, and that the outage is
+the **whole machine's network**, not one subsystem:
+
+| day | windows | longest |
+|---|---|---|
+| 2026-09-07 | 02:11–02:18 | **7+ minutes** |
+| 2026-09-09 | one blip | seconds |
+| 2026-09-11 | 04:00–04:02, 14:12–14:13, 14:36–14:37, 15:27 | ~3 minutes |
+| 2026-09-14 | 05:38–05:39 | ~1 minute |
+
+*(log timestamps, BST)*
+
+Everything network-bound fails at once. From 2026-09-07:
+
+```
+02:10:54  telethon — Attempt 6 at connecting failed: TimeoutError
+02:11:33  channel_strategy_ai: AI call failed — using backtested baseline
+02:11:59  mt5_client — bridge not responding to tick requests (5 consecutive failures)
+02:18:00  telegram alerts — Telegram send failed
+02:18:00  [EABridge] EA connected ...  pushed 1 open position(s) back to the EA
+```
+
+So the local bridge stops answering too — plausibly because the MT5 terminal
+behind it has lost the broker and its tick call blocks — and the EA link drops
+and re-establishes at the end.
+
+**The app behaves correctly throughout.** It warns, it does not fabricate a
+price, it re-adopts the open position on reconnect. What it cannot do is tell
+anyone, which is this file's open half: the Telegram send fails for the same
+reason everything else did. On 2026-09-07 a live position was open for the
+whole seven minutes and the only record is warnings in a log.
+
+That strengthens the case for the reconnect summary over the retry queue. A
+retry needs the outage to end before the alert ages out; a line on reconnect
+saying *"N alerts could not be sent while offline, most recent: …"* costs
+nothing and covers the case that matters, which is the operator finding out at
+all.
+
+**Not a new bug and not filed as one.** The cause is environmental — this
+machine's connection — and the code's behaviour during it is what it should be.
