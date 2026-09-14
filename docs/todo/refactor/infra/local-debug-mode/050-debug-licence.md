@@ -10,7 +10,7 @@
 ## Problem
 
 `run.py:219 guard.enforce()` runs before anything else and exits (via its own NiceGUI error
-page) without a valid key. Darren has no key. The golden rules forbid adding "a licence or auth
+page) without a valid key. The developer has no key. The golden rules forbid adding "a licence or auth
 bypass, even for testing" — so no skip flag, no guard edit, no `if is_debug(): return`.
 
 ## Decision

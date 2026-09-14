@@ -1,8 +1,7 @@
 # HANDOFF — start here if you are picking up this work
 
-You are picking up a **live-money MetaTrader 5 forex trading application** that is being refactored
-and prepared to hand to its owner. Read this file first, then the rules it points to. It is the
-single entry point for a new agent or developer.
+You are picking up a **live-money MetaTrader 5 forex trading application**. Read this file first,
+then the rules it points to. It is the single entry point for a new agent or developer.
 
 ---
 
@@ -18,15 +17,13 @@ Write the test first and watch it fail. `python -m tools.checks all` must be gre
 
 ## 1. Who is who (this shapes every decision)
 
-- **Darren** (darren@proptech.builders) — runs the working sessions, makes dev/structural calls. He
-  is refactoring the app for his brother. He does **not** hold the credentials and does not make the
-  trading/money-policy decisions.
-- **Simon** (Darren's brother) — holds the live MT5 account, all API keys, and the licence. He makes
-  the trading/business/risk decisions and gives money-path sign-off. He is the one this work is being
-  prepared for.
+- **Simon** — owns the system. Holds the live MT5 account, all API keys and the licence, runs the
+  working sessions, and makes the trading, business and risk decisions. Money-path sign-off is his.
+- **Agents** — make dev and structural calls within the rules. They do **not** hold credentials and
+  do **not** decide trading policy.
 
 **Consequence:** any question about trading policy, risk numbers, money-path behaviour, or licensing
-is **Simon's** to answer, and Darren usually cannot answer it. See §5.
+is **Simon's** to answer, and an agent cannot answer it. See §5.
 
 ## 2. Where questions go — put them in `docs/simon-handover/`
 
@@ -40,7 +37,7 @@ session that order/close/sizing changes still require.
 
 ## 3. How to run it locally (debug mode — offline, no credentials)
 
-Darren can now boot the whole app with no MT5, no Telegram, no network:
+The whole app can boot with no MT5, no Telegram, no network:
 
 ```powershell
 $env:FOREX_DEBUG_MODE=1 ; python run.py

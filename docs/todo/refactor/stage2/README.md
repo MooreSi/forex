@@ -24,8 +24,8 @@ for files over 800 lines · `python -m tools.checks all` green before every comm
 
 ## What "giveable to Simon" means (the finish line)
 
-Darren is refactoring this for his brother **Simon**, who holds the live account and makes the
-trading decisions. Today Darren can boot it in debug mode but said, verbatim, *"it's almost
+This is being refactored for **Simon**, who holds the live account and makes the
+trading decisions. Today it boots in debug mode, but the verdict was, verbatim, *"it's almost
 impossible for me to know what I'm meant to do."* Giveable means all of:
 
 1. **A person who didn't build it can use it** — first-run guidance, plain-language help, sensible
@@ -57,7 +57,7 @@ impossible for me to know what I'm meant to do."* Giveable means all of:
 |---|---|
 | [PROGRESS.md](PROGRESS.md) | Live shared status log (all phases) |
 | [SUMMARY.md](SUMMARY.md) | Plain-English digest (owner-facing) |
-| [QUESTIONS.md](QUESTIONS.md) | Open decisions — routed to Simon / Darren |
+| [QUESTIONS.md](QUESTIONS.md) | Open decisions — routed to Simon / the developer |
 | [REVIEW.md](REVIEW.md) | Evidence — the reviews each phase builds on |
 | [phase1-usability/](phase1-usability/README.md) | First-run onboarding & comprehension |
 | [phase2-proper-migrations/](phase2-proper-migrations/README.md) | Numbered migrations out of database.py |
@@ -79,7 +79,7 @@ impossible for me to know what I'm meant to do."* Giveable means all of:
 ## Sequencing & priority
 
 Phases 1–3 are **independent and unblocked** — do them in parallel/any order; they are the
-highest-value, lowest-risk foundation. Phase 4 (frontend split) is large and gated on Darren
+highest-value, lowest-risk foundation. Phase 4 (frontend split) is large and gated on the developer
 answering the restructure QUESTIONS. Phase 5 makes debug mode fully usable. The money-path
 (**[stage 3](../stage3/README.md)**) is gated on **Simon** (sign-off + demo) and is not part of
 stage 2. Phase 7 closes out. Recommended first move: **phase 1 (usability)** — it is the owner's
@@ -97,9 +97,9 @@ stated top pain and is pure view-layer, no money.
 
 Full write-ups in [QUESTIONS.md](QUESTIONS.md); short list:
 
-- Onboarding scope — is the first-run checklist the right centerpiece? (Darren)
-- The 4 unanswered frontend-restructure QUESTIONS block phase 4 (Darren)
-- The debug-mode QUESTIONS (fake-stream format, fill modeling, first-run password) (Darren/Simon)
+- Onboarding scope — is the first-run checklist the right centerpiece? (dev)
+- The 4 unanswered frontend-restructure QUESTIONS block phase 4 (dev)
+- The debug-mode QUESTIONS (fake-stream format, fill modeling, first-run password) (Simon)
 - Money-path defaults already provisionally answered in stage1 QUESTIONS (Simon confirms)
 
 ## Out of scope

@@ -86,7 +86,7 @@ c:\dev\forex\app\notebooks\        <- inside app/ so it rides the main git repo
 ```
 
 Location *(updated 2026-08-11)*: originally planned as a sibling of `app/`,
-but Darren wants it version-controlled with the main repo, so it lives at
+but the developer wants it version-controlled with the main repo, so it lives at
 `app/notebooks/`. The isolation is behavioural, not positional: the lab
 talks only to the .db *copies* in `_shared/data` (opened read-only, with
 credential tables blocked in code), never to the live backend, never to

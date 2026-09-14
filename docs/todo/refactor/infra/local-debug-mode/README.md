@@ -27,7 +27,7 @@ see task 060/070 notes) · `python -m tools.checks all` before every commit.
 
 ## What we're building & why
 
-Darren is refactoring this system for Simon, who holds every credential — MT5 account, Telegram
+The developer refactoring this system does not hold the credentials — MT5 account, Telegram
 API/bot, Anthropic key, licence. The refactor has **never been booted** by the person doing it:
 there is no way to run the app without those credentials, because every dependency is called
 directly with no interface behind it. Before the refactor goes back to Simon, we need to prove
@@ -43,7 +43,7 @@ today it has none. A new `tests/e2e/` suite then drives signal → parse → pla
 entirely offline.
 
 The fakes are written as named adapter seams, not test hacks: the same ports accept future real
-integrations (another broker, other signal sources), which Darren and Simon both want anyway.
+integrations (another broker, other signal sources), which is wanted anyway.
 
 ## What must NOT change
 
@@ -66,7 +66,7 @@ The anchor spec's section is authoritative; the lines that constrain these tasks
 | [SUMMARY.md](SUMMARY.md) | Plain-English digest for Simon (owner-facing) |
 | [QUESTIONS.md](QUESTIONS.md) | Decisions to confirm — answer inline before building |
 | [REVIEW.md](REVIEW.md) | Evidence: the mapped external-dependency surface (paths:lines) |
-| [BAR.md](BAR.md) | Screen bar for the login page + debug banner (draft — Darren must edit) |
+| [BAR.md](BAR.md) | Screen bar for the login page + debug banner (draft — the developer must edit) |
 | [010-debug-config.md](010-debug-config.md) | `debug_mode` flag, `is_debug()`, debug DB isolation |
 | [020-fake-mt5-bridge.md](020-fake-mt5-bridge.md) | `FakeMT5Bridge` + the `_make_bridge` seam (MONEY) |
 | [030-fake-telegram.md](030-fake-telegram.md) | Fake signal reader; alerts/bot no-op in debug |

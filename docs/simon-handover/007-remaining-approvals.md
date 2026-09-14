@@ -11,7 +11,7 @@ from the admin console. 2: **B** — full self-serve is the handover bar.
 
 Practice mode ("debug mode") needed a licence to boot, because the licence
 check is never bypassed — that's a hard rule. So a small tool was built that
-generates a *genuine* licence for Darren's development machine, valid 30
+generates a *genuine* licence for the developer's development machine, valid 30
 days at a time, using the same generator your licences come from.
 
 The thing to be aware of: that generator (and its secret) ship inside the
@@ -19,12 +19,12 @@ code, so anyone with a copy of the code could always self-licence — this
 tool doesn't create that exposure, it just uses it openly. Fixing the
 exposure itself is the licence-security rework on the future roadmap.
 
-- **A. Fine — Darren self-licensing for development is approved**
+- **A. Fine — the developer self-licensing for development is approved**
   *(recommended; already in use, expires every 30 days)*
-- **B. Not fine — you'll issue Darren a licence from your admin server
+- **B. Not fine — you'll issue the developer a licence from your admin server
   instead**
 
-**ANSWER:** **B — Simon issues Darren's licence from the admin server.**
+**ANSWER:** **B — Simon issues the developer's licence from the admin server.**
 (Simon, 2026-08-25)
 
 > **The question's premise is about to become false, and that is what decides
@@ -58,7 +58,7 @@ exposure itself is the licence-security rework on the future roadmap.
 
 The finish line we've been building toward:
 
-- **A. A handover session: Darren walks you through it, you watch the
+- **A. A handover session: the developer walks you through it, you watch the
   safety demos on your demo account, sign off, and take the keys**
   *(recommended — this is what session-agenda.md is)*
 - **B. Full self-serve: you want to be able to set it up and run it

@@ -64,7 +64,7 @@ which reads `bridge_credentials.json` / `MT5_LOGIN` env (`mt5_bridge.py:118-128`
 logs into the real account (`:146,:164`). Debug DB isolation
 (`config/__init__.py:202-205`) isolates only the *database file* — not the broker,
 not the credentials file.
-**Failure scenario:** Simon or Darren boots with `FOREX_DEBUG_MODE=1` on the machine
+**Failure scenario:** Simon boots with `FOREX_DEBUG_MODE=1` on the machine
 that has MT5 + credentials, trusts the amber banner, and clicks the Market Order
 button (or enables auto-exec so the scripted `tp1-hit.json` fake signals flow through
 the real pipeline — `fake_reader.py:1-14` deliberately feeds the *real* parser and

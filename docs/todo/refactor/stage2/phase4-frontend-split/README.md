@@ -1,6 +1,6 @@
 # Phase 4 — Frontend split & restructure
 
-**Status:** blocked — Darren must answer the restructure QUESTIONS (0/4) first
+**Status:** blocked — the developer must answer the restructure QUESTIONS (0/4) first
 **Gated on:** `docs/todo/refactor/frontend/restructure/QUESTIONS.md` answered
 **Touches money:** no
 

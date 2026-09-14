@@ -24,8 +24,8 @@ doc, not a work log._
   checklist with live status and Fix-this jumps; a Help "?" is on every
   screen; the 10 tabs carry plain-language subtitles; empty states say what
   to do next; About reads as "Set up once / Every day".
-  *Caveat: the wording is provisional — Darren reviews
-  `docs/todo/refactor/darren-decisions/006-onboarding-strings.md`.*
+  *Caveat: the wording is provisional — the developer reviews
+  `docs/todo/refactor/dev-decisions/006-onboarding-strings.md`.*
 - [x] **Migrations (stage2 phase 2).** Schema changes are an ordered,
   numbered registry (`backend/migrations/registry.py`) with per-step version stamps;
   legacy DB shapes are fixture-tested to head losslessly; data backfills are
@@ -122,7 +122,7 @@ doc, not a work log._
   own homework. Tick it after the first unaided install.
   *Open — this row did not exist until Simon raised the bar on 2026-08-26.*
 - [x] **Docs.** HANDOFF.md current (docs/todo/refactor/HANDOFF.md); open decisions
-  parked in docs/simon-handover/ (6 items, 0 answered — Simon/Darren triage them
+  parked in docs/simon-handover/ (6 items, 0 answered — Simon triages them
   at handoff); knowledge base updated as work landed.
 - [x] **CHANGELOG updated** for the stage-2 sweep ("Unreleased — Road to
   Handoff" section, each claim traceable to a PROGRESS Done row).

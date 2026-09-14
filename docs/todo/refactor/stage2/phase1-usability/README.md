@@ -6,7 +6,7 @@
 
 ## Goal of this phase
 
-A person who did not build this app — Darren today, Simon tomorrow — can open it and tell what to do.
+A person who did not build this app can open it and tell what to do.
 Fixes the owner's verbatim pain: *"it's almost impossible for me to know what I'm meant to do."*
 Everything here is view-only: it reads status the app already computes and adds guidance; it changes
 no engine, order, sizing or risk behaviour.
@@ -33,5 +33,5 @@ button; a concrete "Start Here" proposal.
 - No jargon tab is unlabelled; empty states point to a next action.
 - All new UI lives in `frontend/components/` (its first real residents), not pasted into `app.py`.
 - `python -m tools.checks all` green; import contracts do not regress.
-- The user-facing strings (checklist rows, tab names, empty-state prompts) are confirmed by Darren
+- The user-facing strings (checklist rows, tab names, empty-state prompts) are confirmed by the developer
   before the UI is built — they're his words, not the builder's guess.

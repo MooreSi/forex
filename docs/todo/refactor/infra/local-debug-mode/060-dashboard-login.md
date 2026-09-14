@@ -13,7 +13,7 @@ NiceGUI auth middleware pattern (`app.storage`, `storage_secret`)
 
 The dashboard has no authentication at all — `frontend/app.py:709` serves everything to anyone
 on port 8888, `ui.run` has no `storage_secret` (`run.py:262-277`), and the app's own help text
-warns about it (`frontend/app.py:456`). Darren needs credentials for local/e2e work; Simon's
+warns about it (`frontend/app.py:456`). The developer needs credentials for local/e2e work; Simon's
 machine ships with an open control panel that can move real money.
 
 ## Decision
@@ -26,7 +26,7 @@ Single-user username/password:
 - `backend/src/controllers/auth_controller.py` — thin: login/logout/first-run-set forwarding to
   the service.
 - Frontend: NiceGUI middleware gating **all** routes (not per-page), `storage_secret` in
-  `ui.run`, a login page and a first-run setup page per [BAR.md](BAR.md) (which Darren must
+  `ui.run`, a login page and a first-run setup page per [BAR.md](BAR.md) (which the developer must
   edit to `agreed` before the UI is built), "Sign out" in the power dialog.
 - Debug mode only: if no hash exists, seed `debug`/`debug` (QUESTIONS.md #3) so e2e and local
   boots need no manual step. Never seeded when debug is off.
@@ -54,7 +54,7 @@ Single-user username/password:
 
 ## What to do
 
-1. **BAR.md first**: Darren edits and marks `agreed`. Do not build the UI against the draft.
+1. **BAR.md first**: the developer edits and marks `agreed`. Do not build the UI against the draft.
 2. Write the tests; watch them fail.
 3. Service + controller; extract shared scrypt helpers so `remote/auth.py` and dashboard auth
    share one implementation.

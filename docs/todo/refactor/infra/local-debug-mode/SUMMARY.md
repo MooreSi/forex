@@ -3,7 +3,7 @@
 For Simon. A per-area breakdown of what's changing and why — no jargon, no code. Numbers marked
 *(starting value)* are proposals, not decisions. Full detail lives in the task files.
 
-Why any of this: Darren has been restructuring the app's internals, but he has no MT5 account,
+Why any of this: the developer has been restructuring the app's internals, but he has no MT5 account,
 no Telegram keys and no licence — so until now he literally could not switch the app on to check
 his own work. This pack gives the app a "debug mode" that runs the whole system on **pretend
 data with no internet and no keys**, so the restructure gets properly exercised before it comes
@@ -49,9 +49,9 @@ back to you.
 
 ## 5. Licence
 
-**Problem:** the app refuses to start without a valid licence key, which Darren doesn't have.
+**Problem:** the app refuses to start without a valid licence key, which the developer doesn't have.
 
-We will **not** weaken or skip the licence check — the rules forbid that. Instead Darren would
+We will **not** weaken or skip the licence check — the rules forbid that. Instead the developer would
 generate a short-lived key for his own machine using the same generator your admin server uses,
 and the normal check passes honestly. **This one needs your explicit OK** (QUESTIONS.md, item 1),
 because it documents that the generator's secret lives in the code you shared.

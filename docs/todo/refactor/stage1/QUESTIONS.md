@@ -6,7 +6,7 @@ values (anything you should be able to change later goes through `/add-tunable`)
 
 Answer inline (write `ANSWER:` under each). Answered items stay, annotated — don't delete them.
 
-> **2026-08-10 — all six answered with the recommendations, provisionally.** Darren adopted every
+> **2026-08-10 — all six answered with the recommendations, provisionally.** The developer adopted every
 > recommended option so work can proceed; the final decision-maker is his brother, who has not yet
 > reviewed these. Any answer below may be overridden by him **before the task that consumes it is
 > implemented** — check for an override before building 1/010 (Q1), 1/030 (Q2, Q6), 1/060 (Q3),

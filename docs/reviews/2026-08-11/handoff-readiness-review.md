@@ -1,7 +1,7 @@
 # Handoff-readiness review — 2026-08-11 (end of the stage-2 sweep)
 
 Point-in-time review after the stage-2 sweep landed (commits `9ff9fba` → `2d17b94`). Two parts:
-a **circuit-breaker design review** (Darren's notes.md question — fresh analysis, code read in
+a **circuit-breaker design review** (the developer's notes.md question — fresh analysis, code read in
 full), and a **re-measured state of the branch** (every number below re-run today, not quoted
 from PROGRESS). Caveat stated up front: the sweep itself was executed by the same agent writing
 this review — the numbers are mechanical and reproducible, but an independent pass
@@ -101,7 +101,7 @@ observability* gaps, and both are already specced for the Simon session (stage3/
 ### Pre-existing debt surfaced (not new, now recorded)
 
 - ~~9 links referenced `docs/specs/` which does not exist at HEAD~~ — RESOLVED 2026-08-11:
-  Darren ruled specs live in `docs/todo/` (a pack's SPEC.md, or a standalone file there);
+  The developer ruled specs live in `docs/todo/` (a pack's SPEC.md, or a standalone file there);
   all living docs and the /spec + /new-spec skills updated. The lost restructure anchor spec's
   substance is that pack's README.
 - The four built-but-unwired modules remain ledgered in the orphan allowlist awaiting Q002.

@@ -1,12 +1,12 @@
 # The Simon session — agenda for the sign-off + demo sitting
 
-**Who:** Simon (decides) + Darren (drives) · **Where:** Simon's machine, his MT5 demo terminal
+**Who:** Simon (decides and drives) · **Where:** Simon's machine, his MT5 demo terminal
 **What this is:** the one sitting that clears everything currently blocked on Simon. Nothing on
 this page places a live order — every demo runs on his demo account, and tests never touch a
 broker at all.
 
 Estimated shape: ~30 minutes of decisions (Part A), then the implementation work happens
-(Darren/agent, after the decisions), then a second sitting for the demos (Part B). Parts A and B
+(agent, after the decisions), then a second sitting for the demos (Part B). Parts A and B
 do not need to be the same day.
 
 ---

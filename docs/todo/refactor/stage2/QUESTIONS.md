@@ -3,19 +3,19 @@
 Plain-English choices to settle. Each has a **recommendation** — "go with the recommendations" is a
 complete answer. Answer inline (write `ANSWER:` under each); answered items stay, annotated.
 
-Routing: **Simon** answers trading/money/licence items; **Darren** answers dev/usability/structure
+Routing: **Simon** answers trading/money/licence items; the **dev** lane covers usability/structure
 items. Anything an implementing agent hits later goes in [../../simon-handover/](../../../simon-handover).
 
 ## The decisions (quick list)
-1. Is the first-run "Start Here" checklist the right onboarding centerpiece? (Darren)
-2. The 4 unanswered frontend-restructure questions — needed to unblock phase 4. (Darren)
-3. Debug-mode open questions — fake-stream format, fill modeling, first-run password. (Darren/Simon)
+1. Is the first-run "Start Here" checklist the right onboarding centerpiece? (dev)
+2. The 4 unanswered frontend-restructure questions — needed to unblock phase 4. (dev)
+3. Debug-mode open questions — fake-stream format, fill modeling, first-run password. (Simon)
 4. Confirm the money-path provisional defaults from stage1. (Simon)
-5. What is the bar for "giveable to Simon" — does he run it live himself, or does Darren demo it to him first? (Darren/Simon)
+5. What is the bar for "giveable" — does Simon run it live himself, or is it demoed to him first? (Simon)
 
 ---
 
-## 1. Onboarding centerpiece? (Darren)
+## 1. Onboarding centerpiece? (dev)
 The onboarding review proposes a first-run "Start Here" checklist (Licence / MT5 connected / Algo on
 / Risk set / Demo-mode) with live ✅/❌ and "Fix this →" jumps, as the main comprehension fix.
 
@@ -23,11 +23,11 @@ The onboarding review proposes a first-run "Start Here" checklist (Licence / MT5
   computes, pure view-layer.
 - **Something else** — describe it under ANSWER.
 
-ANSWER: PROVISIONAL (2026-08-11, session run under Darren's "do all of stage 2" instruction) —
+ANSWER: PROVISIONAL (2026-08-11, session run under the developer's "do all of stage 2" instruction) —
 went with the recommendation. The checklist shipped as `frontend/components/start_here.py`; the
-exact strings are queued for Darren's review in `docs/todo/refactor/darren-decisions/006-onboarding-strings.md`.
+exact strings are queued for the developer's review in `docs/todo/refactor/dev-decisions/006-onboarding-strings.md`.
 
-## 2. Frontend-restructure questions (Darren)
+## 2. Frontend-restructure questions (dev)
 Phase 4 (splitting the giant files, finishing the restructure) is blocked because
 `docs/todo/refactor/frontend/restructure/QUESTIONS.md` has 4 unanswered decisions. They are structural/naming,
 not trading.
@@ -37,9 +37,9 @@ not trading.
 
 ANSWER: PROVISIONAL (2026-08-11) — answered all four inline in
 `docs/todo/refactor/frontend/restructure/QUESTIONS.md` with each question's own recommendation, marked
-PROVISIONAL for Darren to confirm. Phase 4's money-free lanes are unblocked.
+PROVISIONAL for the developer to confirm. Phase 4's money-free lanes are unblocked.
 
-## 3. Debug-mode open questions (Darren/Simon)
+## 3. Debug-mode open questions (Simon)
 `docs/todo/refactor/infra/local-debug-mode/QUESTIONS.md` covers: scripted-scenario format for the fake price
 stream, whether fills model slippage, and the first-run dashboard-password flow. Needed to finish
 phase 5 (make debug mode actually tick).
@@ -59,8 +59,8 @@ work could proceed; **Simon confirms** before the [stage 3](../stage3/README.md)
 
 ANSWER:
 
-## 5. The "giveable" bar (Darren/Simon)
-Does giveable mean Simon boots and trades it live himself, or Darren demos it to Simon and Simon
+## 5. The "giveable" bar (Simon)
+Does giveable mean Simon boots and trades it live himself, or it is demoed to Simon and Simon
 signs off the money-path on a shared demo session?
 
 - **Demo-session handoff (Recommended)** — matches the golden-rule requirement that money-path
@@ -68,7 +68,7 @@ signs off the money-path on a shared demo session?
 - **Full self-serve for Simon** — needs the onboarding + docs to be complete enough to run unaided.
 
 ANSWER: PROVISIONAL (2026-08-11) — the recommendation: demo-session handoff. Phase-1 onboarding
-still aims at self-serve daily use after that handoff. Simon/Darren confirm.
+still aims at self-serve daily use after that handoff. Simon confirm.
 
 ---
 

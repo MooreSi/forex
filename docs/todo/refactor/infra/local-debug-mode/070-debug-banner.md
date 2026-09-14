@@ -10,7 +10,7 @@ in [BAR.md](BAR.md)
 ## Problem
 
 Debug mode makes every number on screen fake. Without an unmissable, undismissable marker,
-someone (including future-Darren, including Simon trying it out) will read a simulated balance
+someone (a developer months later, or Simon trying it out) will read a simulated balance
 or a fake fill as real. The user asked for exactly this: "a clear banner message at the top".
 
 ## Decision

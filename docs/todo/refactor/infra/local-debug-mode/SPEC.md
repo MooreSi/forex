@@ -1,7 +1,7 @@
 # SPEC — Local debug mode: run the whole system offline on fakes
 
 **Status:** Draft
-**Owner:** Darren (final sign-off: Simon — he holds the live account and all API keys)
+**Owner:** The developer (final sign-off: Simon — he holds the live account and all API keys)
 **Touches money:** yes — one task edits the bridge-selection seam in `runtime.py`; nothing else
 touches order code. Sign-off + demo session required for that seam before it ships to the live
 machine.
@@ -12,7 +12,7 @@ machine.
 ## Problem
 
 The refactored system has never been run by the person refactoring it. All credentials — MT5
-account, Telegram API/bot, Anthropic key, licence — live with Simon; Darren has none and cannot
+account, Telegram API/bot, Anthropic key, licence — live with Simon; the developer has none and cannot
 boot the app, let alone watch a signal become a bid and a close. Today the app hard-depends on:
 
 1. A live MT5 terminal via `mt5_bridge.py` (HTTP on macOS/Wine, in-process native on Windows) —

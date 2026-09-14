@@ -1,6 +1,6 @@
 # 030 — Tab subtitles / plain renames
 
-**Status:** not started · **Depends on:** Darren provides the plain names/subtitles · **Touches money:** no · **Layer:** frontend
+**Status:** not started · **Depends on:** The developer provides the plain names/subtitles · **Touches money:** no · **Layer:** frontend
 
 ## Problem
 
@@ -14,7 +14,7 @@ Edge, Analysis… A non-expert can't map any to intent.
 
 ## What to do
 
-1. Get the plain names/subtitles from Darren (a short list, one per tab).
+1. Get the plain names/subtitles from the developer (a short list, one per tab).
 2. Add a subtitle field to the tab definitions and render it; or rename per the list. No behaviour change.
 3. `python -m tools.checks all`.
 
@@ -22,4 +22,4 @@ Edge, Analysis… A non-expert can't map any to intent.
 - `frontend/app.py` tab definitions (data only — do not grow logic).
 
 ## Acceptance
-- No tab is an unlabelled jargon word; labels match Darren's list. Green suite.
+- No tab is an unlabelled jargon word; labels match the developer's list. Green suite.

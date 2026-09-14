@@ -1,6 +1,6 @@
 # Road to handoff — plain-English summary
 
-**For:** Darren (and Simon) · **Updated:** 2026-08-11 (scaffold — nothing built yet)
+**For:** The developer (and Simon) · **Updated:** 2026-08-11 (scaffold — nothing built yet)
 
 ## What this is
 

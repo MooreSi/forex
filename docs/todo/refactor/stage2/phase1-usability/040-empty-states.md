@@ -17,7 +17,7 @@ a signal / trade.
 
 1. Write the tests; watch them fail.
 2. Replace the empty-state text on the Trading / Analysis / signals surfaces with the agreed next-step
-   prompts (short next-step wording Darren confirms). Reuse a shared `components/empty_state.py`.
+   prompts (short next-step wording the developer confirms). Reuse a shared `components/empty_state.py`.
 3. `python -m tools.checks all`.
 
 ## Where

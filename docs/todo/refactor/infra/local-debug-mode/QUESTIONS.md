@@ -5,7 +5,7 @@ the recommendations" and only change what you disagree with. Numbers are startin
 values. Answer inline (write `ANSWER:` under each). Answered items stay, annotated — don't delete.
 
 ## The decisions (quick list)
-1. Is the locally generated debug licence key OK? (needs Simon, not just Darren)
+1. Is the locally generated debug licence key OK? (needs Simon, not just the developer)
 2. What format should scripted fake-data scenarios use?
 3. How are the dashboard username/password first set?
 4. Should fake order fills model slippage and partial-fill realism?
@@ -21,10 +21,10 @@ The golden rules ban adding "a licence or auth bypass, even for testing", so we 
 (`config/licence/keygen.py`) to write a genuinely valid key for the local machine — the real
 verifier runs untouched. But that generator's secret ships in the repo, so this is Simon's call to
 bless, because it documents (again) that anyone with the repo can self-licence. The alternative is
-Simon issuing Darren a key from his admin server.
+Simon issuing the developer a key from his admin server.
 
 - **Generate locally, 30-day expiry, tool named `tools/generate_debug_licence.py` (Recommended)** —
-  Darren is unblocked immediately; guard code untouched; expiry limits the artefact's life.
+  The developer is unblocked immediately; guard code untouched; expiry limits the artefact's life.
 - **Simon issues a real key** — cleanest, but blocks all local work on Simon's availability, which
   is the exact dependency this pack exists to remove.
 
@@ -45,7 +45,7 @@ default for just clicking around the UI.
 - **Hardcoded Python scenarios in the fakes** — less to build, but every new case is a code edit
   and the files can't be shared with Simon as documentation.
 
-ANSWER: PROVISIONAL (2026-08-11, agent under Darren's "complete stage 2" instruction) — the
+ANSWER: PROVISIONAL (2026-08-11, agent under the developer's "complete stage 2" instruction) — the
 recommendation: JSON scenarios under `tools/debug_scenarios/` + a deterministic seeded default
 stream when no scenario is given.
 
@@ -56,7 +56,7 @@ time?
 
 - **First-load setup page when no password hash exists (Recommended)** — Simon sets his own on
   first boot after update; nothing secret in config.yaml; debug mode pre-seeds `debug` /
-  `debug` so tests and Darren's local runs need no manual step (seed happens ONLY when
+  `debug` so tests and the developer's local runs need no manual step (seed happens ONLY when
   `debug_mode` is on).
 - **Plaintext password in config.yaml, hashed on load** — simpler, but puts a secret in a file
   the repo rules say must never hold credentials that get committed.

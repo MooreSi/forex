@@ -1,7 +1,7 @@
 # Future roadmap — ideas for after the handover
 
 **Status: a menu, not a plan.** Nothing here is started, promised, or needed
-for the handover. These are the improvements Darren and the review work
+for now. These are the improvements the refactor and the review work
 identified as worth considering once the app is safely in Simon's hands,
 roughly ordered by value. Each notes what it would cost and what would
 trigger doing it.

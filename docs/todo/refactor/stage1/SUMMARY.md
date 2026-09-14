@@ -1,6 +1,6 @@
 # Review remediation — plain-English summary
 
-**For:** Darren · **Updated:** 2026-08-08 (scaffold — nothing built yet)
+**For:** The developer · **Updated:** 2026-08-08 (scaffold — nothing built yet)
 
 ## What this pack does
 

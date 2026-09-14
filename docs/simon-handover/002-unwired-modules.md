@@ -1,6 +1,6 @@
 # Q002 — Four built-but-never-connected features: keep, connect, or remove?
 
-**Who answers:** Simon (the first two are yours; the last two Darren has
+**Who answers:** Simon (the first two are yours; the last two the developer has
 already leaned on — just confirm unless you know better).
 **Status:** **ANSWERED 2026-08-25** — see the answer table in
 [questions.md](questions.md) and the per-item notes below.
@@ -80,7 +80,7 @@ happens. (Simon, 2026-08-25)
 A tool for testing breakout-strategy tweaks against history *before* they
 touch live trading. Runs by hand; not reachable from the app's screens.
 
-- **A. Keep it as a hand-run safety tool** *(Darren's lean — a pre-live
+- **A. Keep it as a hand-run safety tool** *(the developer's lean — a pre-live
   test harness is worth having)*
 - **B. Remove it**
 - **C. Give it a button in the app eventually**

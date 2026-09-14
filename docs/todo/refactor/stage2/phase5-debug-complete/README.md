@@ -8,7 +8,7 @@ fake itself and all its tests are non-money.
 ## Goal of this phase
 
 Debug mode actually ticks: a fake MT5 bridge streams synthetic prices and fills orders against an
-internal ledger, so Darren can run and demonstrate the whole system end-to-end offline (today the
+internal ledger, so the developer can run and demonstrate the whole system end-to-end offline (today the
 chart is empty / "MT5 Disconnected"). This **drives the existing local-debug-mode pack**; its config
 flag, DB isolation and dashboard login already shipped this session.
 

@@ -6,7 +6,7 @@
 ## Problem
 
 In debug mode the chart is empty / "MT5 Disconnected": `_make_bridge` returns a real bridge that can't
-connect without MT5, so nothing ticks. Darren can't see or demo the system working.
+connect without MT5, so nothing ticks. The developer can't see or demo the system working.
 
 ## What to do
 

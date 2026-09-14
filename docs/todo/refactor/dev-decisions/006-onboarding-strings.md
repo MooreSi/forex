@@ -1,13 +1,13 @@
 # 006 — Onboarding wording: checklist rows, tab subtitles, empty-state prompts
 
 **Decision:** PROVISIONAL — the review's proposed wording was adopted verbatim-in-spirit so
-phase 1 could ship; Darren reviews the strings in the running app and edits the data files.
+phase 1 could ship; the developer reviews the strings in the running app and edits the data files.
 
-**Who decides:** Darren (usability wording — no trading policy involved).
+**Who decides:** The developer (usability wording — no trading policy involved).
 
 ## The question
 
-Stage 2 phase 1 (usability) required user-facing strings that the task files said Darren should
+Stage 2 phase 1 (usability) required user-facing strings that the task files said the developer should
 confirm before building: the Start Here checklist rows, the ten tab subtitles, the empty-state
 prompts, and the "Set up once / Every day" About grouping. This session was run with the
 instruction to complete all of stage 2, so the strings were written from the

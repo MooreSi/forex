@@ -26,7 +26,7 @@ you watching.
 | 4 | [005-fact-finding.md](005-fact-finding.md) | Four facts only you know (logs, the licence secret, the update client, retention) | ~5 min |
 | 5 | [007-remaining-approvals.md](007-remaining-approvals.md) | The practice-mode licence, and what "handed over" means | ~3 min |
 
-*(There is no 003 or 006 — those were Darren's technical items and live with
+*(There is no 003 or 006 — those were dev-side technical items and live with
 the technical docs, not in your folder.)*
 
 ## Status

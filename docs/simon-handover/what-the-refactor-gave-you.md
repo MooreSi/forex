@@ -63,7 +63,7 @@ is now **3,487** — it grew. That row on the readiness checklist is still
 unticked, and honestly marked as maintenance debt rather than a money risk.
 
 **The automatic checks have never run on this repository.** Not once. The green
-run the checklist points at happened on Darren's copy, three weeks before the
+run the checklist points at happened on a development copy, three weeks before the
 current code existed. Turning them on needs one click from you (see
 [STATUS](../todo/upstream-merge/STATUS.md)).
 

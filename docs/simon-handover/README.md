@@ -1,9 +1,8 @@
-# For Simon — the handover pack
+# Open decisions — the owner's queue
 
-Hi Simon. This folder is for you. Everything in it is written in plain
-English — no programming knowledge needed. Darren has spent the last while
-getting your trading app into shape to hand back to you, and this folder is
-the record of what was done, what we need from you, and what happens next.
+This folder is the answer-later queue. Everything in it is written in plain
+English — no programming knowledge needed. It is the record of what the
+refactor did, what still needs an owner decision, and what happens next.
 
 ## What has been done (in plain English)
 
@@ -38,8 +37,8 @@ only whispers.
 
 **Nothing about how it trades has changed.** Every change above is about
 usability, plumbing and testing. The rules of this project say that anything
-touching real orders — opening, closing, sizing — needs *you* to approve it
-and watch it demonstrated. That work is prepared and waiting (see below).
+touching real orders — opening, closing, sizing — needs the owner to approve
+it and watch it demonstrated. That work is prepared and waiting (see below).
 
 ## What we need from you — step by step
 
@@ -54,14 +53,13 @@ needed).** Open [session-agenda.md](session-agenda.md) and work down Part A.
 Each row links to one of the numbered files in this folder; open the file,
 read "The question" and the recommendation, and type your answer on the
 **Answer:** line (in any text editor — even Notepad). *"Confirm — keep what
-you chose"* is a complete answer for every one of them. When all six are
-answered, tell Darren.
+you chose"* is a complete answer for every one of them.
 
-**Step 2 — The demo session on your machine (with Darren).** After your
-answers, the money-safety work gets built, and you watch each protection
-demonstrated on your **demo** account (never the live one) before it ships —
-one position instead of two on a timeout, no phantom closes, the safety
-brake on by default. The agenda's Part B lists exactly what you'll watch.
+**Step 2 — The demo session on your machine.** After your answers, the
+money-safety work gets built, and each protection is demonstrated on the
+**demo** account (never the live one) before it ships — one position instead
+of two on a timeout, no phantom closes, the safety brake on by default. The
+agenda's Part B lists exactly what gets watched.
 
 ## How to run the app
 
@@ -103,8 +101,8 @@ you to the right screen for each one.
 
 Nothing needs editing in files — every key is entered through those screens,
 and the **? Help button** (top right, any screen) opens a guide that links
-to all of this. If anything is unclear, that's a bug in our docs — tell
-Darren and we fix the doc, not you.
+to all of this. If anything is unclear, that is a bug in the docs — the doc
+gets fixed, not you.
 
 ## What's in this folder
 
@@ -115,7 +113,7 @@ Darren and we fix the doc, not you.
 | `001, 002, 004, 005, 007` | Your five decisions, one file each — options spelled out, you write on the **ANSWER:** lines |
 | [what-the-refactor-gave-you.md](what-the-refactor-gave-you.md) | What the refactor actually changed — better, cost, and still outstanding |
 | [readiness-checklist.md](readiness-checklist.md) | The honest "is it ready?" scorecard — what's green, what's not, and why |
-| [future-roadmap.md](future-roadmap.md) | Ideas for after the handover — not commitments, a menu |
+| [future-roadmap.md](future-roadmap.md) | Ideas for what comes next — not commitments, a menu |
 
 ## The one-line summary
 

@@ -26,7 +26,7 @@ before every commit.
 
 ## The goal — "Safe to run, clean to build on"
 
-Darren's target (2026-08-10): **everything fixed up so the app can be run
+The developer's target (2026-08-10): **everything fixed up so the app can be run
 locally with confidence.** Concretely, done means:
 
 1. **It runs clean, locally** — boots on 127.0.0.1, demo mode, no network
@@ -131,7 +131,7 @@ is money-touching and governed there. This pack does not fork it.
 
 ### Provisional decisions (2026-08-10) — recommendations adopted, brother's confirmation pending
 
-Darren adopted all six QUESTIONS.md recommendations so work can proceed; the final decision-maker
+The developer adopted all six QUESTIONS.md recommendations so work can proceed; the final decision-maker
 (his brother) has not yet reviewed them. Check QUESTIONS.md for overrides before implementing the
 consuming task.
 

@@ -34,7 +34,7 @@ not a failure.
 - **Leave `app.py` alone entirely** — cheapest, and defensible for a composition root, but the About
   and Glossary content alone is several hundred lines of pure data sitting in the shell file.
 
-ANSWER: PROVISIONAL (2026-08-11, agent under Darren's "complete stage 2" instruction; Darren
+ANSWER: PROVISIONAL (2026-08-11, agent under the developer's "complete stage 2" instruction; the developer
 confirms) — the recommendation: split the real components (About/Glossary content, dialogs,
 ticker where it separates cleanly), let the remaining composition stay. No manufactured modules.
 Stage2 phase 1 already moved the About home into `frontend/components/about_home.py`.

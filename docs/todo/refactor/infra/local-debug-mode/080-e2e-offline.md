@@ -13,7 +13,7 @@ scenario files from 020/030
 
 Nothing proves the refactored system works end-to-end. Unit and characterization tests pin
 pieces; no test boots the composed app and walks a signal through parse → risk → placement →
-monitoring → close. That is the exact confidence Darren needs before handing the refactor back.
+monitoring → close. That is the exact confidence needed before the refactor can be trusted.
 
 ## Decision
 
