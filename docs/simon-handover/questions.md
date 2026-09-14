@@ -101,12 +101,12 @@ the code. Nothing below has been changed on your account; each is a decision._
    holds it**, which makes them genuinely different rather than one being
    wrong. The switch built for the Reversal Engine is off; turning it on would
    admit about seven or eight signals a day.
-6. **[034](034-the-bounce-engine-has-not-produced-a-signal-since-august.md) —
-   one of your three engines has produced nothing since 2026-08-27.** It found
-   514 setups in those sixteen days and refused every one, after its own AI
-   tuner raised the quality bar to the maximum it is allowed. On that engine's
-   record that may be the right answer. It now says so in the log either way.
-   It has never placed a real order, so nothing is at risk while you decide.
+6. **[034](034-the-bounce-engine-has-not-produced-a-signal-since-august.md)
+   — CLOSED 2026-09-14, nothing needed from you.** One of your three engines
+   had produced nothing since 2026-08-27: 514 setups found in sixteen days and
+   every one refused, after its own AI tuner raised the quality bar to the
+   maximum it is allowed. You decided to remove the engine; it is deleted. It
+   never placed a real order.
 7. **[bugs/051](../todo/bugs/051-withdraw-and-re-arm-has-never-re-armed.md) —
    the one I would look at first.** On 2026-09-10 you chose that a resting
    order failing its re-check should be *withdrawn and put back*, not
@@ -132,23 +132,33 @@ the code. Nothing below has been changed on your account; each is a decision._
     by the app-level daily-loss halt, which does work; the per-engine one has
     never existed. Delete the description, or build it.
 
-**Closed 2026-09-14 — the Bounce engine is stopped.** You said it had been
-removed; it had not, and was running as you said so. It is now
-(`docs/todo/bugs/046`), and nothing is deleted — the service, its database and
-its history are intact, and reviving it is one constant.
+**Closed 2026-09-14 — the Bounce engine is stopped, then deleted.** You said it
+had been removed; it had not, and was running as you said so. It was stopped on
+2026-09-13 and its code was deleted on 2026-09-14 on your instruction
+(`docs/todo/bugs/046`). 18 modules gone.
 
-That closes **034** (its eighteen days of silence no longer need explaining)
-and **046** itself. Two related items survive it, and both are about the
-**Breakout** engine, which still runs:
+**Its database is not deleted.** `test_signal.db` and its 173 signals are still
+on disk, untouched. The code that wrote them is not, so reviving the engine is
+no longer a one-line change — it is a revert.
+
+That closes **034** (its eighteen days of silence no longer need explaining),
+**046** itself, and **045**: the parameter Breakout was reading out of the
+stopped engine's database is gone, and the value it held is now a named
+constant in `services/market/sessions.py`. Nothing about what either engine
+trades changed.
+
+One related item survives, about the **Breakout** engine, which still runs:
 
 * **[048](../todo/bugs/048-two-engines-describe-a-daily-loss-stop-that-does-not-exist.md)**
-  — Breakout still advertises a daily loss stop that does not exist.
-* **[045](../todo/bugs/045-a-tuned-parameter-that-changes-nothing-and-crosses-engines.md)**
-  — Breakout still reads a parameter out of the *stopped* engine's database.
+  — Breakout still advertises a daily loss stop that does not exist. Half of
+  this closed with the Bounce engine; the Breakout half is unchanged and is
+  still yours to settle — delete the description, or build the limit.
 
 And **[057](../todo/bugs/057-four-definitions-of-the-trading-session.md)** is
 unchanged: four session definitions still exist in the code, and your Asia
 button still covers different hours from the engine that places the trades.
+Moving one of them into `services/market/` deliberately did not reconcile it
+with the other three.
 
 **Closed 2026-09-14:** **041** — the profitable harvest that armed the circuit
 breaker. You instructed the fix, compiled EA v1.08 and re-attached; both halves
