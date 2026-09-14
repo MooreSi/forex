@@ -633,3 +633,72 @@ Nothing they say is wrong. It does re-rank them:
 
 The cause of these numbers is the dashboard's own refresh cycle, and the worst
 of it is one button.
+
+---
+
+## The panel diffing is built, and it is OFF (2026-09-14)
+
+The section above ended: *"give the Reversal and Breakout panels a
+per-container signature and skip the rebuild when it has not moved. Not done
+here, and the reason is the failure mode: a signature that omits a field leaves
+a trading screen showing a stale number, which is worse than a stall the owner
+can see. That wants him watching the panel while it is switched on, not an
+overnight commit."*
+
+Both halves of that are honoured. The mechanism is built and wired to all
+fourteen containers across the two panels. **It is off**, and the switch is a
+toggle above the two tabs on the Signal Generator page — on the screen it
+changes, so turning it on and watching the numbers is one action.
+
+### The omitted-field problem is designed out, not guarded against
+
+`change_signature` hand-picked five fields. That is the shape that goes stale:
+add a column, forget the signature, and the panel silently stops showing it.
+
+`frontend/components/render_cache.payload_digest` picks nothing. It digests the
+**whole payload the container renders from**, so the property is:
+
+    if the payload is equal, and the render is a pure function of the
+    payload, then the rendered output is equal.
+
+The first half is this module's job, and
+`tests/frontend/test_render_cache.py` holds it — every field checked by
+mutating each key in turn, ordering significant for sequences and not for
+mappings, `0`/`0.0`/`False`/`None`/`"0"` all distinguished, and a value whose
+`repr` raises degrading to "rebuild" rather than taking the panel down.
+
+The second half is the caller's, cannot be checked by a scanner, and is stated
+next to each guard. `tests/frontend/test_panel_rebuilds_are_gated.py` holds the
+wiring instead: any `.clear()` in either panel package must sit behind a
+`cache.changed(...)` or be listed as not-on-a-timer, shrink-only. That is the
+gap the previous attempt fell into — the mechanism was fine and the only panel
+that called it was deleted.
+
+### What mutation testing changed about the design
+
+Twelve mutants, twelve killed, and three of them were worth the trip:
+
+* Three hand-written scalar branches — NaN, bool, and a type tag — all survived
+  because `repr` already did the job. They were removed rather than kept with a
+  comment claiming they did something.
+* One of them was not merely redundant: folding `-0.0` into `0.0` is **wrong**,
+  because `_pnl_str` prints an explicit sign and those render as `-0.00` and
+  `+0.00`. The first draft of the thing built to prevent stale numbers on
+  screen had a stale-number bug in it.
+* An unreachable `try/except` around `payload_digest` hid a real mutant. It was
+  deleted; the safety net that is actually reachable lives in
+  `SectionCache.changed`, where the payload comes from a repo.
+
+### Also removed
+
+`reversal_panel`'s `_refresh_all` called `active_levels()` — a worker-thread
+database round trip — on every refresh and never read the result. The levels
+list renders from the engine's own cache. That is one fewer DB hop per pass, on
+the loop this is all about.
+
+### What this does not claim
+
+No measurement yet. The stall numbers in this file were taken with the owner at
+the dashboard; the next read has to be taken the same way, with the toggle on,
+and compared against the 55 panel re-renders in the table above. Until then
+this is a mechanism with a switch, not a result.
