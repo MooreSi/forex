@@ -702,3 +702,153 @@ No measurement yet. The stall numbers in this file were taken with the owner at
 the dashboard; the next read has to be taken the same way, with the toggle on,
 and compared against the 55 panel re-renders in the table above. Until then
 this is a mechanism with a switch, not a result.
+
+> **Superseded 2026-09-16.** The toggle was turned on, and the measurement
+> below was taken. Both sentences above ("it is off", "no measurement yet")
+> were true when written and are not now. Left in place rather than edited,
+> because the section's reasoning is the record of why it shipped off.
+
+---
+
+# The panel diffing worked. Measured 2026-09-16
+
+`panel_diff_rendering = 1` in the live database. Aggregating
+`WARNING asyncio — Executing <Task ...> took N seconds` exactly as the
+2026-09-12 section did, across `forex_trader.log.2026-09-12` through today:
+
+| day | stalls | panel re-renders | active dashboard hrs | panel stalls/hr | panel share |
+|---|---|---|---|---|---|
+| 09-12 (baseline) | 184 | 58 | 5 | 11.60 | 31.5% |
+| 09-13 | 205 | 59 | 5 | 11.80 | 28.8% |
+| 09-14 (shipped) | 472 | 121 | 16 | 7.56 | 25.6% |
+| 09-15 | 348 | 12 | 14 | **0.86** | 3.4% |
+| 09-16 | 52 | 0 | 6 | **0.00** | 0.0% |
+
+**Per dashboard-hour, not per day.** Raw counts are not comparable between
+these days: the owner was at the screen for 5 hours on the 12th and 14 on the
+15th, and the 14th is the day the change shipped, so it is half old behaviour.
+
+The two source lines the earlier section named,
+`breakout_panel/__init__.py:529` and `reversal_panel/__init__.py:555`,
+produced 54 stalls on the 12th and **none at all** on the 15th or the 16th.
+Total stalls per active hour fell too, 36.8 to 24.9 to 8.7.
+
+The "only when someone is looking" finding still holds: overnight on the 16th,
+one stall, in the 03:00 hour.
+
+## What is left is NiceGUI timers, and they are unattributed
+
+`Timer._invoke_callback()` is now **84–88%** of all stalls, up from 59%. It did
+not get worse; everything else got better around it.
+
+And the route that cracked the panels does not work here. Every one of the
+thirty-three `ui.timer` call sites in `frontend/` produces the identical line:
+
+```
+coro=<Timer._invoke_callback() done, defined at .../nicegui/timer.py:107>
+created at backend/src/utils/background_tasks.py:40
+```
+
+The user callback is awaited *inside* NiceGUI's task, so the coroutine name and
+the source location are both NiceGUI's. There is nothing in the warning to
+aggregate. This is the same wall the file started at in July, one layer down.
+
+## Step 1 done 2026-09-16: the timers say their own names
+
+`frontend/components/timer_probe.py`. It renames the task NiceGUI creates per
+invocation, so the label travels in asyncio's own stall warning, and it
+separately logs completion latency over the loop monitor's threshold (`0.40`,
+duplicated rather than imported because the import contract allows this package
+`backend.src.controllers` and nothing else; a test asserts the two copies
+agree).
+
+That is the second design. The first one was wrong and is worth recording,
+because it was wrong in the direction this whole file is about.
+
+All thirty-three call sites now go through it, and
+`tests/frontend/test_timer_probe.py` holds the rule that no page calls
+`ui.timer` directly — with the two wrappers on a shrink-only allowlist. That
+rule exists because of how the last attempt at this file died: the mechanism
+was fine and the only caller was deleted.
+
+**It measures and does not act.** No skipping, no debouncing, no swallowing:
+return values, arguments and exceptions pass straight through, a callback that
+fails *slowly* is still timed, and a sync callback stays sync (NiceGUI
+schedules coroutine functions differently, so wrapping one in the other would
+change when it runs). Eleven mutants, eleven killed.
+
+Two things the scanner and the tests caught that a review would not have:
+
+* `frontend/pages/settings/_diagnostics.py` imported nicegui as `_ui`, so a
+  scanner keyed on the literal name `ui` walked straight past it. The alias set
+  is now `{ui, _ui, nicegui}`. This is how a "zero violations" check quietly
+  becomes a check of nothing.
+* `poll()` builds every tick from one factory, so all four polls would have
+  arrived in the log as `make_tick.<locals>._tick` — the exact problem this
+  module exists to end, reintroduced one level in. They are labelled after the
+  `produce` function instead. The first test of that only exercised the label
+  helper; a mutant that stopped `poll()` *passing* the label survived it.
+
+### The first version measured the wrong thing (corrected same day)
+
+It wrapped each callback in a **wall clock** and logged anything over the
+threshold as `[SlowTimer]`. Within the hour, with the probe live:
+
+| | |
+|---|---|
+| `[SlowTimer]` lines | 12 |
+| asyncio `Timer._invoke_callback` stalls, same window | **0** |
+
+All seven flagged callbacks were `async def`. The reason is that the two
+instruments do not measure the same quantity:
+
+* asyncio's `slow_callback_duration` hook fires inside `Handle._run()` and
+  measures **one synchronous slice**. That is real loop-blocking time.
+* A wall clock around an `async def` includes every `await`, and during an
+  await the loop is free.
+
+So `_check_github_update took 0.89s` was an HTTP round trip that blocked
+nothing, reported as though it were a freeze. An instrument that manufactures
+the phenomenon it is looking for is worse than none, and this file exists
+because of guardrails that printed "all good" over ground they never walked.
+
+**The fix inverts it.** asyncio keeps the measuring, because it measures the
+right thing. The probe supplies only the name: NiceGUI creates a dedicated
+task per invocation (`nicegui/timer.py:95`), so `current_task().set_name(label)`
+from inside the callback puts the label in the `name=` field of the warning
+that was already correct:
+
+```
+Executing <Task finished name='chart/_refresh_fast (__init__.py:552)'
+coro=<Timer._invoke_callback() ...>> took 0.83 seconds
+```
+
+Per-task, so concurrent timers cannot be confused; no registry to keep in step.
+The wall-clock line is kept because a slow refresh is worth knowing about, but
+it now reads `completed in Ns (wall clock, awaits included)` and a test asserts
+that wording. It answers "which refresh is slow", not "which one froze the
+app".
+
+Five more mutants on the correction, five killed. One of the tests added with
+it was itself vacuous on the first run: it looked for the literal phrase
+`describe the same event` in the module and passed while the claim was still
+there, because the docstring wrapped it across a line break. It normalises
+whitespace now.
+
+### What is NOT done, and needs you
+
+**No measurement of the timers yet, and this cannot be taken unattended.**
+185 of 186 stalls fall in the hours the owner is at the dashboard, so the read
+has to be taken the same way every other read in this file was: a session at
+the screen, then aggregate the `name=` field of the asyncio stall warnings.
+A first session on 2026-09-16 was abandoned once the wall-clock flaw above was
+found; its only result is that flaw. The app must be restarted to pick the
+corrected probe up before the next attempt.
+
+Only then is it worth touching a timer. The obvious suspects are
+`_header.py:640` (`_refresh_header`, every 2.0s on every page, 1,800 calls an
+hour) and `chart/__init__.py:565` (`_refresh_fast`, every 3.0s) — but that is a
+prediction, and this file's whole history is the cost of acting on those.
+Most are likely the same disease the panels had, rebuilding on a timer whether
+or not anything changed, and `render_cache.payload_digest` plus
+`SectionCache.changed` already exist and are already tested.
