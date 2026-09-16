@@ -122,3 +122,54 @@ constant is checked (a literal scan alone missed a mutant that set
 `_H4_CANDLES = 40`), and the dormant gate cannot be armed without failing a
 test. Five mutants, four killed; the fifth is an equivalent mutant, confirmed
 by removing both redundant guards and watching the test fail.
+
+
+---
+
+## Excursion measurement added 2026-09-16
+
+The other half of "why does this engine lose". `bo_signals` carried no
+`mfe_pts`/`mae_pts`, so the breakout engine has never had a reach
+distribution and its `tp1_mult` of 1.0 has been a guess for its whole life --
+`rr_tp1` is 1.0 on all 122 closed signals, and at the realised payoff of 1.30
+that needs a 43.5% win rate against an actual 36.1%.
+
+Shipped, all read-only measurement, placing nothing:
+
+* `breakout_signal/measure_repo.py` -- the three filters that decide whether
+  the numbers can be trusted (executed only, closed only, never overwrite),
+  in their own module because adding them to `breakout_signal_repo.py` put it
+  at 806 lines, over the ceiling. The reversal engine already keeps this
+  concern in a `measure_repo.py`; two engines, one shape.
+* `breakout_signal/excursion_backfill.py` -- reconstructs MFE/MAE from broker
+  tick history through the same `market/price_path` the reversal engine uses,
+  so the two engines' numbers mean the same thing.
+* `breakout_signal/excursion_sweep.py` -- runs it nightly at 22:00 London on
+  the timer `research_loop` already owns, with its own `bo_excursion_last`
+  date key. Deliberately not a button: the reversal engine's study was
+  button-only and went four days stale, and the same gap here would be worse
+  because there is no history to go stale from.
+
+**What this does NOT do is change a target.** It builds the evidence base for
+choosing one. Nothing about `tp1_mult` is settled until the backfill has run
+and `barrier_fit` has something to fit on.
+
+For reference, the reversal engine's reach over 793 stored excursions, which
+is the shape of answer to expect here:
+
+```
+ 0.25R: 58.0%   1.0R: 41.5%   2.0R: 24.8%   3.0R: 14.9%
+median reach 0.58R
+```
+
+Only a quarter of those trades ever touch 2R. If the breakout engine reads
+similarly then RAISING its target is the wrong move and the lever is loss
+size -- but that is a guess until measured, which is the entire point of
+shipping this rather than a number.
+
+Twelve mutants across the backfill, the repo filters and the sweep. Two
+survived first time and both were real gaps, now closed: the UPDATE's
+`AND mfe_pts IS NULL` overwrite guard (every test asserted which rows get
+PICKED, none on what a second write does) and the observations query's
+`live_exec_status='executed'` filter (every test created executed signals
+only, so nothing could see it).
