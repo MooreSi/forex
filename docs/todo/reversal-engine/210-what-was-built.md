@@ -573,3 +573,110 @@ in the order they would be turned on:
 And the question that is not ours: **the Bounce engine holds the opposite
 Asian rule** and has since before any of this was measured. See
 [simon-handover/033](../../simon-handover/033-two-engines-disagree-about-the-asian-session.md).
+
+---
+
+## The study runs nightly, 2026-09-16
+
+### Why
+
+`research_lab.run_study` is the only producer of the reach distribution and
+the exit-policy sweep, and the only place they are stored.
+`ai_tuner.gather_evidence` READS that stored summary; it has no way to
+refresh it. So while the study was button-only, the evidence the tuner
+handed a model was however old the last press was.
+
+Measured today: `last_study_summary.ran_at` was **2026-09-12 12:28**, four
+days stale, and still being presented as the current reach evidence. That is
+the slow-fuse version of the failure already recorded in `ai_tuner`'s
+docstring, where the 2026-09-11 run "proposed a 2.0x ATR target that neither
+the reach data nor the sweep supports. It reasoned correctly from half a
+picture."
+
+The study's input justifies a daily cadence and no more: executed-and-closed
+signals went 791 -> 830 over those four days, roughly 2% growth per day.
+Hourly would re-fit the same sample.
+
+### What shipped
+
+| piece | where |
+|---|---|
+| the daily job | `services/reversal_engine/study_schedule.py` (new) |
+| wired into the timer that already ticks | `services/reversal_engine/research_loop.py` |
+| the tuner reports how old its evidence is | `ai_tuner._note_the_age`, `STALE_AFTER_S = 36h` |
+| tests | `tests/reversal_engine/test_study_schedule.py` (new), `TestItSaysHowOldTheEvidenceIs` in `test_ai_tuner.py` |
+
+Guards carried over from the nightly Telegram sweep: local node only, `>= 22`
+rather than `== 22` (the drift that left 2026-08-09, 08-14 and 08-15 with no
+research row), deduped by the `re_study_last` app_config key. Two are its
+own: **no bridge means the day is not marked done**, and **a study that
+raises does not mark the day done** -- claiming it either way would burn the
+single daily run on a pass that measured nothing, which is the staleness the
+schedule exists to stop.
+
+No new asyncio task in `runtime.py`. It shares `research_loop`'s minute
+timer, each job with its own try/except so Telegram being down cannot take
+the study's day with it.
+
+### Why 22:00 Europe/London
+
+The daily settlement break, not just "late". 17:00 New York is 21:00 UTC
+under EDT and 22:00 UTC under EST, and London local tracks that shift both
+ways -- which is why the nightly sweep already used London time. Over the
+seven days to 2026-09-16, `re_analysis_log` produced **2 signals in the
+21:00 UTC hour** against 17-72 in every other hour of the day.
+
+### What was NOT done
+
+- **The study's bridge and database reads are still on the event loop.**
+  bugs/030 moved its CPU-heavy arithmetic off on 2026-09-12 and deliberately
+  left these where they are. ~250 sequential `get_ticks_range` calls at
+  ~0.19s each still saturate the bridge for minutes. They await properly so
+  they cannot freeze dispatch the way the 21.5s sweep did, but scheduling
+  them into the quiet hour is a mitigation, not a fix.
+- **`re_ai_tuning_enabled` is still off** -- it is not even a column in
+  `vantage_risk_settings`, so `_ai_tune_loop` is inert and nothing acts on
+  the study automatically. This makes the Recommend button honest; it does
+  not make the engine self-tuning. Whether an AI may write live capability
+  switches unattended is yours, not a side effect of scheduling a report.
+
+### Verification log
+
+```
+python -m tools.checks all          2026-09-16
+  structure gates        ok   (2.5s)
+  import contracts       ok   (2.0s)
+  runtime facade         ok   (0.1s)
+  orphan modules         ok   (1.0s)
+  undefined names        ok   (1.3s)
+  unawaited coroutines   ok   (1.1s)
+  late binding           ok   (0.6s)
+  boot smoke             ok   (9.4s)
+  doc links              ok   (0.1s)
+  test suite             ok   (409.9s)
+  coverage ratchet       ok   (0.1s)
+All checks passed.
+```
+
+Tests were written first and watched fail (`ImportError: cannot import name
+'study_schedule'`, then 5 red in `TestItSaysHowOldTheEvidenceIs`). Ten
+mutants, each killed, `__pycache__` purged around every restore:
+
+| mutation | result |
+|---|---|
+| `SLOT_HOUR = 22` -> `0` | 1 failed |
+| slot gate removed | 1 failed |
+| no-bridge guard removed | 1 failed |
+| claims the day after a failure | 2 failed |
+| remote-node gate removed | 1 failed |
+| dedup removed | 1 failed |
+| study not called by the loop | 2 failed |
+| staleness never flagged | 2 failed |
+| age never reported | 3 failed |
+| age helper never called | 4 failed |
+
+One of the new tests passed vacuously on its first run and was rewritten:
+`test_the_prompt_tells_it_to_discount_stale_evidence` found `study_note` in
+the prompt because `_build_prompt` dumps the evidence dict in verbatim, so it
+was matching its own input. It now builds from an empty dict and asserts on
+the Notes text.
