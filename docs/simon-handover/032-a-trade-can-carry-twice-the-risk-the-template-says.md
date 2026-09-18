@@ -146,3 +146,70 @@ does not use these templates and is measured separately in
 That file finds losses **exceeding** the stop; this one finds losses landing
 exactly on a stop that is wider than expected. They are different faults on
 different paths and neither is evidence for the other.
+
+---
+
+## Addendum, 2026-09-14 — the same template, two stops, from two paths
+
+You asked why these two look inconsistent:
+
+```
+2007286071   +$42.00   R 0.47      2007221685   +$41.56   R 0.83
+```
+
+Both "30 TP1 SL50 and Trail", both BUY, both 0.10 lot, both closed in the same
+second. The profits are near identical; the R differs because the **risk**
+differs, and only the risk:
+
+| | 2007286071 | 2007221685 |
+|---|---|---|
+| signal | Telegram Auto, zone 4278–4282 | Telegram Instant, no zone |
+| fill | 4290.86 | 4288.64 |
+| stop at open | 4281.87 | 4283.65 |
+| distance | **8.99 pts** | 4.99 pts |
+| risk | **$89.90** | $49.90 |
+
+R is profit / risk recorded at open, so 42.00/89.90 = 0.47 and
+41.56/49.90 = 0.83. The R column is right. The stop distance is the story.
+
+This is this file's issue, with two things the original write-up did not have:
+
+**1. The gap-adjusted market entry makes the tail systematic, not a coin flip.**
+The body above says "most fills land on the edge the stop is measured from".
+That holds for a fill inside the zone. It cannot hold on the IME path. When
+price has already left the zone, `scan_auto_execute` shifts the zone, the stop
+and the ladder by the gap so the zone's **near** edge sits on the market — for
+a BUY, `entry_high` becomes the market price. The stop is anchored to
+`entry_low`. So the fill lands at the far edge from the stop **by construction,
+every time**, and the risk is always `sl_pips + zone width`. Here: 5.00 + 4.00
+= 9.00. Same shape on the SELL side (2003636700, 2-pt zone, 7.05 pts risked).
+
+**2. Two execution paths disagree, on the same template and channel.**
+`template_sl_at` — the function that re-measures a template's stop from the
+actual fill reference — has exactly two call sites: `resolution.py` (the
+`from_signal` path, used by PendingWatcher activations and manual entry) and
+`limit_order_signal.py` (resting orders). The Telegram auto-execute path calls
+`open_trade` directly with whatever stop the parser produced, so it never
+re-measures. Live, 20 minutes after the trade above:
+
+```
+2007468045  PendingWatcher activation, 6-pt zone, fill 4286.20, stop 4281.17
+            -> 5.03 pts, $50.30.   Re-anchored to the fill.
+2007286071  Telegram auto-execute, 4-pt zone, fill 4290.86, stop 4281.87
+            -> 8.99 pts, $89.90.   Zone-edge stop, passed straight through.
+```
+
+Same template, same day, 1.8x the risk, decided by which code path fired.
+
+There is a related asymmetry inside `open_trade` itself: for a template it
+re-resolves the whole **TP ladder** against the current tick
+(`resolve_template_tps`) and passes the **stop** through untouched. The targets
+move to the fill; the stop does not.
+
+**Nothing here changes the options above.** Option B (measure the template's
+stop from the fill) would close both gaps at once and is the same rule you
+already chose for resting orders. Option D (show it) still costs nothing. The
+new argument is that the IME path is not a tail case — every gap-adjusted entry
+pays the zone width.
+
+**ANSWER:**

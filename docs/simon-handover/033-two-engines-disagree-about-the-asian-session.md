@@ -44,7 +44,8 @@ is the population the engine models, not a realised account curve.
 
 ## What has been built, and it is off
 
-A new switch on **Signal Generator > Reversal Engine > Capabilities**:
+A new switch on **Signal Generator > Reversal Engine > Tuning** (called
+"Capabilities" until 2026-09-17):
 
 > …but not in the Asian session: ignore the trend there
 

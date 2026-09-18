@@ -66,8 +66,10 @@ sizing site, and it wants a demo session and someone watching.
 
 ## How to turn any of it on
 
-**Trading > Strategy > Reversal Engine Capabilities**, then Save
-Capabilities. The card sits beside the other behaviour gates because these
+**Signal Generator > Reversal Engine > Tuning**, then Save Tuning. (The
+card was called "Reversal Engine Capabilities" and lived under Trading >
+Strategy when this was written; it moved on 2026-09-11 and was renamed on
+2026-09-17, both owner requests.) It sits beside the other behaviour gates because these
 are tier-2 trading behaviour, not calibration constants
 ([60-adding-a-tunable](../../system/rules/60-adding-a-tunable.md)).
 

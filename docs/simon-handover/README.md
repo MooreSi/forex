@@ -143,5 +143,9 @@ in the room.
 
 - [032-a-trade-can-carry-twice-the-risk-the-template-says.md](032-a-trade-can-carry-twice-the-risk-the-template-says.md) — one -$120.30 stop on a day of -$50 stops, traced: nothing broke, the stop was simply wider than the template says. How often, what it has cost, and four options
 
+- [039-cme-futures-context-is-free-is-it-worth-building.md](039-cme-futures-context-is-free-is-it-worth-building.md) — dark pools do not exist for gold; CME futures are the honest version, and the daily data is free. A switch is in, off and connected to nothing. The question is whether to spend a session measuring if futures flow predicts anything here
+
+- [040-volatility-sizing-would-have-lost-more-not-less.md](040-volatility-sizing-would-have-lost-more-not-less.md) — measured over 5,116 closed signals before wiring it: volatility targeting would have lost $1,113 MORE, and the drawdown half is pinned at its floor permanently. Recommendation: leave it off
+
 > This list is behind: 021 to 026 and 029 to 031 exist in the folder and are
 > not on it. Open the folder itself for the full set until it is caught up.
